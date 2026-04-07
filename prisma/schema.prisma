@@ -1,0 +1,201 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  RH
+  ENCADRANT
+  STAGIAIRE
+}
+
+enum StageStatus {
+  PLANIFIE
+  EN_COURS
+  SUSPENDU
+  TERMINE
+  ANNULE
+}
+
+enum RapportStatus {
+  BROUILLON
+  SOUMIS
+  VALIDE
+  RETOURNE
+}
+
+enum EvaluationType {
+  MI_PARCOURS
+  FINAL
+}
+
+enum DocumentType {
+  CONVENTION
+  ATTESTATION
+  CV
+  RAPPORT_EVAL
+  AUTRE
+}
+
+enum PresenceStatus {
+  PRESENT
+  ABSENT
+  JUSTIFIE
+}
+
+model User {
+  id               String         @id @default(uuid())
+  nom              String
+  prenom           String
+  email            String         @unique
+  passwordHash     String?
+  role             Role
+  isActive         Boolean        @default(true)
+  twoFactorEnabled Boolean        @default(false)
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+  stagiaire        Stagiaire?
+  encadreStages    Stage[]        @relation("EncadrantStages")
+  notifications    Notification[]
+  auditLogs        AuditLog[]
+  documents        Document[]     @relation("DocumentAuthor")
+}
+
+model Stagiaire {
+  id            String   @id @default(uuid())
+  userId        String   @unique
+  cin           String   @unique
+  dateNaissance DateTime?
+  telephone     String?
+  etablissement String?
+  specialite    String?
+  niveau        String?
+  annee         String?
+  photoUrl      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stages        Stage[]
+}
+
+model Stage {
+  id          String       @id @default(uuid())
+  stagiaireId String
+  encadrantId String?
+  dateDebut   DateTime
+  dateFin     DateTime
+  departement String
+  sujet       String
+  githubRepo  String?
+  statut      StageStatus  @default(PLANIFIE)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  stagiaire   Stagiaire    @relation(fields: [stagiaireId], references: [id], onDelete: Cascade)
+  encadrant   User?        @relation("EncadrantStages", fields: [encadrantId], references: [id], onDelete: SetNull)
+  rapports    Rapport[]
+  evaluations Evaluation[]
+  documents   Document[]
+  presences   Presence[]
+
+  @@index([stagiaireId])
+  @@index([encadrantId])
+  @@index([statut])
+}
+
+model Rapport {
+  id              String        @id @default(uuid())
+  stageId         String
+  semaine         Int
+  tachesRealisees String
+  difficultes     String?
+  planSuivant     String?
+  avancement      Int
+  statut          RapportStatus @default(BROUILLON)
+  dateSoumission  DateTime?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  stage           Stage         @relation(fields: [stageId], references: [id], onDelete: Cascade)
+
+  @@unique([stageId, semaine])
+}
+
+model Evaluation {
+  id          String         @id @default(uuid())
+  stageId     String
+  type        EvaluationType
+  notes       Json
+  commentaire String?
+  signature   String?
+  isSigned    Boolean        @default(false)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  stage       Stage          @relation(fields: [stageId], references: [id], onDelete: Cascade)
+
+  @@unique([stageId, type])
+}
+
+model Document {
+  id           String       @id @default(uuid())
+  stageId      String
+  auteurId     String
+  type         DocumentType
+  nom          String
+  url          String
+  tailleOctets Int
+  version      Int          @default(1)
+  isDeleted    Boolean      @default(false)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  stage        Stage        @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  auteur       User         @relation("DocumentAuthor", fields: [auteurId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id             String   @id @default(uuid())
+  destinataireId String
+  type           String
+  titre          String
+  message        String
+  lien           String?
+  isRead         Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  destinataire   User     @relation(fields: [destinataireId], references: [id], onDelete: Cascade)
+
+  @@index([destinataireId, isRead])
+}
+
+model AuditLog {
+  id             String   @id @default(uuid())
+  userId         String
+  action         String
+  entite         String
+  entiteId       String
+  ancienneValeur Json?
+  nouvelleValeur Json?
+  ip             String?
+  userAgent      String?
+  createdAt      DateTime @default(now())
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([entite, entiteId])
+}
+
+model Presence {
+  id              String         @id @default(uuid())
+  stageId         String
+  date            DateTime
+  statut          PresenceStatus
+  justificatifUrl String?
+  notes           String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  stage           Stage          @relation(fields: [stageId], references: [id], onDelete: Cascade)
+
+  @@unique([stageId, date])
+}
