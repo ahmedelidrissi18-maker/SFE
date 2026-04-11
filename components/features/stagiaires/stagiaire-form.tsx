@@ -16,6 +16,7 @@ type StagiaireFormProps = {
   ) => Promise<StagiaireActionState>;
   defaultValues?: Partial<StagiaireFormValues>;
   showCredentialsHint?: boolean;
+  credentialsHint?: string;
   cancelHref?: string;
 };
 
@@ -69,18 +70,23 @@ export function StagiaireForm({
   action,
   defaultValues,
   showCredentialsHint = false,
+  credentialsHint,
   cancelHref = "/stagiaires",
 }: StagiaireFormProps) {
   const [state, formAction] = useActionState(action, initialState);
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
-        <p className="max-w-3xl text-sm leading-6 text-muted">{description}</p>
+    <div className="space-y-8">
+      <div className="space-y-3">
+        <p className="text-sm font-medium uppercase tracking-[0.18em] text-primary/80">Formulaire</p>
+        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h1>
+        <p className="max-w-3xl text-sm leading-6 text-muted sm:text-[15px]">{description}</p>
       </div>
 
-      <form action={formAction} className="space-y-6 rounded-[28px] border border-border bg-card p-6 shadow-sm">
+      <form
+        action={formAction}
+        className="space-y-8 rounded-[32px] border border-border/80 bg-card p-6 shadow-[0_18px_40px_-24px_rgba(15,23,42,0.28)] sm:p-8"
+      >
         <input type="hidden" name="stagiaireId" value={defaultValues?.stagiaireId ?? ""} />
         <input type="hidden" name="userId" value={defaultValues?.userId ?? ""} />
 
@@ -111,7 +117,8 @@ export function StagiaireForm({
 
         {showCredentialsHint ? (
           <div className="rounded-2xl border border-dashed border-border bg-background px-4 py-3 text-sm text-muted">
-            Le compte stagiaire est cree avec le mot de passe initial <strong>Password123!</strong>.
+            Le compte stagiaire est cree avec le mot de passe initial{" "}
+            <strong>{credentialsHint ?? "defini par DEFAULT_USER_PASSWORD"}</strong>.
           </div>
         ) : null}
 
@@ -125,7 +132,7 @@ export function StagiaireForm({
           <SubmitButton label={submitLabel} />
           <Link
             href={cancelHref}
-            className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold"
+            className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary"
           >
             Annuler
           </Link>

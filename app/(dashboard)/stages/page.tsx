@@ -1,10 +1,15 @@
 import Link from "next/link";
+import { CalendarRange, Clock3, FolderKanban, Users } from "lucide-react";
 import { auth } from "@/auth";
 import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { FeedbackBanner } from "@/components/ui/feedback-banner";
+import { MetricCard } from "@/components/ui/metric-card";
+import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { prisma } from "@/lib/prisma";
 import { getStageStatusLabel } from "@/lib/stages";
+import { formatDate } from "@/lib/stagiaires";
 
 type StagesPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
@@ -16,6 +21,7 @@ function getStringParam(value?: string | string[]) {
 
 export default async function StagesPage({ searchParams }: StagesPageProps) {
   const session = await auth();
+  const now = new Date();
   const params = (await searchParams) ?? {};
   const success = getStringParam(params.success)?.trim() ?? "";
   const statut = getStringParam(params.statut)?.trim() ?? "";
@@ -38,8 +44,16 @@ export default async function StagesPage({ searchParams }: StagesPageProps) {
     orderBy: [{ dateDebut: "desc" }],
   });
 
+  const activeCount = stages.filter((stage) =>
+    ["PLANIFIE", "EN_COURS", "SUSPENDU"].includes(stage.statut),
+  ).length;
+  const endingSoonCount = stages.filter((stage) => {
+    const diff = stage.dateFin.getTime() - now.getTime();
+    return diff >= 0 && diff <= 15 * 24 * 60 * 60 * 1000;
+  }).length;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {success === "created" ? (
         <FeedbackBanner message="Le stage a ete cree avec succes." />
       ) : null}
@@ -47,26 +61,54 @@ export default async function StagesPage({ searchParams }: StagesPageProps) {
         <FeedbackBanner message="Le stage a ete modifie avec succes." />
       ) : null}
 
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="space-y-3">
-          <p className="text-sm font-medium text-primary">Suivi des stages</p>
-          <h1 className="text-3xl font-semibold tracking-tight">Liste des stages</h1>
-          <p className="max-w-3xl text-sm leading-6 text-muted">
-            Vue de suivi des stages avec affectation, statut et acces rapide vers la fiche stagiaire.
-          </p>
+      <PageHeader
+        eyebrow="Suivi des stages"
+        title="Liste des stages"
+        description="Visualisez rapidement le perimetre des stages, leur statut, leur encadrant et leur echeance sans perdre le lien avec la fiche stagiaire."
+        actions={
+          session?.user.role !== "ENCADRANT" ? (
+            <Link
+              href="/stagiaires"
+              className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+            >
+              Creer un stage
+            </Link>
+          ) : null
+        }
+      />
+
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <MetricCard
+          label="Stages visibles"
+          value={stages.length}
+          helper="Nombre de stages affiches selon vos filtres et votre role"
+          accent={<FolderKanban className="h-5 w-5" />}
+        />
+        <MetricCard
+          label="Actifs"
+          value={activeCount}
+          helper="Stages planifies, en cours ou temporairement suspendus"
+          accent={<Clock3 className="h-5 w-5" />}
+        />
+        <MetricCard
+          label="Fin proche"
+          value={endingSoonCount}
+          helper="Stages se terminant dans les quinze prochains jours"
+          accent={<CalendarRange className="h-5 w-5" />}
+        />
+        <MetricCard
+          label="Stagiaires couverts"
+          value={new Set(stages.map((stage) => stage.stagiaireId)).size}
+          helper="Nombre de stagiaires concernes par les stages affiches"
+          accent={<Users className="h-5 w-5" />}
+        />
+      </section>
+
+      <Card className="space-y-5">
+        <div>
+          <p className="text-sm font-medium text-primary">Filtres</p>
+          <h2 className="mt-1 text-2xl font-semibold tracking-tight">Cibler un perimetre</h2>
         </div>
-
-        {session?.user.role !== "ENCADRANT" ? (
-          <Link
-            href="/stagiaires"
-            className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
-          >
-            Creer un stage depuis une fiche stagiaire
-          </Link>
-        ) : null}
-      </div>
-
-      <Card>
         <form className="grid gap-4 md:grid-cols-3">
           <label className="space-y-2 text-sm">
             <span className="font-medium">Statut</span>
@@ -89,7 +131,7 @@ export default async function StagesPage({ searchParams }: StagesPageProps) {
             <input
               name="departement"
               defaultValue={departement}
-              placeholder="Informatique..."
+              placeholder="Infrastructure, Cloud..."
               className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
             />
           </label>
@@ -99,11 +141,11 @@ export default async function StagesPage({ searchParams }: StagesPageProps) {
               type="submit"
               className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
             >
-              Filtrer
+              Appliquer
             </button>
             <Link
               href="/stages"
-              className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold"
+              className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary"
             >
               Reinitialiser
             </Link>
@@ -111,74 +153,77 @@ export default async function StagesPage({ searchParams }: StagesPageProps) {
         </form>
       </Card>
 
-      <Card className="overflow-hidden p-0">
-        <div className="overflow-x-auto">
-          <table className="min-w-full border-collapse">
-            <thead className="bg-background">
-              <tr className="text-left text-sm text-muted">
-                <th className="px-5 py-4 font-medium">Stagiaire</th>
-                <th className="px-5 py-4 font-medium">Departement</th>
-                <th className="px-5 py-4 font-medium">Encadrant</th>
-                <th className="px-5 py-4 font-medium">Periode</th>
-                <th className="px-5 py-4 font-medium">Statut</th>
-                <th className="px-5 py-4 font-medium">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stages.length > 0 ? (
-                stages.map((stage) => (
-                  <tr key={stage.id} className="border-t border-border text-sm">
-                    <td className="px-5 py-4">
-                      <div>
-                        <p className="font-medium">
-                          {`${stage.stagiaire.user.prenom} ${stage.stagiaire.user.nom}`.trim()}
-                        </p>
-                        <p className="text-muted">{stage.sujet}</p>
-                      </div>
-                    </td>
-                    <td className="px-5 py-4 text-muted">{stage.departement}</td>
-                    <td className="px-5 py-4 text-muted">
-                      {stage.encadrant
-                        ? `${stage.encadrant.prenom} ${stage.encadrant.nom}`.trim()
-                        : "Non affecte"}
-                    </td>
-                    <td className="px-5 py-4 text-muted">
-                      {stage.dateDebut.toISOString().slice(0, 10)} - {stage.dateFin.toISOString().slice(0, 10)}
-                    </td>
-                    <td className="px-5 py-4">
-                      <StatusBadge status={getStageStatusLabel(stage.statut)} />
-                    </td>
-                    <td className="px-5 py-4">
-                      <div className="flex flex-wrap gap-3">
-                        <Link
-                          href={`/stagiaires/${stage.stagiaireId}`}
-                          className="text-sm font-semibold text-primary hover:underline"
-                        >
-                          Voir stagiaire
-                        </Link>
-                        {session?.user.role !== "ENCADRANT" ? (
-                          <Link
-                            href={`/stages/${stage.id}/modifier`}
-                            className="text-sm font-semibold text-foreground hover:underline"
-                          >
-                            Modifier
-                          </Link>
-                        ) : null}
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan={6} className="px-5 py-10 text-center text-sm text-muted">
-                    Aucun stage ne correspond aux filtres actuels.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+      {stages.length > 0 ? (
+        <div className="grid gap-4 xl:grid-cols-2">
+          {stages.map((stage) => (
+            <Card key={stage.id} className="space-y-5">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div className="space-y-2">
+                  <div className="flex flex-wrap gap-2">
+                    <StatusBadge status={getStageStatusLabel(stage.statut)} />
+                  </div>
+                  <h2 className="text-2xl font-semibold tracking-tight">{stage.sujet}</h2>
+                  <p className="text-sm leading-6 text-muted">{stage.departement}</p>
+                </div>
+                <div className="flex flex-wrap gap-3">
+                  <Link
+                    href={`/stagiaires/${stage.stagiaireId}`}
+                    className="rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                  >
+                    Voir stagiaire
+                  </Link>
+                  {session?.user.role !== "ENCADRANT" ? (
+                    <Link
+                      href={`/stages/${stage.id}/modifier`}
+                      className="rounded-full border border-border bg-background px-4 py-2.5 text-sm font-semibold transition hover:border-primary hover:text-primary"
+                    >
+                      Modifier
+                    </Link>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="rounded-[22px] border border-border bg-background p-4">
+                  <p className="text-sm text-muted">Stagiaire</p>
+                  <p className="mt-2 text-sm font-medium">
+                    {`${stage.stagiaire.user.prenom} ${stage.stagiaire.user.nom}`.trim()}
+                  </p>
+                </div>
+                <div className="rounded-[22px] border border-border bg-background p-4">
+                  <p className="text-sm text-muted">Encadrant</p>
+                  <p className="mt-2 text-sm font-medium">
+                    {stage.encadrant
+                      ? `${stage.encadrant.prenom} ${stage.encadrant.nom}`.trim()
+                      : "Non affecte"}
+                  </p>
+                </div>
+                <div className="rounded-[22px] border border-border bg-background p-4">
+                  <p className="text-sm text-muted">Debut</p>
+                  <p className="mt-2 text-sm font-medium">{formatDate(stage.dateDebut)}</p>
+                </div>
+                <div className="rounded-[22px] border border-border bg-background p-4">
+                  <p className="text-sm text-muted">Fin</p>
+                  <p className="mt-2 text-sm font-medium">{formatDate(stage.dateFin)}</p>
+                </div>
+                <div className="rounded-[22px] border border-border bg-background p-4 sm:col-span-2 xl:col-span-2">
+                  <p className="text-sm text-muted">Depot GitHub</p>
+                  <p className="mt-2 truncate text-sm font-medium">
+                    {stage.githubRepo ?? "Non renseigne"}
+                  </p>
+                </div>
+              </div>
+            </Card>
+          ))}
         </div>
-      </Card>
+      ) : (
+        <EmptyState
+          title="Aucun stage a afficher"
+          description="Aucun stage ne correspond aux filtres actuels. Essayez un autre statut ou revenez a la liste complete."
+          actionHref="/stages"
+          actionLabel="Voir tous les stages"
+        />
+      )}
     </div>
   );
 }

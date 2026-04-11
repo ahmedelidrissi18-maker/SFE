@@ -121,27 +121,27 @@ Permettre l'affectation et le suivi administratif d'un stage.
 
 ### Backlog
 
-- [ ] creer le formulaire de creation d'un stage
-- [ ] lier un stage a un stagiaire
-- [ ] affecter un encadrant a un stage
-- [ ] gerer les dates de debut et de fin
-- [ ] enregistrer le departement
-- [ ] enregistrer le sujet
-- [ ] gerer le statut du stage
-- [ ] empecher plusieurs stages actifs pour un meme stagiaire
-- [ ] afficher les informations de stage dans la fiche stagiaire
-- [ ] permettre la modification d'un stage
-- [ ] afficher une liste simple des stages
-- [ ] ajouter quelques indicateurs reels au dashboard
-- [ ] afficher les stages de l'encadrant connecte
-- [ ] ajouter des tests sur les regles metier du stage
+- [x] creer le formulaire de creation d'un stage
+- [x] lier un stage a un stagiaire
+- [x] affecter un encadrant a un stage
+- [x] gerer les dates de debut et de fin
+- [x] enregistrer le departement
+- [x] enregistrer le sujet
+- [x] gerer le statut du stage
+- [x] empecher plusieurs stages actifs pour un meme stagiaire
+- [x] afficher les informations de stage dans la fiche stagiaire
+- [x] permettre la modification d'un stage
+- [x] afficher une liste simple des stages
+- [x] ajouter quelques indicateurs reels au dashboard
+- [x] afficher les stages de l'encadrant connecte
+- [x] ajouter des tests sur les regles metier du stage
 
 ### Definition of Done
 
-- [ ] un stage peut etre cree
-- [ ] un stage peut etre modifie
-- [ ] un encadrant peut etre affecte
-- [ ] un stagiaire ne peut pas avoir plusieurs stages actifs
+- [x] un stage peut etre cree
+- [x] un stage peut etre modifie
+- [x] un encadrant peut etre affecte
+- [x] un stagiaire ne peut pas avoir plusieurs stages actifs
 
 ---
 
@@ -153,27 +153,27 @@ Suivre l'avancement du stage via les rapports hebdomadaires.
 
 ### Backlog
 
-- [ ] creer la page `mes rapports`
-- [ ] creer la page `rapports de mes stagiaires`
-- [ ] creer le formulaire de rapport hebdomadaire
-- [ ] ajouter les champs obligatoires
-- [ ] gerer le statut `BROUILLON`
-- [ ] gerer le statut `SOUMIS`
-- [ ] gerer le statut `VALIDE`
-- [ ] gerer le statut `RETOURNE`
-- [ ] empecher plusieurs rapports pour la meme semaine
-- [ ] ajouter le commentaire de l'encadrant
-- [ ] afficher l'historique des rapports
-- [ ] afficher l'avancement du stage
-- [ ] verifier les droits d'acces sur les rapports
-- [ ] ajouter des tests fonctionnels sur le workflow rapport
+- [x] creer la page `mes rapports`
+- [x] creer la page `rapports de mes stagiaires`
+- [x] creer le formulaire de rapport hebdomadaire
+- [x] ajouter les champs obligatoires
+- [x] gerer le statut `BROUILLON`
+- [x] gerer le statut `SOUMIS`
+- [x] gerer le statut `VALIDE`
+- [x] gerer le statut `RETOURNE`
+- [x] empecher plusieurs rapports pour la meme semaine
+- [x] ajouter le commentaire de l'encadrant
+- [x] afficher l'historique des rapports
+- [x] afficher l'avancement du stage
+- [x] verifier les droits d'acces sur les rapports
+- [x] ajouter des tests fonctionnels sur le workflow rapport
 
 ### Definition of Done
 
-- [ ] un stagiaire peut creer et soumettre un rapport
-- [ ] un encadrant peut consulter et commenter
-- [ ] un encadrant peut valider ou retourner un rapport
-- [ ] les statuts evoluent correctement
+- [x] un stagiaire peut creer et soumettre un rapport
+- [x] un encadrant peut consulter et commenter
+- [x] un encadrant peut valider ou retourner un rapport
+- [x] les statuts evoluent correctement
 
 ---
 
@@ -185,26 +185,26 @@ Ajouter les fonctions complementaires indispensables a la V1.
 
 ### Backlog
 
-- [ ] creer un module de televersement de documents
-- [ ] valider les types de fichiers autorises
-- [ ] valider la taille des fichiers
-- [ ] enregistrer les metadonnees dans la table `Document`
-- [ ] afficher les documents dans la fiche stagiaire
-- [ ] gerer les categories de documents
-- [ ] securiser l'acces aux documents selon les roles
-- [ ] creer la page `/notifications`
-- [ ] creer un centre de notifications simple
-- [ ] creer une notification lors d'un nouveau rapport soumis
-- [ ] creer une notification lors d'un rapport retourne
-- [ ] creer une notification lors d'une creation de stagiaire
-- [ ] creer une notification de fin de stage proche
-- [ ] ajouter des tests sur l'upload et les notifications
+- [x] creer un module de televersement de documents
+- [x] valider les types de fichiers autorises
+- [x] valider la taille des fichiers
+- [x] enregistrer les metadonnees dans la table `Document`
+- [x] afficher les documents dans la fiche stagiaire
+- [x] gerer les categories de documents
+- [x] securiser l'acces aux documents selon les roles
+- [x] creer la page `/notifications`
+- [x] creer un centre de notifications simple
+- [x] creer une notification lors d'un nouveau rapport soumis
+- [x] creer une notification lors d'un rapport retourne
+- [x] creer une notification lors d'une creation de stagiaire
+- [x] creer une notification de fin de stage proche
+- [x] ajouter des tests sur l'upload et les notifications
 
 ### Definition of Done
 
-- [ ] un document peut etre ajoute et consulte
-- [ ] les notifications importantes sont visibles
-- [ ] les droits d'acces sont respectes
+- [x] un document peut etre ajoute et consulte
+- [x] les notifications importantes sont visibles
+- [x] les droits d'acces sont respectes
 
 ---
 
@@ -222,15 +222,15 @@ Corriger, tester, finaliser et rendre la V1 presentable et deployable.
 - [ ] tester le parcours soumission rapport
 - [ ] tester le parcours validation rapport
 - [ ] tester le parcours ajout document
-- [ ] tester les restrictions par role
+- [x] tester les restrictions par role
 - [ ] corriger les bugs detectes
 - [ ] harmoniser les messages d'erreur
-- [ ] ameliorer l'interface si necessaire
+- [x] ameliorer l'interface si necessaire
 - [ ] nettoyer le code mort
 - [ ] verifier les performances de base
-- [ ] finaliser le README
-- [ ] documenter la procedure de deploiement
-- [ ] preparer un jeu de demonstration
+- [x] finaliser le README
+- [x] documenter la procedure de deploiement
+- [x] preparer un jeu de demonstration
 - [ ] valider la V1 avec une recette manuelle
 
 ### Definition of Done
@@ -250,8 +250,12 @@ Corriger, tester, finaliser et rendre la V1 presentable et deployable.
 
 ### A lancer juste apres
 
-- [ ] Sprint 3 - Gestion des Stages
-- [ ] Sprint 4 - Rapports Hebdomadaires
+- [x] Sprint 3 - Gestion des Stages
+- [x] Sprint 4 - Rapports Hebdomadaires
+
+### A lancer maintenant
+
+- [ ] Sprint 6 - Stabilisation et Livraison V1
 
 ---
 

@@ -4,6 +4,7 @@ import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
 import { auth, signIn, signOut } from "@/auth";
 import { logAuditEvent } from "@/lib/audit";
+import { loginFormSchema } from "@/lib/validations/auth";
 
 export type LoginActionState = {
   error?: string;
@@ -13,14 +14,15 @@ export async function loginAction(
   _previousState: LoginActionState,
   formData: FormData,
 ): Promise<LoginActionState> {
-  const email = String(formData.get("email") ?? "").trim();
-  const password = String(formData.get("password") ?? "");
+  const parsedData = loginFormSchema.safeParse(Object.fromEntries(formData));
 
-  if (!email || !password) {
+  if (!parsedData.success) {
     return {
-      error: "Veuillez renseigner votre email et votre mot de passe.",
+      error: parsedData.error.issues[0]?.message ?? "Veuillez verifier vos identifiants.",
     };
   }
+
+  const { email, password } = parsedData.data;
 
   try {
     await signIn("credentials", {

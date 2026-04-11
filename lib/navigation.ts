@@ -17,4 +17,16 @@ export const navigationItems = [
     icon: "stages" as const,
     roles: ["ADMIN", "RH", "ENCADRANT"] as const,
   },
+  {
+    label: "Rapports",
+    href: "/rapports",
+    icon: "rapports" as const,
+    roles: ["ADMIN", "RH", "ENCADRANT", "STAGIAIRE"] as const,
+  },
+  {
+    label: "Notifications",
+    href: "/notifications",
+    icon: "notifications" as const,
+    roles: ["ADMIN", "RH", "ENCADRANT", "STAGIAIRE"] as const,
+  },
 ];

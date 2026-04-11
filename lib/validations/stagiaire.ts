@@ -6,6 +6,18 @@ const optionalTrimmedString = z
   .transform((value) => value || undefined)
   .optional();
 
+const optionalUrlString = z.preprocess(
+  (value) => {
+    if (typeof value !== "string") {
+      return undefined;
+    }
+
+    const trimmed = value.trim();
+    return trimmed || undefined;
+  },
+  z.string().url("Veuillez saisir une URL de photo valide.").optional(),
+);
+
 export const stagiaireFormSchema = z.object({
   stagiaireId: optionalTrimmedString,
   userId: optionalTrimmedString,
@@ -19,7 +31,7 @@ export const stagiaireFormSchema = z.object({
   specialite: optionalTrimmedString,
   niveau: optionalTrimmedString,
   annee: optionalTrimmedString,
-  photoUrl: optionalTrimmedString,
+  photoUrl: optionalUrlString,
 });
 
 export type StagiaireFormValues = z.infer<typeof stagiaireFormSchema>;

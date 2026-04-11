@@ -7,6 +7,18 @@ const optionalTrimmedString = z
   .transform((value) => value || undefined)
   .optional();
 
+const optionalUrlString = z.preprocess(
+  (value) => {
+    if (typeof value !== "string") {
+      return undefined;
+    }
+
+    const trimmed = value.trim();
+    return trimmed || undefined;
+  },
+  z.string().url("Veuillez saisir une URL de depot valide.").optional(),
+);
+
 export const stageFormSchema = z
   .object({
     stageId: optionalTrimmedString,
@@ -16,7 +28,7 @@ export const stageFormSchema = z
     dateFin: z.string().trim().min(1, "La date de fin est obligatoire."),
     departement: z.string().trim().min(2, "Le departement est obligatoire."),
     sujet: z.string().trim().min(4, "Le sujet doit contenir au moins 4 caracteres."),
-    githubRepo: optionalTrimmedString,
+    githubRepo: optionalUrlString,
     statut: z.nativeEnum(StageStatus),
   })
   .superRefine((data, ctx) => {

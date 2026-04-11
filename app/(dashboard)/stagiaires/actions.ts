@@ -5,10 +5,13 @@ import { Prisma, Role } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
+import { DEFAULT_USER_PASSWORD } from "@/lib/app-config";
 import { logAuditEvent } from "@/lib/audit";
+import { createNotificationsForRoles } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 import { hasRole } from "@/lib/rbac";
 import { stagiaireFormSchema } from "@/lib/validations/stagiaire";
+import { stagiaireArchiveSchema } from "@/lib/validations/document";
 
 export type StagiaireActionState = {
   error?: string;
@@ -59,7 +62,7 @@ export async function createStagiaireAction(
   const data = parsedData.data;
 
   try {
-    const passwordHash = await bcrypt.hash("Password123!", 10);
+    const passwordHash = await bcrypt.hash(DEFAULT_USER_PASSWORD, 10);
 
     const created = await prisma.$transaction(async (tx) => {
       const user = await tx.user.create({
@@ -100,6 +103,17 @@ export async function createStagiaireAction(
         cin: created.stagiaire.cin,
       },
     });
+
+    await createNotificationsForRoles(
+      ["ADMIN", "RH"],
+      {
+        type: "STAGIAIRE_CREATED",
+        titre: "Nouveau stagiaire cree",
+        message: `${created.user.prenom} ${created.user.nom} a ete ajoute a la plateforme.`,
+        lien: `/stagiaires/${created.stagiaire.id}`,
+      },
+      [session.user.id],
+    );
   } catch (error) {
     console.error(error);
     return {
@@ -200,14 +214,18 @@ export async function toggleStagiaireArchiveAction(formData: FormData) {
     return;
   }
 
-  const userId = String(formData.get("userId") ?? "");
-  const stagiaireId = String(formData.get("stagiaireId") ?? "");
-  const nextActiveValue = String(formData.get("nextActiveValue") ?? "") === "true";
-  const returnTo = String(formData.get("returnTo") ?? `/stagiaires/${stagiaireId}`);
+  const parsedData = stagiaireArchiveSchema.safeParse({
+    userId: formData.get("userId"),
+    stagiaireId: formData.get("stagiaireId"),
+    nextActiveValue: formData.get("nextActiveValue"),
+    returnTo: formData.get("returnTo") ?? "/stagiaires",
+  });
 
-  if (!userId || !stagiaireId) {
+  if (!parsedData.success) {
     return;
   }
+
+  const { userId, stagiaireId, nextActiveValue, returnTo } = parsedData.data;
 
   await prisma.user.update({
     where: { id: userId },

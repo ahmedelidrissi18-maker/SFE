@@ -37,7 +37,10 @@ enum EvaluationType {
 enum DocumentType {
   CONVENTION
   ATTESTATION
+  CIN
   CV
+  RAPPORT
+  JUSTIFICATIF
   RAPPORT_EVAL
   AUTRE
 }
@@ -116,6 +119,7 @@ model Rapport {
   planSuivant     String?
   avancement      Int
   statut          RapportStatus @default(BROUILLON)
+  commentaireEncadrant String?
   dateSoumission  DateTime?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt

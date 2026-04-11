@@ -1,19 +1,14 @@
 import bcrypt from "bcryptjs";
 import NextAuth, { CredentialsSignin } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
-import { z } from "zod";
 import authConfig from "@/auth.config";
 import { logAuditEvent } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
+import { loginFormSchema } from "@/lib/validations/auth";
 
 class InvalidCredentialsError extends CredentialsSignin {
   code = "invalid_credentials";
 }
-
-const credentialsSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
-});
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -24,7 +19,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Mot de passe", type: "password" },
       },
       async authorize(credentials, request) {
-        const parsedCredentials = credentialsSchema.safeParse(credentials);
+        const parsedCredentials = loginFormSchema.safeParse(credentials);
 
         if (!parsedCredentials.success) {
           throw new InvalidCredentialsError();

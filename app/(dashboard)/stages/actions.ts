@@ -141,7 +141,27 @@ export async function updateStageAction(
     };
   }
 
-  if (await assertNoActiveStageConflict(data.stagiaireId, data.statut, data.stageId)) {
+  const existingStage = await prisma.stage.findUnique({
+    where: { id: data.stageId },
+    select: {
+      id: true,
+      stagiaireId: true,
+    },
+  });
+
+  if (!existingStage) {
+    return {
+      error: "Stage introuvable.",
+    };
+  }
+
+  if (data.stagiaireId !== existingStage.stagiaireId) {
+    return {
+      error: "Le stagiaire rattache a ce stage ne peut pas etre modifie.",
+    };
+  }
+
+  if (await assertNoActiveStageConflict(existingStage.stagiaireId, data.statut, data.stageId)) {
     return {
       error: "Ce stagiaire possede deja un autre stage actif. Modifiez d'abord le stage existant.",
     };
@@ -180,8 +200,8 @@ export async function updateStageAction(
   }
 
   revalidatePath("/stages");
-  revalidatePath(`/stagiaires/${data.stagiaireId}`);
-  redirect(getRedirectTarget(`/stagiaires/${data.stagiaireId}`, "stage-updated"));
+  revalidatePath(`/stagiaires/${existingStage.stagiaireId}`);
+  redirect(getRedirectTarget(`/stagiaires/${existingStage.stagiaireId}`, "stage-updated"));
 }
 
 export async function getStageFormOptions() {

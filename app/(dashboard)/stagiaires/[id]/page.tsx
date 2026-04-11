@@ -1,9 +1,18 @@
 import Link from "next/link";
+import { FileText, FolderOpenDot, GraduationCap, Mail, UserSquare2 } from "lucide-react";
 import { notFound } from "next/navigation";
+import { auth } from "@/auth";
+import { uploadDocumentAction } from "@/app/(dashboard)/documents/actions";
 import { toggleStagiaireArchiveAction } from "@/app/(dashboard)/stagiaires/actions";
+import { DocumentUploadForm } from "@/components/features/documents/document-upload-form";
 import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { FeedbackBanner } from "@/components/ui/feedback-banner";
+import { MetricCard } from "@/components/ui/metric-card";
+import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { formatDocumentSize, getDocumentTypeLabel } from "@/lib/documents";
+import { getRapportStatusLabel } from "@/lib/rapports";
 import { formatDate, getAccountStatusLabel, getLatestStageInfo } from "@/lib/stagiaires";
 import { getStageStatusLabel } from "@/lib/stages";
 import { prisma } from "@/lib/prisma";
@@ -17,9 +26,9 @@ type StagiaireDetailPageProps = {
 
 function DetailItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-border bg-background p-4">
+    <div className="rounded-[22px] border border-border bg-background p-4">
       <p className="text-sm text-muted">{label}</p>
-      <p className="mt-2 text-sm font-medium">{value}</p>
+      <p className="mt-2 text-sm font-medium leading-6">{value}</p>
     </div>
   );
 }
@@ -32,6 +41,7 @@ export default async function StagiaireDetailPage({
   params,
   searchParams,
 }: StagiaireDetailPageProps) {
+  const session = await auth();
   const { id } = await params;
   const success = getStringParam(((await searchParams) ?? {}).success)?.trim() ?? "";
 
@@ -44,6 +54,19 @@ export default async function StagiaireDetailPage({
         take: 1,
         include: {
           encadrant: true,
+          rapports: {
+            orderBy: [{ updatedAt: "desc" }],
+            take: 3,
+          },
+          documents: {
+            where: {
+              isDeleted: false,
+            },
+            include: {
+              auteur: true,
+            },
+            orderBy: [{ createdAt: "desc" }],
+          },
         },
       },
     },
@@ -57,7 +80,7 @@ export default async function StagiaireDetailPage({
   const latestStageInfo = getLatestStageInfo(latestStage);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {success === "updated" ? (
         <FeedbackBanner message="La fiche stagiaire a ete mise a jour avec succes." />
       ) : null}
@@ -73,94 +96,131 @@ export default async function StagiaireDetailPage({
       {success === "stage-updated" ? (
         <FeedbackBanner message="Le stage a ete mis a jour avec succes." />
       ) : null}
+      {success === "document-uploaded" ? (
+        <FeedbackBanner message="Le document a ete ajoute avec succes." />
+      ) : null}
 
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-        <div className="space-y-3">
-          <p className="text-sm font-medium text-primary">Fiche stagiaire</p>
-          <h1 className="text-3xl font-semibold tracking-tight">
-            {`${stagiaire.user.prenom} ${stagiaire.user.nom}`.trim()}
-          </h1>
-          <p className="max-w-3xl text-sm leading-6 text-muted">
-            Consultez les informations du stagiaire, son etat de compte et son dernier stage connu.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap gap-3">
-          <Link
-            href="/stagiaires"
-            className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold"
-          >
-            Retour a la liste
-          </Link>
-          <Link
-            href={`/stagiaires/${stagiaire.id}/modifier`}
-            className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground"
-          >
-            Modifier
-          </Link>
-
-          <form action={toggleStagiaireArchiveAction}>
-            <input type="hidden" name="stagiaireId" value={stagiaire.id} />
-            <input type="hidden" name="userId" value={stagiaire.user.id} />
-            <input
-              type="hidden"
-              name="nextActiveValue"
-              value={String(!stagiaire.user.isActive)}
-            />
-            <input type="hidden" name="returnTo" value={`/stagiaires/${stagiaire.id}`} />
-            <button
-              type="submit"
-              className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold"
+      <PageHeader
+        eyebrow="Fiche stagiaire"
+        title={`${stagiaire.user.prenom} ${stagiaire.user.nom}`.trim()}
+        description="Consultez les informations personnelles, academiques et de stage du stagiaire, avec les derniers documents et rapports relies a son perimetre."
+        actions={
+          <>
+            <Link
+              href="/stagiaires"
+              className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary"
             >
-              {stagiaire.user.isActive ? "Archiver" : "Reactiver"}
-            </button>
-          </form>
-        </div>
-      </div>
+              Retour a la liste
+            </Link>
+            <Link
+              href={`/stagiaires/${stagiaire.id}/modifier`}
+              className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+            >
+              Modifier
+            </Link>
+            <form action={toggleStagiaireArchiveAction}>
+              <input type="hidden" name="stagiaireId" value={stagiaire.id} />
+              <input type="hidden" name="userId" value={stagiaire.user.id} />
+              <input
+                type="hidden"
+                name="nextActiveValue"
+                value={String(!stagiaire.user.isActive)}
+              />
+              <input type="hidden" name="returnTo" value={`/stagiaires/${stagiaire.id}`} />
+              <button
+                type="submit"
+                className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary"
+              >
+                {stagiaire.user.isActive ? "Archiver" : "Reactiver"}
+              </button>
+            </form>
+          </>
+        }
+      />
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Card>
-          <p className="text-sm text-muted">Email</p>
-          <p className="mt-3 text-sm font-medium">{stagiaire.user.email}</p>
-        </Card>
-        <Card>
-          <p className="text-sm text-muted">Compte</p>
-          <div className="mt-3">
-            <StatusBadge status={getAccountStatusLabel(stagiaire.user.isActive)} />
+      <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
+        <Card className="space-y-5 bg-linear-to-br from-card via-card to-accent/40">
+          <div className="flex items-center gap-4">
+            {stagiaire.photoUrl ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={stagiaire.photoUrl}
+                alt={`${stagiaire.user.prenom} ${stagiaire.user.nom}`}
+                className="h-20 w-20 rounded-[24px] object-cover"
+              />
+            ) : (
+              <div className="flex h-20 w-20 items-center justify-center rounded-[24px] bg-primary/10 text-primary">
+                <UserSquare2 className="h-9 w-9" />
+              </div>
+            )}
+            <div className="space-y-2">
+              <div className="flex flex-wrap gap-2">
+                <StatusBadge status={getAccountStatusLabel(stagiaire.user.isActive)} />
+                <StatusBadge status={latestStageInfo.statut} />
+              </div>
+              <h2 className="text-2xl font-semibold tracking-tight">
+                {`${stagiaire.user.prenom} ${stagiaire.user.nom}`.trim()}
+              </h2>
+              <p className="text-sm text-muted">{stagiaire.specialite ?? "Specialite non renseignee"}</p>
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <DetailItem label="Email" value={stagiaire.user.email} />
+            <DetailItem label="Telephone" value={stagiaire.telephone ?? "Non renseigne"} />
+            <DetailItem label="Etablissement" value={stagiaire.etablissement ?? "Non renseigne"} />
+            <DetailItem label="Niveau" value={stagiaire.niveau ?? "Non renseigne"} />
           </div>
         </Card>
-        <Card>
-          <p className="text-sm text-muted">Statut stage</p>
-          <div className="mt-3">
-            <StatusBadge status={latestStageInfo.statut} />
-          </div>
-        </Card>
-        <Card>
-          <p className="text-sm text-muted">Departement</p>
-          <p className="mt-3 text-sm font-medium">{latestStageInfo.departement}</p>
-        </Card>
+
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <MetricCard
+            label="Compte"
+            value={getAccountStatusLabel(stagiaire.user.isActive)}
+            helper="Etat actuel du compte de connexion"
+            accent={<Mail className="h-5 w-5" />}
+          />
+          <MetricCard
+            label="Stage"
+            value={latestStage ? getStageStatusLabel(latestStage.statut) : "Aucun"}
+            helper="Dernier stage rattache a la fiche"
+            accent={<FolderOpenDot className="h-5 w-5" />}
+          />
+          <MetricCard
+            label="Documents"
+            value={latestStage?.documents.length ?? 0}
+            helper="Pieces visibles sur le stage courant"
+            accent={<FileText className="h-5 w-5" />}
+          />
+          <MetricCard
+            label="Rapports recents"
+            value={latestStage?.rapports.length ?? 0}
+            helper="Trois derniers rapports visibles sur la fiche"
+            accent={<GraduationCap className="h-5 w-5" />}
+          />
+        </section>
       </section>
 
       <section className="grid gap-4 lg:grid-cols-2">
         <Card className="space-y-4">
           <div>
-            <h2 className="text-xl font-semibold">Informations personnelles</h2>
-            <p className="mt-2 text-sm text-muted">Donnees administratives du stagiaire.</p>
+            <p className="text-sm font-medium text-primary">Informations personnelles</p>
+            <h2 className="mt-1 text-2xl font-semibold tracking-tight">Identite et contact</h2>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <DetailItem label="Nom" value={stagiaire.user.nom} />
             <DetailItem label="Prenom" value={stagiaire.user.prenom} />
             <DetailItem label="CIN" value={stagiaire.cin} />
-            <DetailItem label="Telephone" value={stagiaire.telephone ?? "Non renseigne"} />
             <DetailItem label="Date de naissance" value={formatDate(stagiaire.dateNaissance)} />
+            <DetailItem label="Telephone" value={stagiaire.telephone ?? "Non renseigne"} />
             <DetailItem label="Photo URL" value={stagiaire.photoUrl ?? "Non renseignee"} />
           </div>
         </Card>
 
         <Card className="space-y-4">
           <div>
-            <h2 className="text-xl font-semibold">Informations academiques</h2>
-            <p className="mt-2 text-sm text-muted">Reference de l etablissement et du parcours.</p>
+            <p className="text-sm font-medium text-primary">Informations academiques</p>
+            <h2 className="mt-1 text-2xl font-semibold tracking-tight">Parcours et rattachement</h2>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <DetailItem label="Etablissement" value={stagiaire.etablissement ?? "Non renseigne"} />
@@ -173,26 +233,27 @@ export default async function StagiaireDetailPage({
         </Card>
       </section>
 
-      <Card className="space-y-4">
+      <Card className="space-y-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h2 className="text-xl font-semibold">Informations de stage</h2>
-            <p className="mt-2 text-sm text-muted">
-              Dernier stage connu pour ce stagiaire avec affectation et statut.
+            <p className="text-sm font-medium text-primary">Stage</p>
+            <h2 className="mt-1 text-2xl font-semibold tracking-tight">Perimetre de stage</h2>
+            <p className="mt-2 text-sm leading-6 text-muted">
+              Dernier stage connu, son encadrant, son statut et les donnees de contexte utiles a la supervision.
             </p>
           </div>
 
           {latestStage ? (
             <Link
               href={`/stages/${latestStage.id}/modifier`}
-              className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground"
+              className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
             >
               Modifier le stage
             </Link>
           ) : (
             <Link
               href={`/stagiaires/${stagiaire.id}/stage/nouveau`}
-              className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground"
+              className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
             >
               Creer un stage
             </Link>
@@ -200,26 +261,126 @@ export default async function StagiaireDetailPage({
         </div>
 
         {latestStage ? (
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
             <DetailItem label="Sujet" value={latestStage.sujet} />
             <DetailItem label="Departement" value={latestStage.departement} />
             <DetailItem label="Encadrant" value={latestStageInfo.encadrant} />
             <DetailItem label="Date de debut" value={formatDate(latestStage.dateDebut)} />
             <DetailItem label="Date de fin" value={formatDate(latestStage.dateFin)} />
-            <div className="rounded-2xl border border-border bg-background p-4">
+            <div className="rounded-[22px] border border-border bg-background p-4">
               <p className="text-sm text-muted">Statut</p>
               <div className="mt-2">
                 <StatusBadge status={getStageStatusLabel(latestStage.statut)} />
               </div>
             </div>
             <DetailItem label="Depot GitHub" value={latestStage.githubRepo ?? "Non renseigne"} />
+            <DetailItem label="Derniere mise a jour" value={formatDate(latestStage.updatedAt)} />
           </div>
         ) : (
-          <div className="rounded-2xl border border-dashed border-border bg-background px-4 py-6 text-sm text-muted">
-            Aucun stage n est encore rattache a ce stagiaire.
-          </div>
+          <EmptyState
+            title="Aucun stage rattache"
+            description="Cette fiche stagiaire ne contient pas encore de stage. Creez un stage pour demarrer le suivi metier."
+            actionHref={`/stagiaires/${stagiaire.id}/stage/nouveau`}
+            actionLabel="Creer un stage"
+          />
         )}
       </Card>
+
+      {latestStage ? (
+        <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
+          <Card className="space-y-5">
+            <div>
+              <p className="text-sm font-medium text-primary">Rapports</p>
+              <h2 className="mt-1 text-2xl font-semibold tracking-tight">Derniers rapports du stage</h2>
+            </div>
+
+            {latestStage.rapports.length > 0 ? (
+              <div className="space-y-4">
+                {latestStage.rapports.map((rapport) => (
+                  <Link
+                    key={rapport.id}
+                    href={`/rapports/${rapport.id}`}
+                    className="block rounded-[22px] border border-border bg-background p-4 transition hover:border-primary/40"
+                  >
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="space-y-2">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <StatusBadge status={getRapportStatusLabel(rapport.statut)} />
+                          <span className="text-xs uppercase tracking-[0.18em] text-muted">
+                            Semaine {rapport.semaine}
+                          </span>
+                        </div>
+                        <p className="text-sm leading-6 text-muted">{rapport.tachesRealisees}</p>
+                      </div>
+                      <div className="text-sm text-muted sm:text-right">
+                        <p className="font-medium text-foreground">{rapport.avancement}%</p>
+                        <p>Maj {formatDate(rapport.updatedAt)}</p>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <EmptyState
+                title="Aucun rapport disponible"
+                description="Les rapports associes au stage apparaitront ici des leur creation."
+                actionHref="/rapports"
+                actionLabel="Voir les rapports"
+              />
+            )}
+          </Card>
+
+          <div className="grid gap-4">
+            <Card className="space-y-5">
+              <div>
+                <p className="text-sm font-medium text-primary">Documents</p>
+                <h2 className="mt-1 text-2xl font-semibold tracking-tight">Pieces associees</h2>
+              </div>
+
+              {latestStage.documents.length > 0 ? (
+                <div className="space-y-3">
+                  {latestStage.documents.map((document) => (
+                    <div
+                      key={document.id}
+                      className="rounded-[22px] border border-border bg-background p-4"
+                    >
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="space-y-1">
+                          <p className="text-sm font-semibold">{document.nom}</p>
+                          <p className="text-sm text-muted">
+                            {getDocumentTypeLabel(document.type)} · {formatDocumentSize(document.tailleOctets)} · Version{" "}
+                            {document.version}
+                          </p>
+                          <p className="text-xs text-muted">
+                            Ajoute par {`${document.auteur.prenom} ${document.auteur.nom}`.trim()} le{" "}
+                            {formatDate(document.createdAt)}
+                          </p>
+                        </div>
+
+                        <Link
+                          href={`/api/documents/${document.id}`}
+                          className="text-sm font-semibold text-primary hover:underline"
+                        >
+                          Telecharger
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <EmptyState
+                  title="Aucun document sur ce stage"
+                  description="Le CV, la convention et les autres pieces versees sur le stage seront visibles ici."
+                />
+              )}
+            </Card>
+
+            {session?.user && (session.user.role === "ADMIN" || session.user.role === "RH") ? (
+              <DocumentUploadForm stageId={latestStage.id} action={uploadDocumentAction} />
+            ) : null}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }

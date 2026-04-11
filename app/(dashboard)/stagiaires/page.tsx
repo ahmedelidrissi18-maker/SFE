@@ -1,10 +1,14 @@
 import Link from "next/link";
+import { Building2, GraduationCap, Search, Users } from "lucide-react";
 import { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { toggleStagiaireArchiveAction } from "@/app/(dashboard)/stagiaires/actions";
 import { FeedbackBanner } from "@/components/ui/feedback-banner";
 import { getAccountStatusLabel, getLatestStageInfo } from "@/lib/stagiaires";
 import { Card } from "@/components/ui/card";
+import { EmptyState } from "@/components/ui/empty-state";
+import { MetricCard } from "@/components/ui/metric-card";
+import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
 
 type StagiairesPageProps = {
@@ -85,8 +89,12 @@ export default async function StagiairesPage({ searchParams }: StagiairesPagePro
     },
   });
 
+  const activeCount = stagiaires.filter((stagiaire) => stagiaire.user.isActive).length;
+  const archivedCount = stagiaires.length - activeCount;
+  const withAssignedStageCount = stagiaires.filter((stagiaire) => stagiaire.stages[0]).length;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {success === "created" ? (
         <FeedbackBanner message="Le stagiaire a ete cree avec succes." />
       ) : null}
@@ -97,24 +105,52 @@ export default async function StagiairesPage({ searchParams }: StagiairesPagePro
         <FeedbackBanner message="Le stagiaire a ete reactive avec succes." />
       ) : null}
 
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div className="space-y-3">
-          <p className="text-sm font-medium text-primary">Module metier</p>
-          <h1 className="text-3xl font-semibold tracking-tight">Liste des stagiaires</h1>
-          <p className="max-w-3xl text-sm leading-6 text-muted">
-            Vue reliee a Prisma avec recherche, filtres et acces au detail de chaque stagiaire.
-          </p>
+      <PageHeader
+        eyebrow="Module metier"
+        title="Liste des stagiaires"
+        description="Recherchez rapidement un stagiaire, visualisez son statut de compte, son dernier stage et accedez directement a sa fiche detaillee."
+        actions={
+          <Link
+            href="/stagiaires/nouveau"
+            className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+          >
+            Nouveau stagiaire
+          </Link>
+        }
+      />
+
+      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        <MetricCard
+          label="Stagiaires filtres"
+          value={stagiaires.length}
+          helper="Resultats correspondant aux criteres actuels"
+          accent={<Users className="h-5 w-5" />}
+        />
+        <MetricCard
+          label="Comptes actifs"
+          value={activeCount}
+          helper="Stagiaires pouvant se connecter a la plateforme"
+          accent={<Search className="h-5 w-5" />}
+        />
+        <MetricCard
+          label="Avec stage"
+          value={withAssignedStageCount}
+          helper="Stagiaires possedant au moins un stage rattache"
+          accent={<Building2 className="h-5 w-5" />}
+        />
+        <MetricCard
+          label="Archives"
+          value={archivedCount}
+          helper="Comptes preserves pour l historique et le suivi"
+          accent={<GraduationCap className="h-5 w-5" />}
+        />
+      </section>
+
+      <Card className="space-y-5">
+        <div>
+          <p className="text-sm font-medium text-primary">Filtres</p>
+          <h2 className="mt-1 text-2xl font-semibold tracking-tight">Affiner la liste</h2>
         </div>
-
-        <Link
-          href="/stagiaires/nouveau"
-          className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
-        >
-          Nouveau stagiaire
-        </Link>
-      </div>
-
-      <Card>
         <form className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           <label className="space-y-2 text-sm">
             <span className="font-medium">Recherche</span>
@@ -131,7 +167,7 @@ export default async function StagiairesPage({ searchParams }: StagiairesPagePro
             <input
               name="etablissement"
               defaultValue={etablissement}
-              placeholder="ENSA, FST..."
+              placeholder="ENSA, EMI, FST..."
               className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
             />
           </label>
@@ -141,13 +177,13 @@ export default async function StagiairesPage({ searchParams }: StagiairesPagePro
             <input
               name="departement"
               defaultValue={departement}
-              placeholder="Informatique..."
+              placeholder="Transformation digitale..."
               className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
             />
           </label>
 
           <label className="space-y-2 text-sm">
-            <span className="font-medium">Statut</span>
+            <span className="font-medium">Statut du compte</span>
             <select
               name="statut"
               defaultValue={statut}
@@ -180,11 +216,11 @@ export default async function StagiairesPage({ searchParams }: StagiairesPagePro
               type="submit"
               className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
             >
-              Filtrer
+              Appliquer les filtres
             </button>
             <Link
               href="/stagiaires"
-              className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold"
+              className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary"
             >
               Reinitialiser
             </Link>
@@ -192,83 +228,90 @@ export default async function StagiairesPage({ searchParams }: StagiairesPagePro
         </form>
       </Card>
 
-      <Card className="overflow-hidden p-0">
-        <div className="overflow-x-auto">
-          <table className="min-w-full border-collapse">
-            <thead className="bg-background">
-              <tr className="text-left text-sm text-muted">
-                <th className="px-5 py-4 font-medium">Nom</th>
-                <th className="px-5 py-4 font-medium">Etablissement</th>
-                <th className="px-5 py-4 font-medium">Departement</th>
-                <th className="px-5 py-4 font-medium">Statut</th>
-                <th className="px-5 py-4 font-medium">Compte</th>
-                <th className="px-5 py-4 font-medium">Action</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stagiaires.length > 0 ? (
-                stagiaires.map((stagiaire) => {
-                  const latestStage = stagiaire.stages[0] ?? null;
-                  const latestStageInfo = getLatestStageInfo(latestStage);
+      {stagiaires.length > 0 ? (
+        <div className="grid gap-4 xl:grid-cols-2">
+          {stagiaires.map((stagiaire) => {
+            const latestStage = stagiaire.stages[0] ?? null;
+            const latestStageInfo = getLatestStageInfo(latestStage);
 
-                  return (
-                    <tr key={stagiaire.id} className="border-t border-border text-sm">
-                      <td className="px-5 py-4">
-                        <div>
-                          <p className="font-medium">
-                            {`${stagiaire.user.prenom} ${stagiaire.user.nom}`.trim()}
-                          </p>
-                          <p className="text-muted">{stagiaire.user.email}</p>
-                        </div>
-                      </td>
-                      <td className="px-5 py-4 text-muted">{stagiaire.etablissement ?? "Non renseigne"}</td>
-                      <td className="px-5 py-4 text-muted">{latestStageInfo.departement}</td>
-                      <td className="px-5 py-4">
-                        <StatusBadge status={latestStageInfo.statut} />
-                      </td>
-                      <td className="px-5 py-4">
-                        <StatusBadge status={getAccountStatusLabel(stagiaire.user.isActive)} />
-                      </td>
-                      <td className="px-5 py-4">
-                        <div className="flex flex-wrap items-center gap-3">
-                          <Link
-                            href={`/stagiaires/${stagiaire.id}`}
-                            className="text-sm font-semibold text-primary hover:underline"
-                          >
-                            Voir la fiche
-                          </Link>
-                          <form action={toggleStagiaireArchiveAction}>
-                            <input type="hidden" name="stagiaireId" value={stagiaire.id} />
-                            <input type="hidden" name="userId" value={stagiaire.user.id} />
-                            <input
-                              type="hidden"
-                              name="nextActiveValue"
-                              value={String(!stagiaire.user.isActive)}
-                            />
-                            <input type="hidden" name="returnTo" value="/stagiaires" />
-                            <button
-                              type="submit"
-                              className="text-sm font-semibold text-foreground hover:underline"
-                            >
-                              {stagiaire.user.isActive ? "Archiver" : "Reactiver"}
-                            </button>
-                          </form>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td colSpan={6} className="px-5 py-10 text-center text-sm text-muted">
-                    Aucun stagiaire ne correspond aux filtres actuels.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+            return (
+              <Card key={stagiaire.id} className="space-y-5">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <StatusBadge status={getAccountStatusLabel(stagiaire.user.isActive)} />
+                      <StatusBadge status={latestStageInfo.statut} />
+                    </div>
+                    <h2 className="text-2xl font-semibold tracking-tight">
+                      {`${stagiaire.user.prenom} ${stagiaire.user.nom}`.trim()}
+                    </h2>
+                    <p className="text-sm leading-6 text-muted">{stagiaire.user.email}</p>
+                  </div>
+
+                  <div className="flex flex-wrap gap-3">
+                    <Link
+                      href={`/stagiaires/${stagiaire.id}`}
+                      className="rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                    >
+                      Voir la fiche
+                    </Link>
+                    <form action={toggleStagiaireArchiveAction}>
+                      <input type="hidden" name="stagiaireId" value={stagiaire.id} />
+                      <input type="hidden" name="userId" value={stagiaire.user.id} />
+                      <input
+                        type="hidden"
+                        name="nextActiveValue"
+                        value={String(!stagiaire.user.isActive)}
+                      />
+                      <input type="hidden" name="returnTo" value="/stagiaires" />
+                      <button
+                        type="submit"
+                        className="rounded-full border border-border bg-background px-4 py-2.5 text-sm font-semibold transition hover:border-primary hover:text-primary"
+                      >
+                        {stagiaire.user.isActive ? "Archiver" : "Reactiver"}
+                      </button>
+                    </form>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  <div className="rounded-[22px] border border-border bg-background p-4">
+                    <p className="text-sm text-muted">Etablissement</p>
+                    <p className="mt-2 text-sm font-medium">{stagiaire.etablissement ?? "Non renseigne"}</p>
+                  </div>
+                  <div className="rounded-[22px] border border-border bg-background p-4">
+                    <p className="text-sm text-muted">Departement</p>
+                    <p className="mt-2 text-sm font-medium">{latestStageInfo.departement}</p>
+                  </div>
+                  <div className="rounded-[22px] border border-border bg-background p-4">
+                    <p className="text-sm text-muted">Encadrant</p>
+                    <p className="mt-2 text-sm font-medium">{latestStageInfo.encadrant}</p>
+                  </div>
+                  <div className="rounded-[22px] border border-border bg-background p-4">
+                    <p className="text-sm text-muted">Telephone</p>
+                    <p className="mt-2 text-sm font-medium">{stagiaire.telephone ?? "Non renseigne"}</p>
+                  </div>
+                  <div className="rounded-[22px] border border-border bg-background p-4">
+                    <p className="text-sm text-muted">Specialite</p>
+                    <p className="mt-2 text-sm font-medium">{stagiaire.specialite ?? "Non renseignee"}</p>
+                  </div>
+                  <div className="rounded-[22px] border border-border bg-background p-4">
+                    <p className="text-sm text-muted">CIN</p>
+                    <p className="mt-2 text-sm font-medium">{stagiaire.cin}</p>
+                  </div>
+                </div>
+              </Card>
+            );
+          })}
         </div>
-      </Card>
+      ) : (
+        <EmptyState
+          title="Aucun stagiaire pour ces criteres"
+          description="Essayez d elargir les filtres ou creez une nouvelle fiche stagiaire pour alimenter la plateforme."
+          actionHref="/stagiaires/nouveau"
+          actionLabel="Creer un stagiaire"
+        />
+      )}
     </div>
   );
 }

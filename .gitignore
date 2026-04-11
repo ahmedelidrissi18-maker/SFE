@@ -19,10 +19,12 @@
 
 # production
 /build
+/storage/
 
 # misc
 .DS_Store
 *.pem
+.codex-runtime/
 
 # debug
 npm-debug.log*

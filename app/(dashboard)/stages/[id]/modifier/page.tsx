@@ -1,7 +1,10 @@
+import { redirect } from "next/navigation";
 import { notFound } from "next/navigation";
+import { auth } from "@/auth";
 import { getStageFormOptions, updateStageAction } from "@/app/(dashboard)/stages/actions";
 import { StageForm } from "@/components/features/stages/stage-form";
 import { prisma } from "@/lib/prisma";
+import { hasRole } from "@/lib/rbac";
 
 type EditStagePageProps = {
   params: Promise<{
@@ -10,6 +13,12 @@ type EditStagePageProps = {
 };
 
 export default async function EditStagePage({ params }: EditStagePageProps) {
+  const session = await auth();
+
+  if (!session?.user || !hasRole(session.user.role, ["ADMIN", "RH"])) {
+    redirect("/acces-refuse");
+  }
+
   const { id } = await params;
 
   const stage = await prisma.stage.findUnique({
@@ -30,6 +39,7 @@ export default async function EditStagePage({ params }: EditStagePageProps) {
       action={updateStageAction}
       stagiaires={options.stagiaires}
       encadrants={options.encadrants}
+      lockStagiaire
       cancelHref={`/stagiaires/${stage.stagiaireId}`}
       defaultValues={{
         stageId: stage.id,

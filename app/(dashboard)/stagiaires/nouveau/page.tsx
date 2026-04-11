@@ -1,5 +1,6 @@
 import { createStagiaireAction } from "@/app/(dashboard)/stagiaires/actions";
 import { StagiaireForm } from "@/components/features/stagiaires/stagiaire-form";
+import { DEFAULT_USER_PASSWORD } from "@/lib/app-config";
 
 export default function NewStagiairePage() {
   return (
@@ -9,6 +10,7 @@ export default function NewStagiairePage() {
       submitLabel="Creer le stagiaire"
       action={createStagiaireAction}
       showCredentialsHint
+      credentialsHint={DEFAULT_USER_PASSWORD}
       cancelHref="/stagiaires"
     />
   );

@@ -63,6 +63,7 @@ Application :
 - `npm run dev` : lance Next.js en developpement
 - `npm run build` : build de production
 - `npm run lint` : verifie le code
+- `npm test` : lance la suite Vitest
 - `npm run prisma:generate` : genere le client Prisma
 - `npm run prisma:migrate` : cree/applique les migrations
 - `npm run prisma:studio` : ouvre Prisma Studio
@@ -98,13 +99,33 @@ Le seed cree ces utilisateurs :
 Mot de passe de demo :
 
 ```text
-Password123!
+valeur de DEFAULT_USER_PASSWORD
 ```
 
-## Prochaines etapes recommandees
+## Etat actuel
 
-- brancher Auth.js / NextAuth
-- proteger les routes par role
-- implementer le CRUD stagiaires
-- ajouter les formulaires avec Zod + react-hook-form
-- creer les premieres migrations metier
+Le socle V1 couvre deja :
+
+- authentification par email et mot de passe
+- protection des routes par role
+- gestion des stagiaires
+- gestion des stages avec affectation d encadrant
+- rapports hebdomadaires avec workflow brouillon / soumis / valide / retourne
+- documents de stage avec televersement et telechargement securises
+- notifications in-app avec badge et centre de lecture
+- dashboard relie aux donnees reelles
+- validations metier et premiers tests Vitest
+
+## Sprint actuel
+
+Le sprint en cours est le `Sprint 6 - Stabilisation et Livraison V1` :
+
+- tests des parcours critiques
+- corrections de bugs fonctionnels
+- harmonisation de l interface et des messages
+- preparation de la recette et du deploiement
+
+## Documentation de livraison
+
+- recette manuelle : `docs/RECETTE_V1.md`
+- procedure de deploiement : `docs/DEPLOIEMENT_V1.md`

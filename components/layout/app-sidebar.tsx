@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { FolderKanban, LayoutDashboard, Users } from "lucide-react";
+import { Bell, FileText, FolderKanban, LayoutDashboard, Users } from "lucide-react";
 import { navigationItems } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 import { hasRole } from "@/lib/rbac";
@@ -9,6 +9,8 @@ const iconMap = {
   dashboard: LayoutDashboard,
   stagiaires: Users,
   stages: FolderKanban,
+  rapports: FileText,
+  notifications: Bell,
 };
 
 type AppSidebarProps = {
@@ -19,12 +21,12 @@ export function AppSidebar({ role }: AppSidebarProps) {
   const allowedNavigation = navigationItems.filter((item) => hasRole(role, [...item.roles]));
 
   return (
-    <aside className="rounded-[28px] border border-border bg-card p-5 shadow-sm">
-      <div className="border-b border-border pb-5">
+    <aside className="rounded-[28px] border border-border/80 bg-linear-to-br from-card via-card to-accent/50 p-5 shadow-[0_24px_48px_-32px_rgba(15,23,42,0.45)] lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)]">
+      <div className="border-b border-border/80 pb-5">
         <p className="text-sm font-medium text-primary">SFE</p>
         <h2 className="mt-2 text-xl font-semibold">Gestion des Stagiaires</h2>
         <p className="mt-2 text-sm leading-6 text-muted">
-          Socle UI et data pret pour le premier lot fonctionnel.
+          Base metier en place pour le suivi des stages et des rapports.
         </p>
       </div>
 
@@ -37,8 +39,8 @@ export function AppSidebar({ role }: AppSidebarProps) {
               key={item.href}
               href={item.href}
               className={cn(
-                "flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-medium transition",
-                "hover:bg-accent hover:text-primary",
+                "flex items-center gap-3 rounded-2xl border border-transparent px-4 py-3 text-sm font-medium transition",
+                "hover:border-border hover:bg-background hover:text-primary",
               )}
             >
               <Icon className="h-4 w-4" />

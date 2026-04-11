@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import type { StageActionState } from "@/app/(dashboard)/stages/actions";
+import { getStageStatusLabel } from "@/lib/stages";
 import type { StageFormValues } from "@/lib/validations/stage";
 
 type Option = {
@@ -81,13 +82,17 @@ export function StageForm({
   const [state, formAction] = useActionState(action, initialState);
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
-        <p className="max-w-3xl text-sm leading-6 text-muted">{description}</p>
+    <div className="space-y-8">
+      <div className="space-y-3">
+        <p className="text-sm font-medium uppercase tracking-[0.18em] text-primary/80">Formulaire</p>
+        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h1>
+        <p className="max-w-3xl text-sm leading-6 text-muted sm:text-[15px]">{description}</p>
       </div>
 
-      <form action={formAction} className="space-y-6 rounded-[28px] border border-border bg-card p-6 shadow-sm">
+      <form
+        action={formAction}
+        className="space-y-8 rounded-[32px] border border-border/80 bg-card p-6 shadow-[0_18px_40px_-24px_rgba(15,23,42,0.28)] sm:p-8"
+      >
         <input type="hidden" name="stageId" value={defaultValues?.stageId ?? ""} />
 
         <section className="grid gap-4 md:grid-cols-2">
@@ -159,7 +164,7 @@ export function StageForm({
             >
               {Object.values(StageStatus).map((status) => (
                 <option key={status} value={status}>
-                  {status}
+                  {getStageStatusLabel(status)}
                 </option>
               ))}
             </select>
@@ -195,7 +200,7 @@ export function StageForm({
           <SubmitButton label={submitLabel} />
           <Link
             href={cancelHref}
-            className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold"
+            className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary"
           >
             Annuler
           </Link>

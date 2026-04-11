@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
-    "@prisma/client": "^6.18.0",
+    "@prisma/client": "6.18.0",
     "@tanstack/react-query": "^5.90.2",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
@@ -41,7 +41,7 @@
     "es-abstract": "^1.24.1",
     "eslint": "^9",
     "eslint-config-next": "16.2.2",
-    "prisma": "^6.18.0",
+    "prisma": "6.18.0",
     "tailwindcss": "^4",
     "tsx": "^4.20.6",
     "typescript": "^5",

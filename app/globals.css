@@ -1,14 +1,14 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f6f7fb;
-  --foreground: #0f172a;
+  --background: #f3f7f6;
+  --foreground: #102033;
   --card: #ffffff;
-  --muted: #64748b;
-  --border: #dbe2ea;
+  --muted: #5d6c82;
+  --border: #d6e0e5;
   --primary: #0f766e;
   --primary-foreground: #f8fafc;
-  --accent: #ecfeff;
+  --accent: #e8f6f4;
 }
 
 @theme inline {
@@ -46,9 +46,13 @@ html {
 }
 
 body {
-  background: var(--background);
+  background:
+    radial-gradient(circle at top right, rgba(15, 118, 110, 0.09), transparent 26%),
+    radial-gradient(circle at top left, rgba(14, 165, 233, 0.08), transparent 22%),
+    var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), sans-serif;
+  text-rendering: optimizeLegibility;
 }
 
 a {
@@ -58,4 +62,15 @@ a {
 
 button {
   cursor: pointer;
+}
+
+input,
+select,
+textarea,
+button {
+  font: inherit;
+}
+
+::selection {
+  background: rgba(15, 118, 110, 0.18);
 }
