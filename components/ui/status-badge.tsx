@@ -17,6 +17,19 @@ const statusClassName: Record<string, string> = {
   Soumis: "border-blue-200 bg-blue-50 text-blue-700",
   Valide: "border-emerald-200 bg-emerald-50 text-emerald-700",
   Retourne: "border-orange-200 bg-orange-50 text-orange-700",
+  Depose: "border-slate-200 bg-slate-100 text-slate-700",
+  "En verification": "border-blue-200 bg-blue-50 text-blue-700",
+  Rejete: "border-rose-200 bg-rose-50 text-rose-700",
+  "Depot manuel": "border-slate-200 bg-slate-100 text-slate-700",
+  Genere: "border-indigo-200 bg-indigo-50 text-indigo-700",
+  "Non preparee": "border-slate-200 bg-slate-100 text-slate-700",
+  "Pret a signer": "border-amber-200 bg-amber-50 text-amber-700",
+  Signe: "border-emerald-200 bg-emerald-50 text-emerald-700",
+  "Echec signature": "border-rose-200 bg-rose-50 text-rose-700",
+  "Synchro OK": "border-emerald-200 bg-emerald-50 text-emerald-700",
+  "Quota GitHub": "border-amber-200 bg-amber-50 text-amber-700",
+  "Erreur sync": "border-rose-200 bg-rose-50 text-rose-700",
+  "Jamais synchronise": "border-slate-200 bg-slate-100 text-slate-700",
 };
 
 export function StatusBadge({ status }: StatusBadgeProps) {

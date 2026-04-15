@@ -7,9 +7,12 @@ export const authRoutes = ["/login"];
 
 const protectedRouteRules: Array<{ prefix: string; roles: UserRole[] }> = [
   { prefix: "/dashboard", roles: ["ADMIN", "RH", "ENCADRANT", "STAGIAIRE"] },
+  { prefix: "/analytics", roles: ["ADMIN", "RH", "ENCADRANT"] },
   { prefix: "/stagiaires", roles: ["ADMIN", "RH"] },
   { prefix: "/stages", roles: ["ADMIN", "RH", "ENCADRANT"] },
   { prefix: "/rapports", roles: ["ADMIN", "RH", "ENCADRANT", "STAGIAIRE"] },
+  { prefix: "/evaluations", roles: ["ADMIN", "RH", "ENCADRANT", "STAGIAIRE"] },
+  { prefix: "/documents", roles: ["ADMIN", "RH", "ENCADRANT", "STAGIAIRE"] },
   { prefix: "/notifications", roles: ["ADMIN", "RH", "ENCADRANT", "STAGIAIRE"] },
 ];
 

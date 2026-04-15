@@ -3,15 +3,29 @@ import { FileText, FolderOpenDot, GraduationCap, Mail, UserSquare2 } from "lucid
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { uploadDocumentAction } from "@/app/(dashboard)/documents/actions";
+import {
+  linkGithubAccountAction,
+  syncGithubActivityAction,
+} from "@/app/(dashboard)/stagiaires/github-actions";
 import { toggleStagiaireArchiveAction } from "@/app/(dashboard)/stagiaires/actions";
 import { DocumentUploadForm } from "@/components/features/documents/document-upload-form";
+import { GithubIntegrationCard } from "@/components/features/github/github-integration-card";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FeedbackBanner } from "@/components/ui/feedback-banner";
 import { MetricCard } from "@/components/ui/metric-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { formatDocumentSize, getDocumentTypeLabel } from "@/lib/documents";
+import {
+  formatDocumentSize,
+  getDocumentStatusLabel,
+  getDocumentTypeLabel,
+} from "@/lib/documents";
+import {
+  getEvaluationStatusLabel,
+  getEvaluationTypeLabel,
+} from "@/lib/evaluations";
+import { getGithubSyncStatusLabel, githubService } from "@/lib/github/service";
 import { getRapportStatusLabel } from "@/lib/rapports";
 import { formatDate, getAccountStatusLabel, getLatestStageInfo } from "@/lib/stagiaires";
 import { getStageStatusLabel } from "@/lib/stages";
@@ -37,13 +51,31 @@ function getStringParam(value?: string | string[]) {
   return Array.isArray(value) ? value[0] : value;
 }
 
+function getGithubErrorMessage(code: string) {
+  const messages: Record<string, string> = {
+    missing_stagiaire: "La liaison GitHub n a pas pu demarrer : stagiaire manquant.",
+    unknown_stagiaire: "Le stagiaire cible pour la connexion GitHub est introuvable.",
+    oauth_not_configured: "GitHub OAuth n est pas configure dans l environnement.",
+    oauth_state_invalid: "La verification de securite GitHub a echoue. Merci de relancer la connexion.",
+    oauth_denied: "La connexion GitHub a ete annulee par l utilisateur ou refusee par GitHub.",
+    oauth_code_missing: "Le code d autorisation GitHub est manquant.",
+    oauth_callback_failed: "La finalisation OAuth GitHub a echoue. Merci de reessayer.",
+    link_failed: "Le compte GitHub n a pas pu etre lie au stagiaire.",
+  };
+
+  return messages[code] ?? "";
+}
+
 export default async function StagiaireDetailPage({
   params,
   searchParams,
 }: StagiaireDetailPageProps) {
   const session = await auth();
   const { id } = await params;
-  const success = getStringParam(((await searchParams) ?? {}).success)?.trim() ?? "";
+  const resolvedSearchParams = (await searchParams) ?? {};
+  const success = getStringParam(resolvedSearchParams.success)?.trim() ?? "";
+  const githubErrorCode = getStringParam(resolvedSearchParams.githubError)?.trim() ?? "";
+  const githubErrorMessage = getGithubErrorMessage(githubErrorCode);
 
   const stagiaire = await prisma.stagiaire.findUnique({
     where: { id },
@@ -57,6 +89,9 @@ export default async function StagiaireDetailPage({
           rapports: {
             orderBy: [{ updatedAt: "desc" }],
             take: 3,
+          },
+          evaluations: {
+            orderBy: [{ updatedAt: "desc" }],
           },
           documents: {
             where: {
@@ -78,6 +113,23 @@ export default async function StagiaireDetailPage({
 
   const latestStage = stagiaire.stages[0] ?? null;
   const latestStageInfo = getLatestStageInfo(latestStage);
+  const githubSummary = await githubService.getSummary(stagiaire.id);
+  const latestGithubPayload =
+    githubSummary.latestSync?.payload &&
+    typeof githubSummary.latestSync.payload === "object" &&
+    githubSummary.latestSync.payload !== null
+      ? (githubSummary.latestSync.payload as {
+          repository?: {
+            fullName?: string;
+            description?: string | null;
+          };
+          recentCommits?: Array<{
+            sha: string;
+            message: string;
+            htmlUrl: string;
+          }>;
+        })
+      : null;
 
   return (
     <div className="space-y-8">
@@ -98,6 +150,15 @@ export default async function StagiaireDetailPage({
       ) : null}
       {success === "document-uploaded" ? (
         <FeedbackBanner message="Le document a ete ajoute avec succes." />
+      ) : null}
+      {success === "github-linked" ? (
+        <FeedbackBanner message="Le compte GitHub a ete lie avec succes." />
+      ) : null}
+      {success === "github-synced" ? (
+        <FeedbackBanner message="La synchronisation GitHub a ete executee avec succes." />
+      ) : null}
+      {githubErrorMessage ? (
+        <FeedbackBanner kind="error" message={githubErrorMessage} />
       ) : null}
 
       <PageHeader
@@ -286,6 +347,95 @@ export default async function StagiaireDetailPage({
         )}
       </Card>
 
+      {session?.user && (session.user.role === "ADMIN" || session.user.role === "RH") ? (
+        <GithubIntegrationCard
+          stagiaireId={stagiaire.id}
+          repositoryUrl={latestStage?.githubRepo ?? null}
+          oauthConnectHref={`/api/github/connect?stagiaireId=${stagiaire.id}&returnTo=${encodeURIComponent(
+            `/stagiaires/${stagiaire.id}`,
+          )}`}
+          summaryHref={`/stagiaires/${stagiaire.id}/github`}
+          connection={
+            githubSummary.connection
+              ? {
+                  username: githubSummary.connection.username,
+                  profileUrl: githubSummary.connection.profileUrl,
+                  avatarUrl: githubSummary.connection.avatarUrl,
+                  lastSyncError: githubSummary.connection.lastSyncError,
+                }
+              : null
+          }
+          latestSync={
+            githubSummary.latestSync
+              ? {
+                  statusLabel: getGithubSyncStatusLabel(githubSummary.latestSync.status),
+                  synchronizedAtLabel: formatDate(githubSummary.latestSync.synchronizedAt),
+                  commitsCount: githubSummary.latestSync.commitsCount,
+                  pullRequestsCount: githubSummary.latestSync.pullRequestsCount,
+                  issuesCount: githubSummary.latestSync.issuesCount,
+                  payload: latestGithubPayload,
+                }
+              : null
+          }
+          linkAction={linkGithubAccountAction}
+          syncAction={syncGithubActivityAction}
+        />
+      ) : null}
+
+      {latestStage ? (
+        <Card className="space-y-5">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+              <p className="text-sm font-medium text-primary">Evaluations</p>
+              <h2 className="mt-1 text-2xl font-semibold tracking-tight">Synthese du cycle d evaluation</h2>
+              <p className="mt-2 text-sm leading-6 text-muted">
+                Suivez les evaluations planifiees, leur score courant et leur statut de validation sur ce stage.
+              </p>
+            </div>
+
+            <Link
+              href={`/evaluations/nouvelle?stageId=${latestStage.id}&type=DEBUT_STAGE`}
+              className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+            >
+              Planifier une evaluation
+            </Link>
+          </div>
+
+          {latestStage.evaluations.length > 0 ? (
+            <div className="grid gap-4 xl:grid-cols-3">
+              {latestStage.evaluations.map((evaluation) => (
+                <Link
+                  key={evaluation.id}
+                  href={`/evaluations/${evaluation.id}`}
+                  className="block rounded-[22px] border border-border bg-background p-4 transition hover:border-primary/40"
+                >
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="space-y-2">
+                      <StatusBadge status={getEvaluationStatusLabel(evaluation.status)} />
+                      <p className="text-base font-semibold">{getEvaluationTypeLabel(evaluation.type)}</p>
+                      <p className="text-sm text-muted">
+                        Score {evaluation.totalScore}/{evaluation.maxScore}
+                      </p>
+                    </div>
+                    <div className="text-sm text-muted sm:text-right">
+                      <p>{formatDate(evaluation.scheduledFor)}</p>
+                      <p>Maj {formatDate(evaluation.updatedAt)}</p>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <EmptyState
+              title="Aucune evaluation planifiee"
+              description="Planifiez une evaluation de debut, mi-parcours ou fin de stage pour structurer le suivi."
+              actionHref={`/evaluations/nouvelle?stageId=${latestStage.id}&type=DEBUT_STAGE`}
+              actionLabel="Creer la premiere evaluation"
+            />
+          )}
+        </Card>
+      ) : null}
+
       {latestStage ? (
         <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
           <Card className="space-y-5">
@@ -357,12 +507,15 @@ export default async function StagiaireDetailPage({
                           </p>
                         </div>
 
-                        <Link
-                          href={`/api/documents/${document.id}`}
-                          className="text-sm font-semibold text-primary hover:underline"
-                        >
-                          Telecharger
-                        </Link>
+                        <div className="flex flex-col items-start gap-3 sm:items-end">
+                          <StatusBadge status={getDocumentStatusLabel(document.statut)} />
+                          <Link
+                            href={`/documents/${document.id}`}
+                            className="text-sm font-semibold text-primary hover:underline"
+                          >
+                            Ouvrir
+                          </Link>
+                        </div>
                       </div>
                     </div>
                   ))}

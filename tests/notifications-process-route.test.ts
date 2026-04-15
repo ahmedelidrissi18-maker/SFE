@@ -1,0 +1,61 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const authMock = vi.fn();
+const processPendingJobsMock = vi.fn();
+
+vi.mock("@/auth", () => ({
+  auth: authMock,
+}));
+
+vi.mock("@/lib/notifications", () => ({
+  processPendingNotificationDispatchJobs: processPendingJobsMock,
+}));
+
+describe("notifications process route", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("refuse un utilisateur non autorise", async () => {
+    authMock.mockResolvedValue({
+      user: {
+        id: "user-stg-1",
+        role: "STAGIAIRE",
+      },
+    });
+
+    const { POST } = await import("@/app/api/notifications/process/route");
+    const response = await POST(new Request("http://localhost:3000/api/notifications/process", {
+      method: "POST",
+    }));
+
+    expect(response.status).toBe(401);
+  });
+
+  it("autorise un admin a traiter la file", async () => {
+    authMock.mockResolvedValue({
+      user: {
+        id: "user-admin-1",
+        role: "ADMIN",
+      },
+    });
+    processPendingJobsMock.mockResolvedValue({
+      processed: 2,
+      pending: 1,
+    });
+
+    const { POST } = await import("@/app/api/notifications/process/route");
+    const response = await POST(new Request("http://localhost:3000/api/notifications/process", {
+      method: "POST",
+    }));
+
+    const payload = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(payload).toEqual({
+      status: "ok",
+      processed: 2,
+      pending: 1,
+    });
+  });
+});

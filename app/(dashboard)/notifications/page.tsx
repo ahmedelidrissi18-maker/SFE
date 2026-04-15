@@ -5,12 +5,18 @@ import { auth } from "@/auth";
 import {
   markAllNotificationsReadAction,
   markNotificationReadAction,
+  updateNotificationPreferenceAction,
 } from "@/app/(dashboard)/notifications/actions";
+import { LiveNotificationsListener } from "@/components/features/notifications/live-notifications-listener";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { MetricCard } from "@/components/ui/metric-card";
 import { PageHeader } from "@/components/ui/page-header";
-import { ensureEndingSoonNotifications, getNotificationTypeLabel } from "@/lib/notifications";
+import {
+  ensureEndingSoonNotifications,
+  getNotificationTypeLabel,
+  notificationEventDefinitions,
+} from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/stagiaires";
 
@@ -30,10 +36,22 @@ export default async function NotificationsPage() {
     orderBy: [{ createdAt: "desc" }],
   });
 
+  const existingPreferences = await prisma.notificationPreference.findMany({
+    where: {
+      userId: session.user.id,
+    },
+    orderBy: [{ eventType: "asc" }],
+  });
+
+  const preferenceByType = new Map(
+    existingPreferences.map((preference) => [preference.eventType, preference]),
+  );
+
   const unreadCount = notifications.filter((notification) => !notification.isRead).length;
 
   return (
     <div className="space-y-8">
+      <LiveNotificationsListener />
       <PageHeader
         eyebrow="Notifications"
         title="Centre de notifications"
@@ -70,6 +88,76 @@ export default async function NotificationsPage() {
           accent={<CheckCheck className="h-5 w-5" />}
         />
       </section>
+
+      <Card className="space-y-5">
+        <div>
+          <p className="text-sm font-medium text-primary">Preferences</p>
+          <h2 className="mt-1 text-2xl font-semibold tracking-tight">
+            Diffusion temps reel et in-app
+          </h2>
+          <p className="mt-2 text-sm leading-6 text-muted">
+            Choisissez les evenements qui doivent apparaitre dans votre centre de notifications
+            et ceux qui doivent declencher une mise a jour live de votre interface.
+          </p>
+        </div>
+
+        <div className="grid gap-4 xl:grid-cols-2">
+          {notificationEventDefinitions.map((eventDefinition) => {
+            const preference = preferenceByType.get(eventDefinition.type);
+
+            return (
+              <form
+                key={eventDefinition.type}
+                action={updateNotificationPreferenceAction}
+                className="rounded-[22px] border border-border bg-background p-4"
+              >
+                <input type="hidden" name="eventType" value={eventDefinition.type} />
+                <div className="space-y-3">
+                  <div>
+                    <p className="font-semibold">{eventDefinition.label}</p>
+                    <p className="mt-1 text-sm leading-6 text-muted">
+                      {eventDefinition.description}
+                    </p>
+                  </div>
+
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <label className="space-y-2 text-sm">
+                      <span className="font-medium">Centre in-app</span>
+                      <select
+                        name="inAppEnabled"
+                        defaultValue={String(preference?.inAppEnabled ?? true)}
+                        className="w-full rounded-2xl border border-border bg-card px-4 py-3 outline-none transition focus:border-primary"
+                      >
+                        <option value="true">Active</option>
+                        <option value="false">Desactive</option>
+                      </select>
+                    </label>
+
+                    <label className="space-y-2 text-sm">
+                      <span className="font-medium">Mise a jour live</span>
+                      <select
+                        name="liveEnabled"
+                        defaultValue={String(preference?.liveEnabled ?? true)}
+                        className="w-full rounded-2xl border border-border bg-card px-4 py-3 outline-none transition focus:border-primary"
+                      >
+                        <option value="true">Active</option>
+                        <option value="false">Desactive</option>
+                      </select>
+                    </label>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="rounded-full border border-border bg-card px-4 py-2.5 text-sm font-semibold transition hover:border-primary hover:text-primary"
+                  >
+                    Enregistrer
+                  </button>
+                </div>
+              </form>
+            );
+          })}
+        </div>
+      </Card>
 
       {notifications.length > 0 ? (
         <div className="grid gap-4">

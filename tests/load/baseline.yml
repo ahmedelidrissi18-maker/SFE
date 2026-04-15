@@ -1,0 +1,11 @@
+config:
+  target: "http://127.0.0.1:3000"
+  phases:
+    - duration: 60
+      arrivalRate: 2
+      name: "baseline warmup"
+scenarios:
+  - name: "health endpoint baseline"
+    flow:
+      - get:
+          url: "/api/health"

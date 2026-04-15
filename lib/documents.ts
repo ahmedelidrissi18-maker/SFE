@@ -1,19 +1,60 @@
 import { createHash, randomUUID } from "node:crypto";
 import path from "node:path";
-import type { DocumentType, Role } from "@prisma/client";
+import { DocumentSource, DocumentStatus, SignatureStatus, type DocumentType, type Prisma, type Role } from "@prisma/client";
 
 const MAX_DOCUMENT_SIZE_BYTES = 5 * 1024 * 1024;
 
 const documentTypeLabels: Record<DocumentType, string> = {
   CONVENTION: "Convention",
   ATTESTATION: "Attestation",
+  FICHE_RECAPITULATIVE: "Fiche recapitulative",
   CIN: "CIN",
   CV: "CV",
   RAPPORT: "Rapport",
   JUSTIFICATIF: "Justificatif",
   RAPPORT_EVAL: "Rapport d evaluation",
+  RAPPORT_CONSOLIDE: "Rapport consolide",
   AUTRE: "Autre",
 };
+
+const documentStatusLabels: Record<DocumentStatus, string> = {
+  DEPOSE: "Depose",
+  EN_VERIFICATION: "En verification",
+  VALIDE: "Valide",
+  REJETE: "Rejete",
+};
+
+const documentSourceLabels: Record<DocumentSource, string> = {
+  UPLOADED: "Depot manuel",
+  GENERATED: "Genere",
+};
+
+const signatureStatusLabels: Record<SignatureStatus, string> = {
+  NOT_REQUESTED: "Non preparee",
+  READY: "Pret a signer",
+  SIGNED: "Signe",
+  FAILED: "Echec signature",
+};
+
+export const pdfTemplateDefinitions = [
+  {
+    key: "ATTESTATION_STAGE",
+    label: "Attestation",
+    documentType: "ATTESTATION" as const,
+  },
+  {
+    key: "FICHE_RECAP_STAGE",
+    label: "Fiche recapitulative",
+    documentType: "FICHE_RECAPITULATIVE" as const,
+  },
+  {
+    key: "RAPPORT_CONSOLIDE_STAGE",
+    label: "Rapport consolide",
+    documentType: "RAPPORT_CONSOLIDE" as const,
+  },
+] as const;
+
+export type PdfTemplateKey = (typeof pdfTemplateDefinitions)[number]["key"];
 
 const allowedMimeTypes = new Set([
   "application/pdf",
@@ -25,6 +66,32 @@ const allowedMimeTypes = new Set([
 
 export function getDocumentTypeLabel(type: DocumentType) {
   return documentTypeLabels[type];
+}
+
+export function getDocumentStatusLabel(status: DocumentStatus) {
+  return documentStatusLabels[status];
+}
+
+export function getDocumentSourceLabel(source: DocumentSource) {
+  return documentSourceLabels[source];
+}
+
+export function getSignatureStatusLabel(status: SignatureStatus) {
+  return signatureStatusLabels[status];
+}
+
+export function getPdfTemplateLabel(template: PdfTemplateKey) {
+  return (
+    pdfTemplateDefinitions.find((definition) => definition.key === template)?.label ??
+    "Generation PDF"
+  );
+}
+
+export function getPdfTemplateDocumentType(template: PdfTemplateKey): DocumentType {
+  return (
+    pdfTemplateDefinitions.find((definition) => definition.key === template)?.documentType ??
+    "AUTRE"
+  );
 }
 
 export function formatDocumentSize(size: number) {
@@ -118,6 +185,81 @@ export function canAccessStageDocuments(role: Role, options: { isStageOwner: boo
   }
 
   return false;
+}
+
+export function canManageDocumentReview(
+  role: Role,
+  options: { isAssignedEncadrant: boolean },
+) {
+  if (role === "ADMIN" || role === "RH") {
+    return true;
+  }
+
+  return role === "ENCADRANT" && options.isAssignedEncadrant;
+}
+
+export function canRequestPdfGeneration(
+  role: Role,
+  options: { isAssignedEncadrant: boolean },
+) {
+  if (role === "ADMIN" || role === "RH") {
+    return true;
+  }
+
+  return role === "ENCADRANT" && options.isAssignedEncadrant;
+}
+
+export function canPrepareDocumentSignature(role: Role) {
+  return role === "ADMIN" || role === "RH";
+}
+
+export function getDocumentVisibilityFilter(role: Role, userId: string): Prisma.DocumentWhereInput {
+  if (role === "ENCADRANT") {
+    return {
+      stage: {
+        encadrantId: userId,
+      },
+    };
+  }
+
+  if (role === "STAGIAIRE") {
+    return {
+      stage: {
+        stagiaire: {
+          userId,
+        },
+      },
+    };
+  }
+
+  return {};
+}
+
+export function canEditDocument(status: DocumentStatus) {
+  return status === "DEPOSE" || status === "REJETE";
+}
+
+export function canSubmitDocumentForReview(status: DocumentStatus) {
+  return status === "DEPOSE" || status === "REJETE";
+}
+
+export function canReviewDocument(status: DocumentStatus) {
+  return status === "EN_VERIFICATION";
+}
+
+export function isSensitiveDocumentType(type: DocumentType) {
+  return new Set<DocumentType>([
+    "CONVENTION",
+    "ATTESTATION",
+    "CIN",
+    "RAPPORT_EVAL",
+    "FICHE_RECAPITULATIVE",
+    "RAPPORT_CONSOLIDE",
+  ]).has(type);
+}
+
+export function shouldAuditDocumentDownload(type: DocumentType) {
+  return isSensitiveDocumentType(type);
 }
 
 export { MAX_DOCUMENT_SIZE_BYTES };

@@ -2,8 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
+import { notificationService } from "@/lib/notification-service";
 import { prisma } from "@/lib/prisma";
 import { notificationActionSchema } from "@/lib/validations/document";
+import { notificationPreferenceSchema } from "@/lib/validations/notification";
+import { publishNotificationRealtimeEvent } from "@/lib/realtime-notifications";
 
 export async function markNotificationReadAction(formData: FormData) {
   const session = await auth();
@@ -22,15 +25,7 @@ export async function markNotificationReadAction(formData: FormData) {
 
   const { notificationId } = parsedData.data;
 
-  await prisma.notification.updateMany({
-    where: {
-      id: notificationId,
-      destinataireId: session.user.id,
-    },
-    data: {
-      isRead: true,
-    },
-  });
+  await notificationService.markAsRead(notificationId, session.user.id);
 
   revalidatePath("/notifications");
 }
@@ -50,6 +45,46 @@ export async function markAllNotificationsReadAction() {
     data: {
       isRead: true,
     },
+  });
+
+  const unreadCount = await prisma.notification.count({
+    where: {
+      destinataireId: session.user.id,
+      isRead: false,
+    },
+  });
+
+  publishNotificationRealtimeEvent({
+    kind: "notification_read",
+    userId: session.user.id,
+    unreadCount,
+  });
+
+  revalidatePath("/notifications");
+}
+
+export async function updateNotificationPreferenceAction(formData: FormData) {
+  const session = await auth();
+
+  if (!session?.user) {
+    return;
+  }
+
+  const parsedData = notificationPreferenceSchema.safeParse({
+    eventType: formData.get("eventType"),
+    inAppEnabled: formData.get("inAppEnabled"),
+    liveEnabled: formData.get("liveEnabled"),
+  });
+
+  if (!parsedData.success) {
+    return;
+  }
+
+  await notificationService.updatePreferences({
+    userId: session.user.id,
+    eventType: parsedData.data.eventType,
+    inAppEnabled: parsedData.data.inAppEnabled,
+    liveEnabled: parsedData.data.liveEnabled,
   });
 
   revalidatePath("/notifications");

@@ -1,10 +1,12 @@
 import { readFile } from "node:fs/promises";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { logAuditEvent } from "@/lib/audit";
 import {
   canAccessStageDocuments,
   getDocumentContentType,
   getDocumentDownloadName,
+  shouldAuditDocumentDownload,
 } from "@/lib/documents";
 import { prisma } from "@/lib/prisma";
 
@@ -49,6 +51,20 @@ export async function GET(_request: Request, { params }: RouteContext) {
 
   try {
     const buffer = await readFile(document.url);
+
+    if (shouldAuditDocumentDownload(document.type)) {
+      await logAuditEvent({
+        userId: session.user.id,
+        action: "DOCUMENT_DOWNLOAD",
+        entite: "Document",
+        entiteId: document.id,
+        nouvelleValeur: {
+          stageId: document.stageId,
+          type: document.type,
+          statut: document.statut,
+        },
+      });
+    }
 
     return new NextResponse(buffer, {
       status: 200,

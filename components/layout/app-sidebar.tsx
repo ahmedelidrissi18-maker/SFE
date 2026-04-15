@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Bell, FileText, FolderKanban, LayoutDashboard, Users } from "lucide-react";
+import { BarChart3, Bell, ClipboardCheck, FileArchive, FileText, FolderKanban, LayoutDashboard, Users } from "lucide-react";
 import { navigationItems } from "@/lib/navigation";
 import { cn } from "@/lib/utils";
 import { hasRole } from "@/lib/rbac";
@@ -7,9 +7,12 @@ import type { UserRole } from "@/types";
 
 const iconMap = {
   dashboard: LayoutDashboard,
+  analytics: BarChart3,
   stagiaires: Users,
   stages: FolderKanban,
   rapports: FileText,
+  evaluations: ClipboardCheck,
+  documents: FileArchive,
   notifications: Bell,
 };
 

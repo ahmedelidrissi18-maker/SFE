@@ -3,6 +3,9 @@ import path from "node:path";
 import bcrypt from "bcryptjs";
 import {
   DocumentType,
+  EvaluationRevisionAction,
+  EvaluationStatus,
+  EvaluationType,
   PrismaClient,
   RapportStatus,
   Role,
@@ -10,6 +13,7 @@ import {
 } from "@prisma/client";
 import { DEFAULT_USER_PASSWORD } from "@/lib/app-config";
 import { getDocumentStorageRoot } from "@/lib/documents";
+import { calculateEvaluationScore, getEvaluationGridDefinition } from "@/lib/evaluations";
 
 const prisma = new PrismaClient();
 
@@ -33,6 +37,27 @@ function buildDocumentContent(title: string, lines: string[]) {
     "",
     "Document genere par le seed V1 Gestion des Stagiaires.",
   ].join("\n");
+}
+
+function buildEvaluationPayload(
+  type: EvaluationType,
+  values: Record<string, { score: number; comment?: string }>,
+) {
+  const grid = getEvaluationGridDefinition(type);
+  const rawNotes = grid.criteria.map((criterion) => ({
+    criterionId: criterion.id,
+    score: values[criterion.id]?.score ?? 0,
+    comment: values[criterion.id]?.comment ?? "",
+  }));
+  const scoreSummary = calculateEvaluationScore(grid.criteria, rawNotes);
+
+  return {
+    gridVersion: grid.version,
+    criteriaSnapshot: grid.criteria,
+    notes: scoreSummary.notes,
+    totalScore: scoreSummary.totalScore,
+    maxScore: scoreSummary.maxScore,
+  };
 }
 
 type UserSeed = {
@@ -663,6 +688,275 @@ async function main() {
     updatedAt: document.updatedAt,
   }));
 
+  const evaluationDefinitions: Array<{
+    id: string;
+    stageId: string;
+    type: EvaluationType;
+    status: EvaluationStatus;
+    commentaire: string;
+    commentaireEncadrant: string;
+    commentaireRh: string | null;
+    scheduledFor: Date;
+    createdByUserId: string;
+    submittedByUserId: string;
+    validatedByUserId: string | null;
+    returnedByUserId: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    submittedAt: Date | null;
+    validatedAt: Date | null;
+    returnedAt: Date | null;
+    values: Record<string, { score: number; comment?: string }>;
+  }> = [
+    {
+      id: "evaluation-stage-1-start",
+      stageId: "stage-1-current",
+      type: EvaluationType.DEBUT_STAGE,
+      status: EvaluationStatus.VALIDE,
+      commentaire: "Demarrage tres solide, objectifs compris et rythme bien lance.",
+      commentaireEncadrant: "Bonne integration dans l equipe produit.",
+      commentaireRh: "Validation RH sans reserve.",
+      scheduledFor: shiftDays(now, -25),
+      createdByUserId: "user-enc-1",
+      submittedByUserId: "user-enc-1",
+      validatedByUserId: "user-rh-1",
+      returnedByUserId: null,
+      createdAt: shiftDays(now, -27),
+      updatedAt: shiftDays(now, -24),
+      submittedAt: shiftDays(now, -26),
+      validatedAt: shiftDays(now, -24),
+      returnedAt: null,
+      values: {
+        integration: { score: 4, comment: "Integration rapide avec l equipe." },
+        comprehension: { score: 5, comment: "Sujet bien reformule des la premiere semaine." },
+        organisation: { score: 4, comment: "Bonne structure de travail." },
+        initiative: { score: 4, comment: "Questions pertinentes et utiles." },
+      },
+    },
+    {
+      id: "evaluation-stage-1-mid",
+      stageId: "stage-1-current",
+      type: EvaluationType.MI_PARCOURS,
+      status: EvaluationStatus.SOUMIS,
+      commentaire: "Mi-parcours encourageant avec une progression technique visible.",
+      commentaireEncadrant: "Continuer a consolider les tests et la documentation.",
+      commentaireRh: null,
+      scheduledFor: shiftDays(now, 3),
+      createdByUserId: "user-enc-1",
+      submittedByUserId: "user-enc-1",
+      validatedByUserId: null,
+      returnedByUserId: null,
+      createdAt: shiftDays(now, -3),
+      updatedAt: shiftDays(now, -1),
+      submittedAt: shiftDays(now, -1),
+      validatedAt: null,
+      returnedAt: null,
+      values: {
+        "progression-technique": { score: 4, comment: "Bonne maitrise du front et des flux API." },
+        "qualite-livrables": { score: 4, comment: "Livrables clairs et relus." },
+        collaboration: { score: 5, comment: "Tres bonne communication avec le binome RH." },
+        autonomie: { score: 4, comment: "Monte bien en autonomie." },
+      },
+    },
+    {
+      id: "evaluation-stage-5-final",
+      stageId: "stage-5-finished",
+      type: EvaluationType.FINAL,
+      status: EvaluationStatus.VALIDE,
+      commentaire: "Cloture tres positive avec livrables utiles au departement metier.",
+      commentaireEncadrant: "Le stagiaire a livre un lot directement reutilisable.",
+      commentaireRh: "Evaluation finale validee et archivee.",
+      scheduledFor: shiftDays(now, -25),
+      createdByUserId: "user-enc-2",
+      submittedByUserId: "user-enc-2",
+      validatedByUserId: "user-rh-2",
+      returnedByUserId: null,
+      createdAt: shiftDays(now, -28),
+      updatedAt: shiftDays(now, -22),
+      submittedAt: shiftDays(now, -24),
+      validatedAt: shiftDays(now, -22),
+      returnedAt: null,
+      values: {
+        objectifs: { score: 5, comment: "Objectifs totalement atteints." },
+        impact: { score: 5, comment: "Impact direct sur le module metier." },
+        professionnalisme: { score: 4, comment: "Bonne posture et bonne tenue des engagements." },
+        projection: { score: 4, comment: "Bonne capacite de capitalisation." },
+      },
+    },
+    {
+      id: "evaluation-stage-8-mid",
+      stageId: "stage-8-suspended",
+      type: EvaluationType.MI_PARCOURS,
+      status: EvaluationStatus.RETOURNE,
+      commentaire: "Le fond est bon mais certaines preuves techniques restent a consolider.",
+      commentaireEncadrant: "Ajouter les traces et captures des controles appliques.",
+      commentaireRh: "Merci de preciser les evidences de securisation avant validation.",
+      scheduledFor: shiftDays(now, -6),
+      createdByUserId: "user-enc-1",
+      submittedByUserId: "user-enc-1",
+      validatedByUserId: null,
+      returnedByUserId: "user-rh-1",
+      createdAt: shiftDays(now, -10),
+      updatedAt: shiftDays(now, -4),
+      submittedAt: shiftDays(now, -7),
+      validatedAt: null,
+      returnedAt: shiftDays(now, -4),
+      values: {
+        "progression-technique": { score: 4, comment: "Sujet securite bien compris." },
+        "qualite-livrables": { score: 3, comment: "Des precisions restent attendues." },
+        collaboration: { score: 4, comment: "Echanges constructifs avec l equipe." },
+        autonomie: { score: 3, comment: "Autonomie correcte mais preuves a completer." },
+      },
+    },
+  ];
+
+  const evaluations = evaluationDefinitions.map((definition) => {
+    const payload = buildEvaluationPayload(definition.type, definition.values);
+
+    return {
+      id: definition.id,
+      stageId: definition.stageId,
+      type: definition.type,
+      status: definition.status,
+      gridVersion: payload.gridVersion,
+      criteriaSnapshot: payload.criteriaSnapshot,
+      notes: payload.notes,
+      totalScore: payload.totalScore,
+      maxScore: payload.maxScore,
+      commentaire: definition.commentaire,
+      commentaireEncadrant: definition.commentaireEncadrant,
+      commentaireRh: definition.commentaireRh,
+      scheduledFor: definition.scheduledFor,
+      createdByUserId: definition.createdByUserId,
+      submittedByUserId: definition.submittedByUserId,
+      validatedByUserId: definition.validatedByUserId,
+      returnedByUserId: definition.returnedByUserId,
+      submittedAt: definition.submittedAt,
+      validatedAt: definition.validatedAt,
+      returnedAt: definition.returnedAt,
+      createdAt: definition.createdAt,
+      updatedAt: definition.updatedAt,
+    };
+  });
+
+  const evaluationById = new Map(evaluations.map((evaluation) => [evaluation.id, evaluation]));
+  const evaluationRevisions = [
+    {
+      id: "evaluation-revision-1",
+      evaluationId: "evaluation-stage-1-start",
+      action: EvaluationRevisionAction.CREATE,
+      previousStatus: null,
+      nextStatus: EvaluationStatus.BROUILLON,
+      changedByUserId: "user-enc-1",
+      createdAt: shiftDays(now, -27),
+    },
+    {
+      id: "evaluation-revision-2",
+      evaluationId: "evaluation-stage-1-start",
+      action: EvaluationRevisionAction.SUBMIT,
+      previousStatus: EvaluationStatus.BROUILLON,
+      nextStatus: EvaluationStatus.SOUMIS,
+      changedByUserId: "user-enc-1",
+      createdAt: shiftDays(now, -26),
+    },
+    {
+      id: "evaluation-revision-3",
+      evaluationId: "evaluation-stage-1-start",
+      action: EvaluationRevisionAction.VALIDATE,
+      previousStatus: EvaluationStatus.SOUMIS,
+      nextStatus: EvaluationStatus.VALIDE,
+      changedByUserId: "user-rh-1",
+      createdAt: shiftDays(now, -24),
+    },
+    {
+      id: "evaluation-revision-4",
+      evaluationId: "evaluation-stage-1-mid",
+      action: EvaluationRevisionAction.CREATE,
+      previousStatus: null,
+      nextStatus: EvaluationStatus.BROUILLON,
+      changedByUserId: "user-enc-1",
+      createdAt: shiftDays(now, -3),
+    },
+    {
+      id: "evaluation-revision-5",
+      evaluationId: "evaluation-stage-1-mid",
+      action: EvaluationRevisionAction.SUBMIT,
+      previousStatus: EvaluationStatus.BROUILLON,
+      nextStatus: EvaluationStatus.SOUMIS,
+      changedByUserId: "user-enc-1",
+      createdAt: shiftDays(now, -1),
+    },
+    {
+      id: "evaluation-revision-6",
+      evaluationId: "evaluation-stage-5-final",
+      action: EvaluationRevisionAction.CREATE,
+      previousStatus: null,
+      nextStatus: EvaluationStatus.BROUILLON,
+      changedByUserId: "user-enc-2",
+      createdAt: shiftDays(now, -28),
+    },
+    {
+      id: "evaluation-revision-7",
+      evaluationId: "evaluation-stage-5-final",
+      action: EvaluationRevisionAction.SUBMIT,
+      previousStatus: EvaluationStatus.BROUILLON,
+      nextStatus: EvaluationStatus.SOUMIS,
+      changedByUserId: "user-enc-2",
+      createdAt: shiftDays(now, -24),
+    },
+    {
+      id: "evaluation-revision-8",
+      evaluationId: "evaluation-stage-5-final",
+      action: EvaluationRevisionAction.VALIDATE,
+      previousStatus: EvaluationStatus.SOUMIS,
+      nextStatus: EvaluationStatus.VALIDE,
+      changedByUserId: "user-rh-2",
+      createdAt: shiftDays(now, -22),
+    },
+    {
+      id: "evaluation-revision-9",
+      evaluationId: "evaluation-stage-8-mid",
+      action: EvaluationRevisionAction.CREATE,
+      previousStatus: null,
+      nextStatus: EvaluationStatus.BROUILLON,
+      changedByUserId: "user-enc-1",
+      createdAt: shiftDays(now, -10),
+    },
+    {
+      id: "evaluation-revision-10",
+      evaluationId: "evaluation-stage-8-mid",
+      action: EvaluationRevisionAction.SUBMIT,
+      previousStatus: EvaluationStatus.BROUILLON,
+      nextStatus: EvaluationStatus.SOUMIS,
+      changedByUserId: "user-enc-1",
+      createdAt: shiftDays(now, -7),
+    },
+    {
+      id: "evaluation-revision-11",
+      evaluationId: "evaluation-stage-8-mid",
+      action: EvaluationRevisionAction.RETURN,
+      previousStatus: EvaluationStatus.SOUMIS,
+      nextStatus: EvaluationStatus.RETOURNE,
+      changedByUserId: "user-rh-1",
+      createdAt: shiftDays(now, -4),
+    },
+  ].map((revision) => {
+    const evaluation = evaluationById.get(revision.evaluationId);
+
+    return {
+      ...revision,
+      previousNotes: evaluation?.notes ?? [],
+      nextNotes: evaluation?.notes ?? [],
+      previousScore: evaluation?.totalScore ?? 0,
+      nextScore: evaluation?.totalScore ?? 0,
+      commentSnapshot: {
+        commentaire: evaluation?.commentaire ?? null,
+        commentaireEncadrant: evaluation?.commentaireEncadrant ?? null,
+        commentaireRh: evaluation?.commentaireRh ?? null,
+      },
+    };
+  });
+
   const notifications = [
     {
       id: "notification-1",
@@ -831,6 +1125,28 @@ async function main() {
       userAgent: "seed-script",
       createdAt: document.createdAt,
     })),
+    ...evaluations.map((evaluation, index) => ({
+      id: `audit-evaluation-${index + 1}`,
+      userId: evaluation.createdByUserId ?? "user-enc-1",
+      action:
+        evaluation.status === EvaluationStatus.VALIDE
+          ? "EVALUATION_VALIDATE"
+          : evaluation.status === EvaluationStatus.RETOURNE
+            ? "EVALUATION_RETURN"
+            : "EVALUATION_SUBMIT",
+      entite: "Evaluation",
+      entiteId: evaluation.id,
+      nouvelleValeur: {
+        stageId: evaluation.stageId,
+        type: evaluation.type,
+        status: evaluation.status,
+        totalScore: evaluation.totalScore,
+        maxScore: evaluation.maxScore,
+      },
+      ip: "127.0.0.1",
+      userAgent: "seed-script",
+      createdAt: evaluation.updatedAt,
+    })),
   ];
 
   await resetStorage();
@@ -843,9 +1159,15 @@ async function main() {
 
   await prisma.$transaction(async (tx) => {
     await tx.auditLog.deleteMany();
+    await tx.pdfGenerationJob.deleteMany();
+    await tx.notificationDispatchJob.deleteMany();
     await tx.notification.deleteMany();
+    await tx.notificationPreference.deleteMany();
     await tx.document.deleteMany();
+    await tx.evaluationRevision.deleteMany();
     await tx.evaluation.deleteMany();
+    await tx.githubSyncLog.deleteMany();
+    await tx.githubConnection.deleteMany();
     await tx.rapport.deleteMany();
     await tx.presence.deleteMany();
     await tx.stage.deleteMany();
@@ -882,6 +1204,14 @@ async function main() {
       data: rapports,
     });
 
+    await tx.evaluation.createMany({
+      data: evaluations,
+    });
+
+    await tx.evaluationRevision.createMany({
+      data: evaluationRevisions,
+    });
+
     await tx.document.createMany({
       data: documentRows,
     });
@@ -904,6 +1234,8 @@ async function main() {
         stagiaires: stagiaires.length,
         stages: stages.length,
         rapports: rapports.length,
+        evaluations: evaluations.length,
+        evaluationRevisions: evaluationRevisions.length,
         documents: documentRows.length,
         notifications: notifications.length,
         auditLogs: auditLogs.length,

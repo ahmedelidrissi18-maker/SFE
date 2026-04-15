@@ -1,6 +1,5 @@
-import Link from "next/link";
-import { Bell } from "lucide-react";
 import { LogoutButton } from "@/components/auth/logout-button";
+import { LiveNotificationLink } from "@/components/features/notifications/live-notification-link";
 import type { UserRole } from "@/types";
 
 type AppHeaderProps = {
@@ -32,18 +31,7 @@ export function AppHeader({ user, unreadNotificationsCount = 0 }: AppHeaderProps
       </div>
 
       <div className="flex flex-wrap items-center gap-3">
-        <Link
-          href="/notifications"
-          className="relative inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-background text-muted transition hover:border-primary hover:text-primary"
-          aria-label="Ouvrir les notifications"
-        >
-          <Bell className="h-4 w-4" />
-          {unreadNotificationsCount > 0 ? (
-            <span className="absolute -right-1 -top-1 inline-flex min-w-5 items-center justify-center rounded-full bg-primary px-1.5 py-0.5 text-[10px] font-semibold text-primary-foreground">
-              {unreadNotificationsCount > 9 ? "9+" : unreadNotificationsCount}
-            </span>
-          ) : null}
-        </Link>
+        <LiveNotificationLink initialUnreadCount={unreadNotificationsCount} />
         <div className="rounded-[20px] border border-border bg-background px-4 py-2 text-right text-sm text-muted">
           <p className="font-medium text-foreground">{displayName}</p>
           <p>{roleLabel}</p>

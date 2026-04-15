@@ -6,6 +6,12 @@ export const navigationItems = [
     roles: ["ADMIN", "RH", "ENCADRANT", "STAGIAIRE"] as const,
   },
   {
+    label: "Analytics",
+    href: "/analytics",
+    icon: "analytics" as const,
+    roles: ["ADMIN", "RH", "ENCADRANT"] as const,
+  },
+  {
     label: "Stagiaires",
     href: "/stagiaires",
     icon: "stagiaires" as const,
@@ -21,6 +27,18 @@ export const navigationItems = [
     label: "Rapports",
     href: "/rapports",
     icon: "rapports" as const,
+    roles: ["ADMIN", "RH", "ENCADRANT", "STAGIAIRE"] as const,
+  },
+  {
+    label: "Evaluations",
+    href: "/evaluations",
+    icon: "evaluations" as const,
+    roles: ["ADMIN", "RH", "ENCADRANT", "STAGIAIRE"] as const,
+  },
+  {
+    label: "Documents",
+    href: "/documents",
+    icon: "documents" as const,
     roles: ["ADMIN", "RH", "ENCADRANT", "STAGIAIRE"] as const,
   },
   {

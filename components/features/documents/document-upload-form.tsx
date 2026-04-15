@@ -12,6 +12,15 @@ type DocumentUploadFormProps = {
 };
 
 const initialState: DocumentActionState = {};
+const manualDocumentTypes = [
+  DocumentType.CONVENTION,
+  DocumentType.CIN,
+  DocumentType.CV,
+  DocumentType.RAPPORT,
+  DocumentType.JUSTIFICATIF,
+  DocumentType.RAPPORT_EVAL,
+  DocumentType.AUTRE,
+];
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -52,7 +61,7 @@ export function DocumentUploadForm({ stageId, action }: DocumentUploadFormProps)
             defaultValue={DocumentType.CONVENTION}
             className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
           >
-            {Object.values(DocumentType).map((type) => (
+            {manualDocumentTypes.map((type) => (
               <option key={type} value={type}>
                 {getDocumentTypeLabel(type)}
               </option>

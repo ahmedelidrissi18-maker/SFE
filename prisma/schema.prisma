@@ -30,19 +30,63 @@ enum RapportStatus {
 }
 
 enum EvaluationType {
+  DEBUT_STAGE
   MI_PARCOURS
   FINAL
+}
+
+enum EvaluationStatus {
+  BROUILLON
+  SOUMIS
+  VALIDE
+  RETOURNE
+}
+
+enum EvaluationRevisionAction {
+  CREATE
+  UPDATE_DRAFT
+  SUBMIT
+  VALIDATE
+  RETURN
 }
 
 enum DocumentType {
   CONVENTION
   ATTESTATION
+  FICHE_RECAPITULATIVE
   CIN
   CV
   RAPPORT
   JUSTIFICATIF
   RAPPORT_EVAL
+  RAPPORT_CONSOLIDE
   AUTRE
+}
+
+enum DocumentStatus {
+  DEPOSE
+  EN_VERIFICATION
+  VALIDE
+  REJETE
+}
+
+enum DocumentSource {
+  UPLOADED
+  GENERATED
+}
+
+enum SignatureStatus {
+  NOT_REQUESTED
+  READY
+  SIGNED
+  FAILED
+}
+
+enum PdfGenerationStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
 }
 
 enum PresenceStatus {
@@ -51,112 +95,214 @@ enum PresenceStatus {
   JUSTIFIE
 }
 
+enum GithubSyncStatus {
+  SUCCESS
+  ERROR
+  RATE_LIMITED
+}
+
+enum NotificationDispatchStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
 model User {
-  id               String         @id @default(uuid())
-  nom              String
-  prenom           String
-  email            String         @unique
-  passwordHash     String?
-  role             Role
-  isActive         Boolean        @default(true)
-  twoFactorEnabled Boolean        @default(false)
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  stagiaire        Stagiaire?
-  encadreStages    Stage[]        @relation("EncadrantStages")
-  notifications    Notification[]
-  auditLogs        AuditLog[]
-  documents        Document[]     @relation("DocumentAuthor")
+  id                       String                    @id @default(uuid())
+  nom                      String
+  prenom                   String
+  email                    String                    @unique
+  passwordHash             String?
+  role                     Role
+  isActive                 Boolean                   @default(true)
+  twoFactorEnabled         Boolean                   @default(false)
+  createdAt                DateTime                  @default(now())
+  updatedAt                DateTime                  @updatedAt
+  stagiaire                Stagiaire?
+  encadreStages            Stage[]                   @relation("EncadrantStages")
+  notifications            Notification[]
+  notificationPreferences  NotificationPreference[]
+  notificationDispatchJobs NotificationDispatchJob[] @relation("NotificationJobTriggeredBy")
+  auditLogs                AuditLog[]
+  documents                Document[]                @relation("DocumentAuthor")
+  githubLinksCreated       GithubConnection[]        @relation("GithubLinkedBy")
+  githubSyncsTriggered     GithubSyncLog[]           @relation("GithubSyncTriggeredBy")
 }
 
 model Stagiaire {
-  id            String   @id @default(uuid())
-  userId        String   @unique
-  cin           String   @unique
-  dateNaissance DateTime?
-  telephone     String?
-  etablissement String?
-  specialite    String?
-  niveau        String?
-  annee         String?
-  photoUrl      String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  stages        Stage[]
+  id               String            @id @default(uuid())
+  userId           String            @unique
+  cin              String            @unique
+  dateNaissance    DateTime?
+  telephone        String?
+  etablissement    String?
+  specialite       String?
+  niveau           String?
+  annee            String?
+  photoUrl         String?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stages           Stage[]
+  githubConnection GithubConnection?
 }
 
 model Stage {
-  id          String       @id @default(uuid())
-  stagiaireId String
-  encadrantId String?
-  dateDebut   DateTime
-  dateFin     DateTime
-  departement String
-  sujet       String
-  githubRepo  String?
-  statut      StageStatus  @default(PLANIFIE)
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  stagiaire   Stagiaire    @relation(fields: [stagiaireId], references: [id], onDelete: Cascade)
-  encadrant   User?        @relation("EncadrantStages", fields: [encadrantId], references: [id], onDelete: SetNull)
-  rapports    Rapport[]
-  evaluations Evaluation[]
-  documents   Document[]
-  presences   Presence[]
+  id                String             @id @default(uuid())
+  stagiaireId       String
+  encadrantId       String?
+  dateDebut         DateTime
+  dateFin           DateTime
+  departement       String
+  sujet             String
+  githubRepo        String?
+  statut            StageStatus        @default(PLANIFIE)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  stagiaire         Stagiaire          @relation(fields: [stagiaireId], references: [id], onDelete: Cascade)
+  encadrant         User?              @relation("EncadrantStages", fields: [encadrantId], references: [id], onDelete: SetNull)
+  rapports          Rapport[]
+  evaluations       Evaluation[]
+  documents         Document[]
+  presences         Presence[]
+  githubSyncLogs    GithubSyncLog[]
+  pdfGenerationJobs PdfGenerationJob[]
 
   @@index([stagiaireId])
   @@index([encadrantId])
   @@index([statut])
+  @@index([statut, dateDebut, dateFin])
+  @@index([encadrantId, statut, dateFin])
 }
 
 model Rapport {
-  id              String        @id @default(uuid())
-  stageId         String
-  semaine         Int
-  tachesRealisees String
-  difficultes     String?
-  planSuivant     String?
-  avancement      Int
-  statut          RapportStatus @default(BROUILLON)
+  id                   String        @id @default(uuid())
+  stageId              String
+  semaine              Int
+  tachesRealisees      String
+  difficultes          String?
+  planSuivant          String?
+  avancement           Int
+  statut               RapportStatus @default(BROUILLON)
   commentaireEncadrant String?
-  dateSoumission  DateTime?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  stage           Stage         @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  dateSoumission       DateTime?
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
+  stage                Stage         @relation(fields: [stageId], references: [id], onDelete: Cascade)
 
   @@unique([stageId, semaine])
+  @@index([stageId, statut])
+  @@index([stageId, updatedAt])
+  @@index([statut, dateSoumission])
 }
 
 model Evaluation {
-  id          String         @id @default(uuid())
-  stageId     String
-  type        EvaluationType
-  notes       Json
-  commentaire String?
-  signature   String?
-  isSigned    Boolean        @default(false)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-  stage       Stage          @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  id                   String               @id @default(uuid())
+  stageId              String
+  type                 EvaluationType
+  status               EvaluationStatus     @default(BROUILLON)
+  gridVersion          String               @default("v1")
+  criteriaSnapshot     Json
+  notes                Json
+  totalScore           Int                  @default(0)
+  maxScore             Int                  @default(0)
+  commentaire          String?
+  commentaireEncadrant String?
+  commentaireRh        String?
+  signature            String?
+  isSigned             Boolean              @default(false)
+  scheduledFor         DateTime?
+  submittedAt          DateTime?
+  validatedAt          DateTime?
+  returnedAt           DateTime?
+  createdByUserId      String?
+  submittedByUserId    String?
+  validatedByUserId    String?
+  returnedByUserId     String?
+  createdAt            DateTime             @default(now())
+  updatedAt            DateTime             @updatedAt
+  stage                Stage                @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  revisions            EvaluationRevision[]
 
   @@unique([stageId, type])
+  @@index([stageId, status])
+  @@index([scheduledFor])
+}
+
+model EvaluationRevision {
+  id              String                   @id @default(uuid())
+  evaluationId    String
+  action          EvaluationRevisionAction
+  previousStatus  EvaluationStatus?
+  nextStatus      EvaluationStatus
+  previousNotes   Json?
+  nextNotes       Json
+  previousScore   Int?
+  nextScore       Int
+  commentSnapshot Json?
+  changedByUserId String
+  createdAt       DateTime                 @default(now())
+  evaluation      Evaluation               @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+
+  @@index([evaluationId, createdAt])
+  @@index([changedByUserId, createdAt])
 }
 
 model Document {
-  id           String       @id @default(uuid())
-  stageId      String
-  auteurId     String
-  type         DocumentType
-  nom          String
-  url          String
-  tailleOctets Int
-  version      Int          @default(1)
-  isDeleted    Boolean      @default(false)
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
-  stage        Stage        @relation(fields: [stageId], references: [id], onDelete: Cascade)
-  auteur       User         @relation("DocumentAuthor", fields: [auteurId], references: [id], onDelete: Cascade)
+  id                    String             @id @default(uuid())
+  stageId               String
+  auteurId              String
+  type                  DocumentType
+  statut                DocumentStatus     @default(DEPOSE)
+  source                DocumentSource     @default(UPLOADED)
+  nom                   String
+  url                   String
+  tailleOctets          Int
+  version               Int                @default(1)
+  generatedTemplate     String?
+  validationRequestedAt DateTime?
+  reviewedByUserId      String?
+  reviewedAt            DateTime?
+  validatedAt           DateTime?
+  rejectedAt            DateTime?
+  rejectionReason       String?
+  signatureStatus       SignatureStatus    @default(NOT_REQUESTED)
+  signatureProvider     String?
+  signatureReference    String?
+  signaturePreparedAt   DateTime?
+  signedAt              DateTime?
+  isDeleted             Boolean            @default(false)
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  stage                 Stage              @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  auteur                User               @relation("DocumentAuthor", fields: [auteurId], references: [id], onDelete: Cascade)
+  pdfGenerationJobs     PdfGenerationJob[]
+
+  @@index([stageId, statut])
+  @@index([stageId, isDeleted, statut])
+  @@index([stageId, type])
+  @@index([source, generatedTemplate])
+  @@index([statut, validatedAt])
+}
+
+model PdfGenerationJob {
+  id                String              @id @default(uuid())
+  stageId           String
+  requestedByUserId String
+  template          String
+  status            PdfGenerationStatus @default(PENDING)
+  outputDocumentId  String?
+  payload           Json?
+  errorMessage      String?
+  processedAt       DateTime?
+  createdAt         DateTime            @default(now())
+  updatedAt         DateTime            @updatedAt
+  stage             Stage               @relation(fields: [stageId], references: [id], onDelete: Cascade)
+  outputDocument    Document?           @relation(fields: [outputDocumentId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([stageId, template])
 }
 
 model Notification {
@@ -171,6 +317,42 @@ model Notification {
   destinataire   User     @relation(fields: [destinataireId], references: [id], onDelete: Cascade)
 
   @@index([destinataireId, isRead])
+}
+
+model NotificationPreference {
+  id           String   @id @default(uuid())
+  userId       String
+  eventType    String
+  inAppEnabled Boolean  @default(true)
+  liveEnabled  Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, eventType])
+  @@index([userId])
+}
+
+model NotificationDispatchJob {
+  id                String                     @id @default(uuid())
+  eventType         String
+  title             String
+  message           String
+  link              String?
+  recipientIds      Json
+  status            NotificationDispatchStatus @default(PENDING)
+  attempts          Int                        @default(0)
+  availableAt       DateTime                   @default(now())
+  processedAt       DateTime?
+  lastError         String?
+  triggeredByUserId String?
+  payload           Json?
+  createdAt         DateTime                   @default(now())
+  updatedAt         DateTime                   @updatedAt
+  triggeredBy       User?                      @relation("NotificationJobTriggeredBy", fields: [triggeredByUserId], references: [id], onDelete: SetNull)
+
+  @@index([status, availableAt])
+  @@index([triggeredByUserId])
 }
 
 model AuditLog {
@@ -202,4 +384,47 @@ model Presence {
   stage           Stage          @relation(fields: [stageId], references: [id], onDelete: Cascade)
 
   @@unique([stageId, date])
+}
+
+model GithubConnection {
+  id             String            @id @default(uuid())
+  stagiaireId    String            @unique
+  username       String
+  githubUserId   String?           @unique
+  profileUrl     String
+  avatarUrl      String?
+  linkedByUserId String?
+  lastSyncAt     DateTime?
+  lastSyncStatus GithubSyncStatus?
+  lastSyncError  String?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  stagiaire      Stagiaire         @relation(fields: [stagiaireId], references: [id], onDelete: Cascade)
+  linkedBy       User?             @relation("GithubLinkedBy", fields: [linkedByUserId], references: [id], onDelete: SetNull)
+  syncLogs       GithubSyncLog[]
+
+  @@index([username])
+}
+
+model GithubSyncLog {
+  id                String           @id @default(uuid())
+  connectionId      String
+  stageId           String?
+  triggeredByUserId String
+  status            GithubSyncStatus
+  repositoriesCount Int              @default(0)
+  commitsCount      Int              @default(0)
+  pullRequestsCount Int              @default(0)
+  issuesCount       Int              @default(0)
+  synchronizedAt    DateTime         @default(now())
+  durationMs        Int?
+  errorMessage      String?
+  payload           Json?
+  connection        GithubConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  stage             Stage?           @relation(fields: [stageId], references: [id], onDelete: SetNull)
+  triggeredBy       User             @relation("GithubSyncTriggeredBy", fields: [triggeredByUserId], references: [id], onDelete: Cascade)
+
+  @@index([connectionId, synchronizedAt])
+  @@index([triggeredByUserId, synchronizedAt])
+  @@index([stageId, synchronizedAt])
 }

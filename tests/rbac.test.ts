@@ -12,9 +12,19 @@ describe("rbac helpers", () => {
 
   it("applies access rules by role", () => {
     expect(canAccessPath("/dashboard", "STAGIAIRE")).toBe(true);
+    expect(canAccessPath("/analytics", "ADMIN")).toBe(true);
+    expect(canAccessPath("/analytics", "ENCADRANT")).toBe(true);
+    expect(canAccessPath("/analytics", "STAGIAIRE")).toBe(false);
     expect(canAccessPath("/rapports", "ENCADRANT")).toBe(true);
     expect(canAccessPath("/notifications", "RH")).toBe(true);
+    expect(canAccessPath("/evaluations", "STAGIAIRE")).toBe(true);
+    expect(canAccessPath("/evaluations/eval-1", "ENCADRANT")).toBe(true);
+    expect(canAccessPath("/documents", "STAGIAIRE")).toBe(true);
+    expect(canAccessPath("/documents/doc-1", "ENCADRANT")).toBe(true);
     expect(canAccessPath("/stagiaires", "STAGIAIRE")).toBe(false);
+    expect(canAccessPath("/stagiaires/stagiaire-1/github", "STAGIAIRE")).toBe(false);
+    expect(canAccessPath("/stagiaires/stagiaire-1/github", "ENCADRANT")).toBe(false);
+    expect(canAccessPath("/stagiaires/stagiaire-1/github", "RH")).toBe(true);
     expect(canAccessPath("/stages", "STAGIAIRE")).toBe(false);
     expect(canAccessPath("/stages", "ENCADRANT")).toBe(true);
   });

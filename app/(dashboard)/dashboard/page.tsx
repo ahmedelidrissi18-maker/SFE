@@ -2,6 +2,7 @@ import Link from "next/link";
 import { FileClock, FolderKanban, ShieldCheck, TimerReset, Users } from "lucide-react";
 import { Role } from "@prisma/client";
 import { auth } from "@/auth";
+import { LiveNotificationsListener } from "@/components/features/notifications/live-notifications-listener";
 import { EmptyState } from "@/components/ui/empty-state";
 import { MetricCard } from "@/components/ui/metric-card";
 import { PageHeader } from "@/components/ui/page-header";
@@ -255,6 +256,7 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
+      <LiveNotificationsListener />
       <PageHeader
         eyebrow="Dashboard"
         title="Pilotage en temps reel de la V1"
