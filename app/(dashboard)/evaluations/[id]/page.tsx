@@ -12,6 +12,7 @@ import { EvaluationReviewForm } from "@/components/features/evaluations/evaluati
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FeedbackBanner } from "@/components/ui/feedback-banner";
+import { MetricCard } from "@/components/ui/metric-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
 import {
@@ -55,6 +56,21 @@ function formatDateTime(date: Date) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
+}
+
+function getEvaluationNextActionLabel(status: string) {
+  switch (status) {
+    case "BROUILLON":
+      return "Completer la grille puis soumettre l evaluation a validation.";
+    case "SOUMIS":
+      return "Attendre la decision RH sur l evaluation soumise.";
+    case "RETOURNE":
+      return "Mettre a jour l evaluation en tenant compte du retour RH.";
+    case "VALIDE":
+      return "Le cycle de validation est termine pour cette evaluation.";
+    default:
+      return "Consulter l historique pour verifier la prochaine etape.";
+  }
 }
 
 export default async function EvaluationDetailPage({
@@ -148,20 +164,41 @@ export default async function EvaluationDetailPage({
     description: definition.description,
     criteria: definition.criteria,
   }));
+  const encadrantLabel = evaluation.stage.encadrant
+    ? `${evaluation.stage.encadrant.prenom} ${evaluation.stage.encadrant.nom}`.trim()
+    : "Non affecte";
+  const nextActionLabel = getEvaluationNextActionLabel(evaluation.status);
 
   return (
     <div className="space-y-8">
       {success === "saved" ? (
-        <FeedbackBanner message="L evaluation a ete enregistree." />
+        <FeedbackBanner
+          title="Evaluation enregistree"
+          message="L evaluation a ete enregistree."
+          description="Vous pouvez encore l ajuster avant sa soumission a validation."
+        />
       ) : null}
       {success === "submitted" ? (
-        <FeedbackBanner message="L evaluation a ete soumise a validation." />
+        <FeedbackBanner
+          title="Evaluation soumise"
+          message="L evaluation a ete soumise a validation."
+          description="Elle est maintenant visible dans le circuit de revue RH."
+        />
       ) : null}
       {success === "validated" ? (
-        <FeedbackBanner message="L evaluation a ete validee." />
+        <FeedbackBanner
+          title="Evaluation validee"
+          message="L evaluation a ete validee."
+          description="Le resultat final est maintenant stabilise pour ce jalon de stage."
+        />
       ) : null}
       {success === "returned" ? (
-        <FeedbackBanner message="L evaluation a ete retournee avec commentaire RH." />
+        <FeedbackBanner
+          kind="warning"
+          title="Evaluation retournee"
+          message="L evaluation a ete retournee avec commentaire RH."
+          description="Le commentaire RH est disponible plus bas pour guider la reprise."
+        />
       ) : null}
 
       <PageHeader
@@ -182,28 +219,30 @@ export default async function EvaluationDetailPage({
       />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Card>
-          <p className="text-sm text-muted">Score</p>
-          <p className="mt-3 text-3xl font-semibold tracking-tight">
-            {evaluation.totalScore}/{evaluation.maxScore}
-          </p>
-        </Card>
-        <Card>
-          <p className="text-sm text-muted">Planifiee le</p>
-          <p className="mt-3 text-sm font-medium">{formatDate(evaluation.scheduledFor)}</p>
-        </Card>
-        <Card>
-          <p className="text-sm text-muted">Encadrant</p>
-          <p className="mt-3 text-sm font-medium">
-            {evaluation.stage.encadrant
-              ? `${evaluation.stage.encadrant.prenom} ${evaluation.stage.encadrant.nom}`.trim()
-              : "Non affecte"}
-          </p>
-        </Card>
-        <Card>
-          <p className="text-sm text-muted">Derniere mise a jour</p>
-          <p className="mt-3 text-sm font-medium">{formatDate(evaluation.updatedAt)}</p>
-        </Card>
+        <MetricCard
+          label="Score"
+          value={`${evaluation.totalScore}/${evaluation.maxScore}`}
+          helper="Note globale calculee sur la grille active"
+          accent={<ClipboardCheck className="h-5 w-5" />}
+        />
+        <MetricCard
+          label="Statut"
+          value={<StatusBadge status={getEvaluationStatusLabel(evaluation.status)} />}
+          helper="Etat actuel dans le workflow de validation"
+          accent={<CheckCircle2 className="h-5 w-5" />}
+        />
+        <MetricCard
+          label="Planifiee le"
+          value={formatDate(evaluation.scheduledFor)}
+          helper="Date cible de realisation de l evaluation"
+          accent={<History className="h-5 w-5" />}
+        />
+        <MetricCard
+          label="Revisions"
+          value={evaluation.revisions.length}
+          helper={`${encadrantLabel}, prochaine action : ${nextActionLabel}`}
+          accent={<MessageSquareQuote className="h-5 w-5" />}
+        />
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
@@ -211,6 +250,35 @@ export default async function EvaluationDetailPage({
           <div>
             <p className="text-sm font-medium text-primary">Historique</p>
             <h2 className="mt-1 text-2xl font-semibold tracking-tight">Revisions et transitions</h2>
+            <p className="mt-2 text-sm leading-6 text-muted">
+              Visualisez le contexte de stage et les changements qui ont conduit au statut actuel.
+            </p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-[22px] border border-border bg-background p-4">
+              <p className="text-sm text-muted">Stagiaire</p>
+              <p className="mt-2 text-sm font-medium">
+                {`${evaluation.stage.stagiaire.user.prenom} ${evaluation.stage.stagiaire.user.nom}`.trim()}
+              </p>
+            </div>
+            <div className="rounded-[22px] border border-border bg-background p-4">
+              <p className="text-sm text-muted">Encadrant</p>
+              <p className="mt-2 text-sm font-medium">{encadrantLabel}</p>
+            </div>
+            <div className="rounded-[22px] border border-border bg-background p-4">
+              <p className="text-sm text-muted">Stage</p>
+              <p className="mt-2 text-sm font-medium">{evaluation.stage.sujet}</p>
+            </div>
+            <div className="rounded-[22px] border border-border bg-background p-4">
+              <p className="text-sm text-muted">Planifiee le</p>
+              <p className="mt-2 text-sm font-medium">{formatDate(evaluation.scheduledFor)}</p>
+            </div>
+          </div>
+
+          <div className="rounded-[22px] border border-primary/15 bg-primary/5 p-4">
+            <p className="text-sm font-medium text-primary">Action attendue</p>
+            <p className="mt-2 text-sm leading-6 text-foreground">{nextActionLabel}</p>
           </div>
 
           {evaluation.revisions.length > 0 ? (
@@ -294,6 +362,9 @@ export default async function EvaluationDetailPage({
             <div>
               <p className="text-sm font-medium text-primary">Grille</p>
               <h2 className="mt-1 text-2xl font-semibold tracking-tight">Detail de l evaluation</h2>
+              <p className="mt-2 text-sm leading-6 text-muted">
+                Chaque critere affiche son score, son commentaire et la synthese consolidee.
+              </p>
             </div>
 
             <div className="space-y-4">

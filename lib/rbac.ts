@@ -14,6 +14,7 @@ const protectedRouteRules: Array<{ prefix: string; roles: UserRole[] }> = [
   { prefix: "/evaluations", roles: ["ADMIN", "RH", "ENCADRANT", "STAGIAIRE"] },
   { prefix: "/documents", roles: ["ADMIN", "RH", "ENCADRANT", "STAGIAIRE"] },
   { prefix: "/notifications", roles: ["ADMIN", "RH", "ENCADRANT", "STAGIAIRE"] },
+  { prefix: "/securite", roles: ["ADMIN", "RH"] },
 ];
 
 export function isPublicRoute(pathname: string) {

@@ -4,6 +4,7 @@ import { DocumentType } from "@prisma/client";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import type { DocumentActionState } from "@/app/(dashboard)/documents/actions";
+import { FeedbackBanner } from "@/components/ui/feedback-banner";
 import { getDocumentTypeLabel } from "@/lib/documents";
 
 type DocumentUploadFormProps = {
@@ -53,13 +54,19 @@ export function DocumentUploadForm({ stageId, action }: DocumentUploadFormProps)
         </p>
       </div>
 
+      <FeedbackBanner
+        kind="info"
+        title="Depot manuel"
+        message="Choisissez la bonne categorie puis televersez le fichier a associer au stage."
+      />
+
       <div className="grid gap-4 md:grid-cols-2">
         <label className="space-y-2 text-sm">
           <span className="font-medium">Categorie</span>
           <select
             name="type"
             defaultValue={DocumentType.CONVENTION}
-            className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+            className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
           >
             {manualDocumentTypes.map((type) => (
               <option key={type} value={type}>
@@ -67,6 +74,9 @@ export function DocumentUploadForm({ stageId, action }: DocumentUploadFormProps)
               </option>
             ))}
           </select>
+          <p className="text-xs leading-5 text-muted">
+            La categorie determine le classement et le workflow applique au document.
+          </p>
         </label>
 
         <label className="space-y-2 text-sm">
@@ -74,15 +84,17 @@ export function DocumentUploadForm({ stageId, action }: DocumentUploadFormProps)
           <input
             name="file"
             type="file"
-            className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-primary"
+            accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+            className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
           />
+          <p className="text-xs leading-5 text-muted">
+            Selectionnez un fichier unique. Le depot sera rattache au stage courant.
+          </p>
         </label>
       </div>
 
       {state.error ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {state.error}
-        </div>
+        <FeedbackBanner kind="error" title="Televersement impossible" message={state.error} />
       ) : null}
 
       <SubmitButton />

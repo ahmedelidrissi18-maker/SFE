@@ -13,11 +13,20 @@ Le format suit Keep a Changelog et SemVer.
 - rapport global de l application : `docs/rapport-global-application.md`
 - runbook release V2 initial : `docs/release-v2.md`
 - plan rollback V2 initial : `docs/rollback-v2.md`
+- migration SQL Sprint 6 : `prisma/migrations/0008_security_hardening/migration.sql`
+- module de securite compte : `app/(dashboard)/securite/page.tsx`
+- actions serveur 2FA : `app/(dashboard)/securite/actions.ts`
+- helpers securite Sprint 6 : `lib/security/password-policy.ts`, `lib/security/rate-limit.ts`, `lib/security/request.ts`, `lib/security/two-factor.ts`
+- tests Sprint 6 : `tests/auth-validation.test.ts`, `tests/password-policy.test.ts`, `tests/rate-limit.test.ts`, `tests/two-factor.test.ts`
 
 ### Changed
 
 - README complete avec l ouverture du Sprint 6
 - plan V2 complete avec le statut courant du Sprint 6
+- authentification credentials durcie avec 2FA TOTP optionnel pour `ADMIN` et `RH`
+- session NextAuth reduite a 8 h avec rotation plus frequente
+- endpoints sensibles proteges par limitation de debit cote serveur
+- dashboard et navigation enrichis avec le module `/securite`
 
 ## [Sprint 5 - 2026-04-13]
 

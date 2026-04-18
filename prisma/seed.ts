@@ -125,6 +125,13 @@ async function main() {
       role: Role.ADMIN,
     },
     {
+      id: "user-admin-2",
+      prenom: "Samir",
+      nom: "El Mansouri",
+      email: "admin2@stagiaires.local",
+      role: Role.ADMIN,
+    },
+    {
       id: "user-rh-1",
       prenom: "Salma",
       nom: "Alaoui",

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import type { StageActionState } from "@/app/(dashboard)/stages/actions";
+import { FeedbackBanner } from "@/components/ui/feedback-banner";
 import { getStageStatusLabel } from "@/lib/stages";
 import type { StageFormValues } from "@/lib/validations/stage";
 
@@ -47,12 +48,16 @@ function Field({
   type = "text",
   defaultValue,
   required = false,
+  hint,
+  placeholder,
 }: {
   label: string;
   name: string;
   type?: string;
   defaultValue?: string;
   required?: boolean;
+  hint?: string;
+  placeholder?: string;
 }) {
   return (
     <label className="space-y-2 text-sm">
@@ -62,8 +67,10 @@ function Field({
         type={type}
         defaultValue={defaultValue}
         required={required}
-        className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+        placeholder={placeholder}
+        className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
       />
+      {hint ? <p className="text-xs leading-5 text-muted">{hint}</p> : null}
     </label>
   );
 }
@@ -95,6 +102,20 @@ export function StageForm({
       >
         <input type="hidden" name="stageId" value={defaultValues?.stageId ?? ""} />
 
+        <FeedbackBanner
+          kind="info"
+          title="Cadre de suivi"
+          message="Renseignez un stage clair et exploitable pour le pilotage, les rapports hebdomadaires et les documents."
+          description="L encadrant est optionnel au depart, mais utile pour les revues et les notifications."
+        />
+
+        <section className="space-y-2">
+          <p className="text-sm font-medium text-primary">Affectation</p>
+          <p className="text-sm leading-6 text-muted">
+            Associez le stage au bon stagiaire puis choisissez, si besoin, un encadrant.
+          </p>
+        </section>
+
         <section className="grid gap-4 md:grid-cols-2">
           <label className="space-y-2 text-sm">
             <span className="font-medium">Stagiaire</span>
@@ -102,7 +123,7 @@ export function StageForm({
               name="stagiaireId"
               defaultValue={defaultValues?.stagiaireId}
               disabled={lockStagiaire}
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary disabled:opacity-70"
+              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 disabled:opacity-70"
             >
               <option value="">Selectionner un stagiaire</option>
               {stagiaires.map((stagiaire) => (
@@ -122,7 +143,7 @@ export function StageForm({
             <select
               name="encadrantId"
               defaultValue={defaultValues?.encadrantId}
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
             >
               <option value="">Non affecte</option>
               {encadrants.map((encadrant) => (
@@ -139,6 +160,7 @@ export function StageForm({
             type="date"
             defaultValue={defaultValues?.dateDebut}
             required
+            hint="La date de debut sert aux calculs de periode et aux vues de planning."
           />
           <Field
             label="Date de fin"
@@ -146,6 +168,7 @@ export function StageForm({
             type="date"
             defaultValue={defaultValues?.dateFin}
             required
+            hint="La date de fin alimente les echeances et les alertes de suivi."
           />
 
           <Field
@@ -153,6 +176,7 @@ export function StageForm({
             name="departement"
             defaultValue={defaultValues?.departement}
             required
+            placeholder="Infrastructure, RH, Data..."
           />
 
           <label className="space-y-2 text-sm">
@@ -160,7 +184,7 @@ export function StageForm({
             <select
               name="statut"
               defaultValue={defaultValues?.statut ?? StageStatus.PLANIFIE}
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
             >
               {Object.values(StageStatus).map((status) => (
                 <option key={status} value={status}>
@@ -171,6 +195,13 @@ export function StageForm({
           </label>
         </section>
 
+        <section className="space-y-2">
+          <p className="text-sm font-medium text-primary">Contenu du stage</p>
+          <p className="text-sm leading-6 text-muted">
+            Detaillez le sujet du stage et, si disponible, le depot GitHub associe.
+          </p>
+        </section>
+
         <section className="grid gap-4">
           <label className="space-y-2 text-sm">
             <span className="font-medium">Sujet</span>
@@ -178,8 +209,11 @@ export function StageForm({
               name="sujet"
               defaultValue={defaultValues?.sujet}
               rows={5}
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
             />
+            <p className="text-xs leading-5 text-muted">
+              Decrivez le sujet de facon concise pour faciliter la lecture des fiches et des rapports.
+            </p>
           </label>
 
           <Field
@@ -187,13 +221,13 @@ export function StageForm({
             name="githubRepo"
             type="url"
             defaultValue={defaultValues?.githubRepo}
+            placeholder="https://github.com/organisation/projet"
+            hint="Optionnel. Cette URL sera utilisee pour le suivi technique si le depot existe."
           />
         </section>
 
         {state.error ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {state.error}
-          </div>
+          <FeedbackBanner kind="error" title="Enregistrement impossible" message={state.error} />
         ) : null}
 
         <div className="flex flex-wrap items-center gap-3">

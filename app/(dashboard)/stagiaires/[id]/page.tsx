@@ -134,28 +134,60 @@ export default async function StagiaireDetailPage({
   return (
     <div className="space-y-8">
       {success === "updated" ? (
-        <FeedbackBanner message="La fiche stagiaire a ete mise a jour avec succes." />
+        <FeedbackBanner
+          title="Fiche mise a jour"
+          message="La fiche stagiaire a ete mise a jour avec succes."
+          description="Les informations de suivi sont maintenant rafraichies sur l ensemble de la fiche."
+        />
       ) : null}
       {success === "archived" ? (
-        <FeedbackBanner message="Le compte du stagiaire a ete archive." />
+        <FeedbackBanner
+          title="Compte archive"
+          message="Le compte du stagiaire a ete archive."
+          description="La fiche reste visible pour le suivi, mais l acces de connexion est desactive."
+        />
       ) : null}
       {success === "restored" ? (
-        <FeedbackBanner message="Le compte du stagiaire a ete reactive." />
+        <FeedbackBanner
+          title="Compte reactive"
+          message="Le compte du stagiaire a ete reactive."
+          description="Le stagiaire peut de nouveau acceder a la plateforme si ses autres droits sont en place."
+        />
       ) : null}
       {success === "stage-created" ? (
-        <FeedbackBanner message="Le stage a ete cree avec succes." />
+        <FeedbackBanner
+          title="Stage cree"
+          message="Le stage a ete cree avec succes."
+          description="Le perimetre de suivi est maintenant disponible sur cette fiche."
+        />
       ) : null}
       {success === "stage-updated" ? (
-        <FeedbackBanner message="Le stage a ete mis a jour avec succes." />
+        <FeedbackBanner
+          title="Stage mis a jour"
+          message="Le stage a ete mis a jour avec succes."
+          description="Les informations de contexte et de supervision ont ete actualisees."
+        />
       ) : null}
       {success === "document-uploaded" ? (
-        <FeedbackBanner message="Le document a ete ajoute avec succes." />
+        <FeedbackBanner
+          title="Document ajoute"
+          message="Le document a ete ajoute avec succes."
+          description="Il apparait maintenant dans la section documentaire de cette fiche."
+        />
       ) : null}
       {success === "github-linked" ? (
-        <FeedbackBanner message="Le compte GitHub a ete lie avec succes." />
+        <FeedbackBanner
+          title="Compte GitHub lie"
+          message="Le compte GitHub a ete lie avec succes."
+          description="Le suivi des synchronisations GitHub est maintenant disponible sur la fiche."
+        />
       ) : null}
       {success === "github-synced" ? (
-        <FeedbackBanner message="La synchronisation GitHub a ete executee avec succes." />
+        <FeedbackBanner
+          title="Synchronisation terminee"
+          message="La synchronisation GitHub a ete executee avec succes."
+          description="Les derniers indicateurs GitHub viennent d etre mis a jour."
+        />
       ) : null}
       {githubErrorMessage ? (
         <FeedbackBanner kind="error" message={githubErrorMessage} />
@@ -222,15 +254,22 @@ export default async function StagiaireDetailPage({
               <h2 className="text-2xl font-semibold tracking-tight">
                 {`${stagiaire.user.prenom} ${stagiaire.user.nom}`.trim()}
               </h2>
-              <p className="text-sm text-muted">{stagiaire.specialite ?? "Specialite non renseignee"}</p>
+              <p className="text-sm text-muted">
+                {stagiaire.specialite ?? "Specialite non renseignee"}
+              </p>
+              <p className="text-sm leading-6 text-muted">
+                {latestStage
+                  ? `Stage ${getStageStatusLabel(latestStage.statut).toLowerCase()} dans ${latestStage.departement}.`
+                  : "Aucun stage n est encore rattache a cette fiche."}
+              </p>
             </div>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
             <DetailItem label="Email" value={stagiaire.user.email} />
             <DetailItem label="Telephone" value={stagiaire.telephone ?? "Non renseigne"} />
-            <DetailItem label="Etablissement" value={stagiaire.etablissement ?? "Non renseigne"} />
-            <DetailItem label="Niveau" value={stagiaire.niveau ?? "Non renseigne"} />
+            <DetailItem label="Sujet du stage" value={latestStage?.sujet ?? "Aucun stage rattache"} />
+            <DetailItem label="Encadrant actuel" value={latestStageInfo.encadrant} />
           </div>
         </Card>
 
@@ -254,9 +293,9 @@ export default async function StagiaireDetailPage({
             accent={<FileText className="h-5 w-5" />}
           />
           <MetricCard
-            label="Rapports recents"
-            value={latestStage?.rapports.length ?? 0}
-            helper="Trois derniers rapports visibles sur la fiche"
+            label="Evaluations"
+            value={latestStage?.evaluations.length ?? 0}
+            helper="Evaluations planifiees ou historisees sur ce stage"
             accent={<GraduationCap className="h-5 w-5" />}
           />
         </section>
@@ -267,6 +306,9 @@ export default async function StagiaireDetailPage({
           <div>
             <p className="text-sm font-medium text-primary">Informations personnelles</p>
             <h2 className="mt-1 text-2xl font-semibold tracking-tight">Identite et contact</h2>
+            <p className="mt-2 text-sm leading-6 text-muted">
+              Retrouvez les informations de contact et les elements administratifs utiles au suivi.
+            </p>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <DetailItem label="Nom" value={stagiaire.user.nom} />
@@ -274,7 +316,7 @@ export default async function StagiaireDetailPage({
             <DetailItem label="CIN" value={stagiaire.cin} />
             <DetailItem label="Date de naissance" value={formatDate(stagiaire.dateNaissance)} />
             <DetailItem label="Telephone" value={stagiaire.telephone ?? "Non renseigne"} />
-            <DetailItem label="Photo URL" value={stagiaire.photoUrl ?? "Non renseignee"} />
+            <DetailItem label="Email" value={stagiaire.user.email} />
           </div>
         </Card>
 
@@ -282,6 +324,10 @@ export default async function StagiaireDetailPage({
           <div>
             <p className="text-sm font-medium text-primary">Informations academiques</p>
             <h2 className="mt-1 text-2xl font-semibold tracking-tight">Parcours et rattachement</h2>
+            <p className="mt-2 text-sm leading-6 text-muted">
+              Cette zone regroupe l etablissement, le niveau et les informations de cadrage du
+              stage courant.
+            </p>
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <DetailItem label="Etablissement" value={stagiaire.etablissement ?? "Non renseigne"} />
@@ -442,6 +488,10 @@ export default async function StagiaireDetailPage({
             <div>
               <p className="text-sm font-medium text-primary">Rapports</p>
               <h2 className="mt-1 text-2xl font-semibold tracking-tight">Derniers rapports du stage</h2>
+              <p className="mt-2 text-sm leading-6 text-muted">
+                Les derniers rapports restent accessibles ici pour suivre l avancement et les
+                retours d encadrement sans quitter la fiche.
+              </p>
             </div>
 
             {latestStage.rapports.length > 0 ? (
@@ -485,14 +535,18 @@ export default async function StagiaireDetailPage({
               <div>
                 <p className="text-sm font-medium text-primary">Documents</p>
                 <h2 className="mt-1 text-2xl font-semibold tracking-tight">Pieces associees</h2>
+                <p className="mt-2 text-sm leading-6 text-muted">
+                  Consultez rapidement les documents attaches au stage et leur statut de traitement.
+                </p>
               </div>
 
               {latestStage.documents.length > 0 ? (
                 <div className="space-y-3">
                   {latestStage.documents.map((document) => (
-                    <div
+                    <Link
                       key={document.id}
-                      className="rounded-[22px] border border-border bg-background p-4"
+                      href={`/documents/${document.id}`}
+                      className="block rounded-[22px] border border-border bg-background p-4 transition hover:border-primary/40"
                     >
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div className="space-y-1">
@@ -509,15 +563,10 @@ export default async function StagiaireDetailPage({
 
                         <div className="flex flex-col items-start gap-3 sm:items-end">
                           <StatusBadge status={getDocumentStatusLabel(document.statut)} />
-                          <Link
-                            href={`/documents/${document.id}`}
-                            className="text-sm font-semibold text-primary hover:underline"
-                          >
-                            Ouvrir
-                          </Link>
+                          <span className="text-sm font-semibold text-primary">Ouvrir le document</span>
                         </div>
                       </div>
-                    </div>
+                    </Link>
                   ))}
                 </div>
               ) : (

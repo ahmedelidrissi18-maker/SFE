@@ -58,6 +58,12 @@ Configuration GitHub optionnelle pour le debut du Sprint 1 :
 - `GITHUB_API_BASE_URL` : utile si vous ciblez un GitHub Enterprise
 - `GITHUB_CLIENT_ID` et `GITHUB_CLIENT_SECRET` : reserves au branchement OAuth complet
 
+Configuration securite Sprint 6 :
+
+- `TWO_FACTOR_ISSUER` : libelle affiche dans l application d authentification
+- `TWO_FACTOR_ENCRYPTION_SECRET` : secret dedie au chiffrement des secrets 2FA
+  - si vide, `NEXTAUTH_SECRET` est reutilise
+
 Application :
 
 - Frontend : `http://localhost:3000`
@@ -264,17 +270,27 @@ Pour activer le lot completement :
 
 ## Avancement Sprint 6
 
-Le Sprint 6 est lance avec un premier lot de cadrage release :
+Le Sprint 6 couvre maintenant un lot fonctionnel de hardening securite :
 
 - rapport global centralise de l application : `docs/rapport-global-application.md`
-- runbook release initial : `docs/release-v2.md`
-- plan rollback initial : `docs/rollback-v2.md`
+- runbook release V2 : `docs/release-v2.md`
+- plan rollback V2 : `docs/rollback-v2.md`
+- page securite `/securite` pour `ADMIN` et `RH`
+- 2FA TOTP active pour les profils sensibles quand configuree
+- protection anti brute-force sur le login et plusieurs routes sensibles
+- durcissement de session NextAuth avec fenetre reduite et rotation plus frequente
+- couverture Vitest Sprint 6 sur 2FA, rate limit, validation auth et route sensible
 
-Priorites Sprint 6 :
+Priorites Sprint 6 restantes :
 
-- hardening securite de l authentification et des sessions
 - finalisation de la non-regression et des tests critiques V2
-- preparation de la release V2 et rehearsal de rollback
+- rehearsal de rollback et validation go/no-go
+
+Pour activer ce lot completement :
+
+- appliquer la migration Prisma `0008_security_hardening`
+- definir `NEXTAUTH_SECRET` en production
+- definir `TWO_FACTOR_ENCRYPTION_SECRET` en production si vous ne souhaitez pas reutiliser `NEXTAUTH_SECRET`
 
 ## Branching et versioning V2
 

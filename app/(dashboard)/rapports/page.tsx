@@ -20,6 +20,21 @@ function getStringParam(value?: string | string[]) {
   return Array.isArray(value) ? value[0] : value;
 }
 
+function getRapportNextActionLabel(status: string) {
+  switch (status) {
+    case "BROUILLON":
+      return "Completer puis soumettre le rapport.";
+    case "SOUMIS":
+      return "En attente de relecture encadrant.";
+    case "RETOURNE":
+      return "Correction attendue avant nouvelle soumission.";
+    case "VALIDE":
+      return "Aucune action attendue, rapport cloture.";
+    default:
+      return "Verifier le detail du rapport.";
+  }
+}
+
 export default async function RapportsPage({ searchParams }: RapportsPageProps) {
   const session = await auth();
 
@@ -101,20 +116,37 @@ export default async function RapportsPage({ searchParams }: RapportsPageProps) 
     userRole === "STAGIAIRE"
       ? "Retrouvez l historique de vos rapports, leur statut et l avancement declare pour votre stage."
       : "Consultez les rapports, identifiez ceux qui exigent une action et suivez le cycle de validation de bout en bout.";
+  const hasActiveFilters = Boolean(statut);
 
   return (
     <div className="space-y-8">
       {success === "saved" ? (
-        <FeedbackBanner message="Le rapport a ete enregistre en brouillon." />
+        <FeedbackBanner
+          title="Brouillon enregistre"
+          message="Le rapport a ete enregistre en brouillon."
+          description="Vous pouvez revenir plus tard pour le completer avant soumission."
+        />
       ) : null}
       {success === "submitted" ? (
-        <FeedbackBanner message="Le rapport a ete soumis avec succes." />
+        <FeedbackBanner
+          title="Rapport soumis"
+          message="Le rapport a ete soumis avec succes."
+          description="Il est maintenant disponible pour relecture dans le workflow de validation."
+        />
       ) : null}
       {success === "validated" ? (
-        <FeedbackBanner message="Le rapport a ete valide." />
+        <FeedbackBanner
+          title="Rapport valide"
+          message="Le rapport a ete valide."
+          description="Le cycle hebdomadaire correspondant est cloture pour ce rapport."
+        />
       ) : null}
       {success === "returned" ? (
-        <FeedbackBanner message="Le rapport a ete retourne au stagiaire." />
+        <FeedbackBanner
+          title="Rapport retourne"
+          message="Le rapport a ete retourne au stagiaire."
+          description="Un ajustement est attendu avant une nouvelle soumission."
+        />
       ) : null}
 
       <PageHeader
@@ -164,6 +196,9 @@ export default async function RapportsPage({ searchParams }: RapportsPageProps) 
         <div>
           <p className="text-sm font-medium text-primary">Filtres</p>
           <h2 className="mt-1 text-2xl font-semibold tracking-tight">Trouver un statut</h2>
+          <p className="mt-2 text-sm leading-6 text-muted">
+            Utilisez ce filtre pour isoler rapidement les brouillons, les rapports soumis ou les retours a traiter.
+          </p>
         </div>
         <form className="flex flex-wrap items-end gap-3">
           <label className="space-y-2 text-sm">
@@ -185,13 +220,13 @@ export default async function RapportsPage({ searchParams }: RapportsPageProps) 
             type="submit"
             className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
           >
-            Appliquer
+            Appliquer les filtres
           </button>
           <Link
             href="/rapports"
             className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary"
           >
-            Reinitialiser
+            Revenir a la liste complete
           </Link>
         </form>
       </Card>
@@ -230,8 +265,18 @@ export default async function RapportsPage({ searchParams }: RapportsPageProps) 
 
                     <div className="grid gap-4 md:grid-cols-3">
                       <div className="rounded-[22px] border border-border bg-background p-4">
+                        <p className="text-sm text-muted">
+                          {rapport.commentaireEncadrant ? "Retour encadrant" : "Action attendue"}
+                        </p>
+                        <p className="mt-2 line-clamp-2 text-sm font-medium">
+                          {rapport.commentaireEncadrant ?? getRapportNextActionLabel(rapport.statut)}
+                        </p>
+                      </div>
+                      <div className="rounded-[22px] border border-border bg-background p-4">
                         <p className="text-sm text-muted">Soumis le</p>
-                        <p className="mt-2 text-sm font-medium">{formatDate(rapport.dateSoumission)}</p>
+                        <p className="mt-2 text-sm font-medium">
+                          {rapport.dateSoumission ? formatDate(rapport.dateSoumission) : "Non soumis"}
+                        </p>
                       </div>
                       <div className="rounded-[22px] border border-border bg-background p-4">
                         <p className="text-sm text-muted">Encadrant</p>
@@ -239,12 +284,6 @@ export default async function RapportsPage({ searchParams }: RapportsPageProps) 
                           {rapport.stage.encadrant
                             ? `${rapport.stage.encadrant.prenom} ${rapport.stage.encadrant.nom}`.trim()
                             : "Non affecte"}
-                        </p>
-                      </div>
-                      <div className="rounded-[22px] border border-border bg-background p-4">
-                        <p className="text-sm text-muted">Commentaire</p>
-                        <p className="mt-2 line-clamp-2 text-sm font-medium">
-                          {rapport.commentaireEncadrant ?? "Aucun commentaire encadrant pour le moment."}
                         </p>
                       </div>
                     </div>
@@ -256,10 +295,31 @@ export default async function RapportsPage({ searchParams }: RapportsPageProps) 
         </div>
       ) : (
         <EmptyState
-          title="Aucun rapport pour ce filtre"
-          description="Aucun rapport ne correspond aux criteres actuels. Elargissez le filtre ou creez un nouveau rapport si votre stage est actif."
-          actionHref={userRole === "STAGIAIRE" && activeStage ? "/rapports/nouveau" : "/rapports"}
-          actionLabel={userRole === "STAGIAIRE" && activeStage ? "Creer un rapport" : "Voir tous les rapports"}
+          eyebrow="Rapports"
+          title={hasActiveFilters ? "Aucun rapport ne correspond a ce statut" : "Aucun rapport visible"}
+          description={
+            hasActiveFilters
+              ? "Elargissez le filtre ou revenez a la liste complete pour retrouver les rapports disponibles."
+              : userRole === "STAGIAIRE" && activeStage
+                ? "Votre stage est actif mais aucun rapport n a encore ete cree pour ce perimetre."
+                : "Aucun rapport n est actuellement visible dans votre perimetre."
+          }
+          actionHref={
+            hasActiveFilters
+              ? "/rapports"
+              : userRole === "STAGIAIRE" && activeStage
+                ? "/rapports/nouveau"
+                : "/dashboard"
+          }
+          actionLabel={
+            hasActiveFilters
+              ? "Voir tous les rapports"
+              : userRole === "STAGIAIRE" && activeStage
+                ? "Creer un rapport"
+                : "Retour au dashboard"
+          }
+          secondaryActionHref={hasActiveFilters && userRole === "STAGIAIRE" && activeStage ? "/rapports/nouveau" : undefined}
+          secondaryActionLabel={hasActiveFilters && userRole === "STAGIAIRE" && activeStage ? "Creer un rapport" : undefined}
         />
       )}
     </div>

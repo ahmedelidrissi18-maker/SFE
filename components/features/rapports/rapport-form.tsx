@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import type { RapportActionState } from "@/app/(dashboard)/rapports/actions";
+import { FeedbackBanner } from "@/components/ui/feedback-banner";
 import type { RapportFormValues } from "@/lib/validations/rapport";
 
 type StageOption = {
@@ -44,7 +45,7 @@ function SubmitButtons() {
         disabled={pending}
         className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
       >
-        {pending ? "Soumission..." : "Soumettre"}
+        {pending ? "Soumission..." : "Soumettre pour relecture"}
       </button>
     </div>
   );
@@ -75,6 +76,12 @@ export function RapportForm({
       >
         <input type="hidden" name="rapportId" value={defaultValues?.rapportId ?? ""} />
 
+        <FeedbackBanner
+          kind="info"
+          title="Deux modes d enregistrement"
+          message="Conservez un brouillon tant que le rapport n est pas pret. Utilisez la soumission lorsque le contenu peut partir en relecture."
+        />
+
         <section className="grid gap-4 md:grid-cols-3">
           <label className="space-y-2 text-sm md:col-span-2">
             <span className="font-medium">Stage</span>
@@ -82,7 +89,7 @@ export function RapportForm({
               name="stageId"
               defaultValue={defaultValues?.stageId}
               disabled={lockStage}
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary disabled:opacity-70"
+              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 disabled:opacity-70"
             >
               <option value="">Selectionner un stage</option>
               {stages.map((stage) => (
@@ -105,8 +112,11 @@ export function RapportForm({
               min={1}
               max={52}
               defaultValue={defaultValues?.semaine}
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
             />
+            <p className="text-xs leading-5 text-muted">
+              Indiquez la semaine de suivi correspondant a ce rapport.
+            </p>
           </label>
         </section>
 
@@ -117,8 +127,11 @@ export function RapportForm({
               name="tachesRealisees"
               defaultValue={defaultValues?.tachesRealisees}
               rows={6}
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
             />
+            <p className="text-xs leading-5 text-muted">
+              Decrivez les taches terminees ou avancees pendant la semaine.
+            </p>
           </label>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -128,8 +141,11 @@ export function RapportForm({
                 name="difficultes"
                 defaultValue={defaultValues?.difficultes}
                 rows={4}
-                className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+                className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
               />
+              <p className="text-xs leading-5 text-muted">
+                Mentionnez les blocages, dependances ou besoins d arbitrage.
+              </p>
             </label>
 
             <label className="space-y-2 text-sm">
@@ -138,8 +154,11 @@ export function RapportForm({
                 name="planSuivant"
                 defaultValue={defaultValues?.planSuivant}
                 rows={4}
-                className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+                className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
               />
+              <p className="text-xs leading-5 text-muted">
+                Expliquez ce qui est prevu sur la prochaine periode de travail.
+              </p>
             </label>
           </div>
 
@@ -151,15 +170,16 @@ export function RapportForm({
               min={0}
               max={100}
               defaultValue={defaultValues?.avancement ?? 0}
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
             />
+            <p className="text-xs leading-5 text-muted">
+              Donnez une estimation globale de progression entre 0 et 100.
+            </p>
           </label>
         </section>
 
         {state.error ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {state.error}
-          </div>
+          <FeedbackBanner kind="error" title="Enregistrement impossible" message={state.error} />
         ) : null}
 
         <div className="flex flex-wrap items-center gap-3">

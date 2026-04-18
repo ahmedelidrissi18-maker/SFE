@@ -51,14 +51,23 @@ export default async function StagesPage({ searchParams }: StagesPageProps) {
     const diff = stage.dateFin.getTime() - now.getTime();
     return diff >= 0 && diff <= 15 * 24 * 60 * 60 * 1000;
   }).length;
+  const hasActiveFilters = Boolean(statut || departement);
 
   return (
     <div className="space-y-8">
       {success === "created" ? (
-        <FeedbackBanner message="Le stage a ete cree avec succes." />
+        <FeedbackBanner
+          title="Stage cree"
+          message="Le stage a ete cree avec succes."
+          description="Le dossier est maintenant disponible pour les rapports, les evaluations et les documents."
+        />
       ) : null}
       {success === "updated" ? (
-        <FeedbackBanner message="Le stage a ete modifie avec succes." />
+        <FeedbackBanner
+          title="Stage mis a jour"
+          message="Le stage a ete modifie avec succes."
+          description="Les nouvelles informations sont prises en compte dans les vues de suivi et les echeances."
+        />
       ) : null}
 
       <PageHeader
@@ -108,6 +117,9 @@ export default async function StagesPage({ searchParams }: StagesPageProps) {
         <div>
           <p className="text-sm font-medium text-primary">Filtres</p>
           <h2 className="mt-1 text-2xl font-semibold tracking-tight">Cibler un perimetre</h2>
+          <p className="mt-2 text-sm leading-6 text-muted">
+            Filtrez par statut ou departement pour retrouver rapidement les stages a suivre.
+          </p>
         </div>
         <form className="grid gap-4 md:grid-cols-3">
           <label className="space-y-2 text-sm">
@@ -141,13 +153,13 @@ export default async function StagesPage({ searchParams }: StagesPageProps) {
               type="submit"
               className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
             >
-              Appliquer
+              Appliquer les filtres
             </button>
             <Link
               href="/stages"
               className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary"
             >
-              Reinitialiser
+              Revenir a la liste complete
             </Link>
           </div>
         </form>
@@ -218,10 +230,29 @@ export default async function StagesPage({ searchParams }: StagesPageProps) {
         </div>
       ) : (
         <EmptyState
-          title="Aucun stage a afficher"
-          description="Aucun stage ne correspond aux filtres actuels. Essayez un autre statut ou revenez a la liste complete."
-          actionHref="/stages"
-          actionLabel="Voir tous les stages"
+          eyebrow="Stages"
+          title={hasActiveFilters ? "Aucun stage ne correspond a ces filtres" : "Aucun stage a afficher"}
+          description={
+            hasActiveFilters
+              ? "Essayez un autre statut ou revenez a la liste complete pour retrouver des stages visibles."
+              : session?.user.role !== "ENCADRANT"
+                ? "Creez un premier stage depuis une fiche stagiaire pour lancer le suivi."
+                : "Aucun stage n est actuellement visible dans votre perimetre d encadrement."
+          }
+          actionHref={
+            hasActiveFilters
+              ? "/stages"
+              : session?.user.role !== "ENCADRANT"
+                ? "/stagiaires"
+                : "/dashboard"
+          }
+          actionLabel={
+            hasActiveFilters
+              ? "Voir tous les stages"
+              : session?.user.role !== "ENCADRANT"
+                ? "Creer un stage"
+                : "Retour au dashboard"
+          }
         />
       )}
     </div>

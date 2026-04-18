@@ -10,8 +10,10 @@ import {
 import { LiveNotificationsListener } from "@/components/features/notifications/live-notifications-listener";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { FeedbackBanner } from "@/components/ui/feedback-banner";
 import { MetricCard } from "@/components/ui/metric-card";
 import { PageHeader } from "@/components/ui/page-header";
+import { StatusBadge } from "@/components/ui/status-badge";
 import {
   ensureEndingSoonNotifications,
   getNotificationTypeLabel,
@@ -20,12 +22,23 @@ import {
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/stagiaires";
 
-export default async function NotificationsPage() {
+type NotificationsPageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+function getStringParam(value?: string | string[]) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+export default async function NotificationsPage({ searchParams }: NotificationsPageProps) {
   const session = await auth();
 
   if (!session?.user) {
     redirect("/login");
   }
+
+  const params = (await searchParams) ?? {};
+  const success = getStringParam(params.success)?.trim() ?? "";
 
   await ensureEndingSoonNotifications();
 
@@ -52,6 +65,20 @@ export default async function NotificationsPage() {
   return (
     <div className="space-y-8">
       <LiveNotificationsListener />
+      {success === "all-read" ? (
+        <FeedbackBanner
+          title="Notifications mises a jour"
+          message="Toutes les notifications ont ete marquees comme lues."
+          description="Le compteur du header et la vue courante ont ete rafraichis."
+        />
+      ) : null}
+      {success === "preferences-updated" ? (
+        <FeedbackBanner
+          title="Preferences enregistrees"
+          message="Les preferences de notification ont ete mises a jour."
+          description="Les nouveaux reglages s appliqueront aux prochains evenements."
+        />
+      ) : null}
       <PageHeader
         eyebrow="Notifications"
         title="Centre de notifications"
@@ -120,13 +147,24 @@ export default async function NotificationsPage() {
                     </p>
                   </div>
 
+                  <div className="flex flex-wrap gap-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-muted">Centre in-app</span>
+                      <StatusBadge status={preference?.inAppEnabled ?? true ? "Active" : "Desactive"} />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-medium text-muted">Live</span>
+                      <StatusBadge status={preference?.liveEnabled ?? true ? "Active" : "Desactive"} />
+                    </div>
+                  </div>
+
                   <div className="grid gap-3 md:grid-cols-2">
                     <label className="space-y-2 text-sm">
                       <span className="font-medium">Centre in-app</span>
                       <select
                         name="inAppEnabled"
                         defaultValue={String(preference?.inAppEnabled ?? true)}
-                        className="w-full rounded-2xl border border-border bg-card px-4 py-3 outline-none transition focus:border-primary"
+                        className="w-full rounded-2xl border border-border bg-card px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
                       >
                         <option value="true">Active</option>
                         <option value="false">Desactive</option>
@@ -138,7 +176,7 @@ export default async function NotificationsPage() {
                       <select
                         name="liveEnabled"
                         defaultValue={String(preference?.liveEnabled ?? true)}
-                        className="w-full rounded-2xl border border-border bg-card px-4 py-3 outline-none transition focus:border-primary"
+                        className="w-full rounded-2xl border border-border bg-card px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
                       >
                         <option value="true">Active</option>
                         <option value="false">Desactive</option>
@@ -172,15 +210,7 @@ export default async function NotificationsPage() {
                     <span className="rounded-full bg-primary/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
                       {getNotificationTypeLabel(notification.type)}
                     </span>
-                    {!notification.isRead ? (
-                      <span className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold text-blue-700">
-                        Non lue
-                      </span>
-                    ) : (
-                      <span className="rounded-full border border-slate-200 bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                        Lue
-                      </span>
-                    )}
+                    <StatusBadge status={notification.isRead ? "Lue" : "Non lue"} />
                   </div>
                   <h2 className="text-xl font-semibold tracking-tight">{notification.titre}</h2>
                   <p className="text-sm leading-6 text-muted">{notification.message}</p>
@@ -217,8 +247,11 @@ export default async function NotificationsPage() {
         </div>
       ) : (
         <EmptyState
+          eyebrow="Notifications"
           title="Aucune notification pour le moment"
           description="Les alertes importantes et les rappels de traitement apparaitront ici automatiquement selon votre role et les actions en cours."
+          actionHref="/dashboard"
+          actionLabel="Retour au dashboard"
         />
       )}
     </div>

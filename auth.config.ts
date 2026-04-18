@@ -2,9 +2,15 @@ import type { NextAuthConfig } from "next-auth";
 
 const authConfig = {
   trustHost: true,
+  useSecureCookies: process.env.NODE_ENV === "production",
   providers: [],
   session: {
     strategy: "jwt",
+    maxAge: 60 * 60 * 8,
+    updateAge: 60 * 60,
+  },
+  jwt: {
+    maxAge: 60 * 60 * 8,
   },
   pages: {
     signIn: "/login",

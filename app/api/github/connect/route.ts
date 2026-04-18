@@ -10,6 +10,8 @@ import {
 import { logAuditEvent } from "@/lib/audit";
 import { hasRole } from "@/lib/rbac";
 import { prisma } from "@/lib/prisma";
+import { buildActorRateLimitKey, buildRateLimitedResponse, extractRequestIp } from "@/lib/security/request";
+import { consumeRateLimit, securityRateLimits } from "@/lib/security/rate-limit";
 
 function buildRedirectUrl(origin: string, returnTo: string, params: Record<string, string>) {
   const url = new URL(returnTo, origin);
@@ -33,6 +35,17 @@ export async function GET(request: NextRequest) {
 
   if (!hasRole(session.user.role, ["ADMIN", "RH"])) {
     return NextResponse.redirect(new URL("/acces-refuse", request.nextUrl));
+  }
+
+  const rateLimitResult = consumeRateLimit({
+    ...securityRateLimits.githubConnect,
+    key: buildActorRateLimitKey(session.user.id, extractRequestIp(request) ?? "unknown"),
+  });
+
+  if (!rateLimitResult.allowed) {
+    return buildRateLimitedResponse(rateLimitResult, {
+      body: "Trop de demandes GitHub. Merci de patienter avant de relancer une connexion OAuth.",
+    });
   }
 
   if (!stagiaireId) {

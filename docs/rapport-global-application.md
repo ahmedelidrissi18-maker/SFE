@@ -213,6 +213,7 @@ Inference depuis le code :
 - `/documents`
 - `/documents/[id]`
 - `/notifications`
+- `/securite`
 
 ## Inventaire des endpoints API
 
@@ -237,6 +238,7 @@ Inference depuis le code :
 - `/evaluations` : `ADMIN`, `RH`, `ENCADRANT`, `STAGIAIRE`
 - `/documents` : `ADMIN`, `RH`, `ENCADRANT`, `STAGIAIRE`
 - `/notifications` : `ADMIN`, `RH`, `ENCADRANT`, `STAGIAIRE`
+- `/securite` : `ADMIN`, `RH`
 
 ### Point fort
 
@@ -371,19 +373,16 @@ Inference depuis le depot :
 - audit des actions sensibles
 - protection des routes par middleware
 - controle d acces sur plusieurs parcours documents/evaluations/GitHub
-
-### Prepare mais non finalise
-
-- champ `twoFactorEnabled` deja present dans `User`
-- backlog V2 et Sprint 6 mentionnent 2FA, brute-force, hardening session et rollback
+- limitation de debit cote serveur sur le login et les endpoints sensibles
+- page `/securite` pour activer/desactiver le 2FA des profils sensibles
+- chiffrement applicatif des secrets 2FA avant stockage
+- durcissement des sessions JWT (fenetre reduite + rotation plus frequente)
 
 ### A finaliser dans le Sprint 6
 
-- 2FA pour profils sensibles
-- protection brute-force / rate limiting login et endpoints sensibles
-- durcissement session
-- revue des surfaces d exposition API
-- eventuelle strategie multi-instance pour le temps reel
+- suite E2E Playwright partagee sur les parcours critiques
+- rehearsal complet de rollback en preproduction
+- eventuelle strategie multi-instance pour le temps reel et le rate limiting distribue
 
 ## Variables d environnement et configuration
 
@@ -396,6 +395,8 @@ Inference depuis le depot :
 ### Utiles selon modules
 
 - `DEFAULT_USER_PASSWORD`
+- `TWO_FACTOR_ISSUER`
+- `TWO_FACTOR_ENCRYPTION_SECRET`
 - `NOTIFICATIONS_PROCESSOR_SECRET`
 - `GITHUB_TOKEN`
 - `GITHUB_API_BASE_URL`
@@ -444,24 +445,23 @@ Inference depuis le depot :
 
 ## Points d attention
 
-- 2FA non branchee fonctionnellement a ce stade
 - absence visible d une suite E2E Playwright partagee
 - transport temps reel encore en memoire de process
-- Sprint 6 encore a realiser sur les axes hardening/release/rollback
+- Sprint 6 reste a terminer sur les axes E2E/release/rollback
 
 ## Priorites recommandees pour le Sprint 6
 
 ### Priorite 1
 
-- finaliser la securite auth : 2FA, brute-force, durcissement session
+- finaliser la verification finale : E2E, non-regression, rehearsal de rollback
 
 ### Priorite 2
 
-- completer la verification finale : E2E, non-regression, charge ciblee
+- completer la charge ciblee sur auth et exports apres hardening
 
 ### Priorite 3
 
-- finaliser le runbook release, le plan rollback et le go/no-go de mise en production V2
+- finaliser le go/no-go de mise en production V2
 
 ## Conclusion
 

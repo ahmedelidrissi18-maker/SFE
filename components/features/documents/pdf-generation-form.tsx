@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import type { DocumentActionState } from "@/app/(dashboard)/documents/actions";
+import { FeedbackBanner } from "@/components/ui/feedback-banner";
 import { pdfTemplateDefinitions } from "@/lib/documents";
 
 type StageOption = {
@@ -16,15 +17,18 @@ type PdfGenerationFormProps = {
 };
 
 const initialState: DocumentActionState = {};
+const fieldClassName =
+  "w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20";
 
-function SubmitButton() {
+function SubmitButton({ disabled }: { disabled?: boolean }) {
   const { pending } = useFormStatus();
+  const isDisabled = pending || disabled;
 
   return (
     <button
       type="submit"
-      disabled={pending}
-      className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
+      disabled={isDisabled}
+      className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
     >
       {pending ? "Generation..." : "Generer le PDF"}
     </button>
@@ -33,6 +37,7 @@ function SubmitButton() {
 
 export function PdfGenerationForm({ stages, action }: PdfGenerationFormProps) {
   const [state, formAction] = useActionState(action, initialState);
+  const hasStages = stages.length > 0;
 
   return (
     <form
@@ -46,12 +51,28 @@ export function PdfGenerationForm({ stages, action }: PdfGenerationFormProps) {
         </p>
       </div>
 
+      <FeedbackBanner
+        kind={hasStages ? "info" : "warning"}
+        title={hasStages ? "Generation guidee" : "Aucun stage disponible"}
+        message={
+          hasStages
+            ? "Choisissez un stage puis un modele. Le PDF genere sera ajoute automatiquement au module Documents."
+            : "Aucun stage visible n est actuellement disponible pour la generation d un PDF standard."
+        }
+        description={
+          hasStages
+            ? "Utilisez ce formulaire pour produire rapidement un document standard sans quitter le perimetre de suivi."
+            : "Verifiez d abord vos donnees de stage ou votre perimetre d acces avant de relancer la generation."
+        }
+      />
+
       <div className="grid gap-4 md:grid-cols-2">
         <label className="space-y-2 text-sm">
           <span className="font-medium">Stage</span>
           <select
             name="stageId"
-            className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+            className={fieldClassName}
+            disabled={!hasStages}
           >
             <option value="">Selectionner un stage</option>
             {stages.map((stage) => (
@@ -60,6 +81,9 @@ export function PdfGenerationForm({ stages, action }: PdfGenerationFormProps) {
               </option>
             ))}
           </select>
+          <p className="text-xs leading-5 text-muted">
+            Selectionnez le stage qui servira de source pour le PDF.
+          </p>
         </label>
 
         <label className="space-y-2 text-sm">
@@ -67,7 +91,8 @@ export function PdfGenerationForm({ stages, action }: PdfGenerationFormProps) {
           <select
             name="template"
             defaultValue={pdfTemplateDefinitions[0]?.key}
-            className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+            className={fieldClassName}
+            disabled={!hasStages}
           >
             {pdfTemplateDefinitions.map((template) => (
               <option key={template.key} value={template.key}>
@@ -75,16 +100,17 @@ export function PdfGenerationForm({ stages, action }: PdfGenerationFormProps) {
               </option>
             ))}
           </select>
+          <p className="text-xs leading-5 text-muted">
+            Choisissez le type de document standard a generer.
+          </p>
         </label>
       </div>
 
       {state.error ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {state.error}
-        </div>
+        <FeedbackBanner kind="error" title="Generation impossible" message={state.error} />
       ) : null}
 
-      <SubmitButton />
+      <SubmitButton disabled={!hasStages} />
     </form>
   );
 }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useActionState, useState } from "react";
 import { useFormStatus } from "react-dom";
 import type { EvaluationActionState } from "@/app/(dashboard)/evaluations/actions";
+import { FeedbackBanner } from "@/components/ui/feedback-banner";
 
 type StageOption = {
   id: string;
@@ -147,6 +148,13 @@ export function EvaluationForm({
         <input type="hidden" name="evaluationId" value={defaultValues?.evaluationId ?? ""} />
         <input type="hidden" name="notesJson" value={notesJson} />
 
+        <FeedbackBanner
+          kind="info"
+          title="Workflow d evaluation"
+          message="Vous pouvez enregistrer un brouillon pour le completer plus tard ou soumettre directement l evaluation a validation."
+          description="La grille active et le score total se mettent a jour automatiquement selon le type choisi."
+        />
+
         <section className="grid gap-4 md:grid-cols-3">
           <label className="space-y-2 text-sm md:col-span-2">
             <span className="font-medium">Stage</span>
@@ -154,7 +162,7 @@ export function EvaluationForm({
               name="stageId"
               defaultValue={defaultValues?.stageId}
               disabled={lockStage}
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary disabled:opacity-70"
+              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 disabled:opacity-70"
             >
               <option value="">Selectionner un stage</option>
               {stages.map((stage) => (
@@ -187,7 +195,7 @@ export function EvaluationForm({
                     : buildCriteriaInputs(nextDefinition),
                 );
               }}
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary disabled:opacity-70"
+              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 disabled:opacity-70"
             >
               {typeDefinitions.map((definition) => (
                 <option key={definition.value} value={definition.value}>
@@ -207,8 +215,11 @@ export function EvaluationForm({
               name="scheduledFor"
               type="date"
               defaultValue={defaultValues?.scheduledFor}
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
             />
+            <p className="text-xs leading-5 text-muted">
+              Optionnel. Cette date alimente le planning des evaluations a venir.
+            </p>
           </label>
 
           <div className="rounded-[24px] border border-border bg-background p-4">
@@ -264,7 +275,7 @@ export function EvaluationForm({
                           ),
                         );
                       }}
-                      className="w-full rounded-2xl border border-border bg-card px-4 py-3 outline-none transition focus:border-primary"
+                      className="w-full rounded-2xl border border-border bg-card px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
                     />
                   </label>
                 </div>
@@ -287,7 +298,7 @@ export function EvaluationForm({
                         ),
                       );
                     }}
-                    className="w-full rounded-2xl border border-border bg-card px-4 py-3 outline-none transition focus:border-primary"
+                    className="w-full rounded-2xl border border-border bg-card px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
                   />
                 </label>
               </div>
@@ -302,7 +313,7 @@ export function EvaluationForm({
               name="commentaire"
               defaultValue={defaultValues?.commentaire}
               rows={5}
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
             />
           </label>
 
@@ -312,15 +323,13 @@ export function EvaluationForm({
               name="commentaireEncadrant"
               defaultValue={defaultValues?.commentaireEncadrant}
               rows={5}
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
             />
           </label>
         </section>
 
         {state.error ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {state.error}
-          </div>
+          <FeedbackBanner kind="error" title="Enregistrement impossible" message={state.error} />
         ) : null}
 
         <div className="flex flex-wrap items-center gap-3">

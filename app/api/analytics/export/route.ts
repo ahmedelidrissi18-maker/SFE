@@ -17,6 +17,8 @@ import {
   resolveAnalyticsStageDetailLimit,
 } from "@/lib/analytics";
 import { recordPerformanceSample } from "@/lib/observability";
+import { buildActorRateLimitKey, buildRateLimitHeaders, buildRateLimitedResponse, extractRequestIp } from "@/lib/security/request";
+import { consumeRateLimit, securityRateLimits } from "@/lib/security/rate-limit";
 
 export async function GET(request: Request) {
   const session = await auth();
@@ -27,6 +29,17 @@ export async function GET(request: Request) {
 
   if (!canAccessAnalytics(session.user.role)) {
     return NextResponse.redirect(new URL("/acces-refuse", request.url));
+  }
+
+  const rateLimitResult = consumeRateLimit({
+    ...securityRateLimits.analyticsExport,
+    key: buildActorRateLimitKey(session.user.id, extractRequestIp(request) ?? "unknown"),
+  });
+
+  if (!rateLimitResult.allowed) {
+    return buildRateLimitedResponse(rateLimitResult, {
+      body: "Trop d exports analytics ont ete demandes. Merci de patienter avant de relancer.",
+    });
   }
 
   const url = new URL(request.url);
@@ -80,6 +93,7 @@ export async function GET(request: Request) {
         "X-Analytics-Cache": meta.cached ? "HIT" : "MISS",
         "X-Analytics-Attention-Filter": attentionFilter,
         "X-Analytics-Department-Filter": departmentFilter ?? "ALL",
+        ...Object.fromEntries(buildRateLimitHeaders(rateLimitResult)),
       },
     });
   } catch (error) {

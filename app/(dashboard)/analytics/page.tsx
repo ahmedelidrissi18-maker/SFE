@@ -284,7 +284,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
             type="submit"
             className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary"
           >
-            Actualiser
+            Appliquer les filtres
           </button>
         </form>
 
@@ -386,12 +386,15 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
             </div>
           ) : (
             <EmptyState
+              eyebrow="Analytics"
               title="Aucun departement exploitable"
               description={
                 departmentFilter
                   ? `Le departement ${departmentFilter} ne remonte aucune activite exploitable sur la periode choisie.`
                   : "Aucune activite visible ne permet encore de calculer une progression moyenne sur la periode choisie."
               }
+              actionHref="/analytics"
+              actionLabel="Revenir a la vue complete"
             />
           )}
         </Card>
@@ -472,15 +475,15 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
                 Fenetre glissante de {monitoring.windowMinutes} minutes sur les chargements et exports.
               </p>
             </div>
-            <span
-              className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${getMonitoringTone(monitoring.status)}`}
-            >
-              {monitoring.status === "ok"
-                ? "Stable"
-                : monitoring.status === "warning"
-                  ? "A surveiller"
-                  : "Critique"}
-            </span>
+            <StatusBadge
+              status={
+                monitoring.status === "ok"
+                  ? "Stable"
+                  : monitoring.status === "warning"
+                    ? "A surveiller"
+                    : "Critique"
+              }
+            />
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
@@ -632,8 +635,11 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
           </div>
         ) : (
           <EmptyState
+            eyebrow="Analytics"
             title="Aucun stage detaille"
             description="Aucun stage ne correspond aux filtres actifs sur la fenetre courante."
+            actionHref="/analytics"
+            actionLabel="Revenir a la vue complete"
           />
         )}
       </Card>

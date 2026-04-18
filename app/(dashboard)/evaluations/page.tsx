@@ -23,6 +23,21 @@ function getStringParam(value?: string | string[]) {
   return Array.isArray(value) ? value[0] : value;
 }
 
+function getEvaluationNextActionLabel(status: EvaluationStatus) {
+  switch (status) {
+    case EvaluationStatus.BROUILLON:
+      return "Completer puis soumettre l evaluation.";
+    case EvaluationStatus.SOUMIS:
+      return "Validation RH en attente.";
+    case EvaluationStatus.RETOURNE:
+      return "Correction attendue avant nouvelle soumission.";
+    case EvaluationStatus.VALIDE:
+      return "Evaluation cloturee, aucune action immediate.";
+    default:
+      return "Verifier le detail de l evaluation.";
+  }
+}
+
 export default async function EvaluationsPage({ searchParams }: EvaluationsPageProps) {
   const session = await auth();
 
@@ -75,6 +90,7 @@ export default async function EvaluationsPage({ searchParams }: EvaluationsPageP
 
     return evaluation.scheduledFor >= now && evaluation.scheduledFor <= soonDate;
   }).length;
+  const hasActiveFilters = Boolean(statut || type);
 
   return (
     <div className="space-y-8">
@@ -125,6 +141,9 @@ export default async function EvaluationsPage({ searchParams }: EvaluationsPageP
         <div>
           <p className="text-sm font-medium text-primary">Filtres</p>
           <h2 className="mt-1 text-2xl font-semibold tracking-tight">Cibler le bon lot</h2>
+          <p className="mt-2 text-sm leading-6 text-muted">
+            Filtrez par statut ou type pour retrouver plus vite les evaluations a traiter.
+          </p>
         </div>
         <form className="grid gap-4 md:grid-cols-3">
           <label className="space-y-2 text-sm">
@@ -161,13 +180,13 @@ export default async function EvaluationsPage({ searchParams }: EvaluationsPageP
               type="submit"
               className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
             >
-              Appliquer
+              Appliquer les filtres
             </button>
             <Link
               href="/evaluations"
               className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary"
             >
-              Reinitialiser
+              Revenir a la liste complete
             </Link>
           </div>
         </form>
@@ -229,16 +248,31 @@ export default async function EvaluationsPage({ searchParams }: EvaluationsPageP
                   <p className="text-sm text-muted">Sujet</p>
                   <p className="mt-2 text-sm font-medium">{evaluation.stage.sujet}</p>
                 </div>
+                <div className="rounded-[22px] border border-border bg-background p-4 sm:col-span-2 xl:col-span-3">
+                  <p className="text-sm text-muted">Action attendue</p>
+                  <p className="mt-2 text-sm font-medium">
+                    {getEvaluationNextActionLabel(evaluation.status)}
+                  </p>
+                </div>
               </div>
             </Card>
           ))}
         </div>
       ) : (
         <EmptyState
-          title="Aucune evaluation a afficher"
-          description="Aucune evaluation ne correspond aux filtres actuels. Revenez a la vue complete ou planifiez une nouvelle evaluation."
-          actionHref={session.user.role === "STAGIAIRE" ? "/dashboard" : "/evaluations/nouvelle"}
-          actionLabel={session.user.role === "STAGIAIRE" ? "Retour au dashboard" : "Creer une evaluation"}
+          eyebrow="Evaluations"
+          title={hasActiveFilters ? "Aucune evaluation ne correspond a ces filtres" : "Aucune evaluation a afficher"}
+          description={
+            hasActiveFilters
+              ? "Revenez a la vue complete ou ajustez les criteres pour retrouver des evaluations visibles."
+              : session.user.role === "STAGIAIRE"
+                ? "Aucune evaluation n est actuellement visible dans votre perimetre."
+                : "Planifiez une evaluation pour lancer le workflow de notation et de validation."
+          }
+          actionHref={hasActiveFilters ? "/evaluations" : session.user.role === "STAGIAIRE" ? "/dashboard" : "/evaluations/nouvelle"}
+          actionLabel={hasActiveFilters ? "Voir toutes les evaluations" : session.user.role === "STAGIAIRE" ? "Retour au dashboard" : "Creer une evaluation"}
+          secondaryActionHref={hasActiveFilters && session.user.role !== "STAGIAIRE" ? "/evaluations/nouvelle" : undefined}
+          secondaryActionLabel={hasActiveFilters && session.user.role !== "STAGIAIRE" ? "Planifier une evaluation" : undefined}
         />
       )}
     </div>

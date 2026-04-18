@@ -23,8 +23,11 @@ La release V2 couvre :
 - `npm test` passe
 - `npm run build` passe
 - migrations Prisma V2 appliquees
+- migration `0008_security_hardening` appliquee
 - verification de la base cible et backup disponible
 - variables d environnement de production validees
+- `NEXTAUTH_SECRET` defini
+- `TWO_FACTOR_ENCRYPTION_SECRET` defini ou decision explicite de reutiliser `NEXTAUTH_SECRET`
 
 ## Preconditions produit
 
@@ -39,9 +42,11 @@ La release V2 couvre :
 - verifier la presence des migrations V2 necessaires
 - verifier la compatibilite schema/code
 - verifier les secrets NextAuth et les credentials GitHub
+- verifier le chiffrement des secrets 2FA et le libelle `TWO_FACTOR_ISSUER`
 - verifier le secret processeur de notifications si utilise
 - verifier la sante de la base et de Redis
 - verifier les routes critiques : login, dashboard, stagiaires, rapports, documents, analytics
+- verifier le module `/securite` avec activation/desactivation 2FA sur un compte pilote
 - verifier l endpoint `/api/health`
 
 ## Strategie de rollout
@@ -61,6 +66,8 @@ La release V2 couvre :
 ## Verifications post-deploiement
 
 - login admin et RH
+- activation 2FA sur un compte pilote `ADMIN` ou `RH`
+- login avec mot de passe + code TOTP sur ce compte pilote
 - acces dashboard par role
 - consultation stagiaires et stages
 - creation / revue d un rapport
@@ -72,6 +79,7 @@ La release V2 couvre :
 ## Indicateurs a surveiller
 
 - erreurs auth
+- compteurs de rate limiting auth et routes sensibles
 - erreurs API GitHub
 - latence analytics
 - erreurs export analytics

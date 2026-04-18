@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { notificationService } from "@/lib/notification-service";
 import { prisma } from "@/lib/prisma";
@@ -61,6 +62,7 @@ export async function markAllNotificationsReadAction() {
   });
 
   revalidatePath("/notifications");
+  redirect("/notifications?success=all-read");
 }
 
 export async function updateNotificationPreferenceAction(formData: FormData) {
@@ -88,4 +90,5 @@ export async function updateNotificationPreferenceAction(formData: FormData) {
   });
 
   revalidatePath("/notifications");
+  redirect("/notifications?success=preferences-updated");
 }

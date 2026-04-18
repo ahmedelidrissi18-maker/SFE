@@ -25,9 +25,12 @@
     "@tanstack/react-query": "^5.90.2",
     "bcryptjs": "^3.0.3",
     "clsx": "^2.1.1",
+    "ioredis": "^5.10.1",
     "lucide-react": "^0.542.0",
     "next": "16.2.2",
     "next-auth": "^5.0.0-beta.30",
+    "otplib": "^13.4.0",
+    "qrcode": "^1.5.4",
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "react-hook-form": "^7.62.0",
@@ -36,8 +39,10 @@
     "zustand": "^5.0.8"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "artillery": "^2.0.21",

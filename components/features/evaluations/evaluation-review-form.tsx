@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import type { EvaluationActionState } from "@/app/(dashboard)/evaluations/actions";
+import { FeedbackBanner } from "@/components/ui/feedback-banner";
 
 type EvaluationReviewFormProps = {
   evaluationId: string;
@@ -66,14 +67,15 @@ export function EvaluationReviewForm({
           name="commentaireRh"
           defaultValue={defaultComment}
           rows={5}
-          className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+          className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
         />
+        <p className="text-xs leading-5 text-muted">
+          En cas de retour, detaillez clairement les ajustements attendus pour l encadrant.
+        </p>
       </label>
 
       {state.error ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {state.error}
-        </div>
+        <FeedbackBanner kind="error" title="Action impossible" message={state.error} />
       ) : null}
 
       <ReviewButtons />

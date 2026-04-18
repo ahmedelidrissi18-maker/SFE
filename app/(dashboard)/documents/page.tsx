@@ -14,6 +14,7 @@ import {
   getDocumentSourceLabel,
   getDocumentStatusLabel,
   getDocumentTypeLabel,
+  getSignatureStatusLabel,
   getDocumentVisibilityFilter,
 } from "@/lib/documents";
 import { prisma } from "@/lib/prisma";
@@ -25,6 +26,34 @@ type DocumentsPageProps = {
 
 function getStringParam(value?: string | string[]) {
   return Array.isArray(value) ? value[0] : value;
+}
+
+function getDocumentNextActionLabel(status: string, signatureStatus: string) {
+  if (status === "REJETE") {
+    return "Correction ou nouveau depot attendu.";
+  }
+
+  if (status === "DEPOSE") {
+    return "Soumettre le document en verification.";
+  }
+
+  if (status === "EN_VERIFICATION") {
+    return "Revue documentaire en cours.";
+  }
+
+  if (status === "VALIDE" && signatureStatus === "NOT_REQUESTED") {
+    return "Document valide, pret pour la preparation de signature.";
+  }
+
+  if (status === "VALIDE" && signatureStatus === "READY") {
+    return "Signature a finaliser.";
+  }
+
+  if (status === "VALIDE" && signatureStatus === "SIGNED") {
+    return "Document finalise et disponible.";
+  }
+
+  return "Consulter le detail du document.";
 }
 
 export default async function DocumentsPage({ searchParams }: DocumentsPageProps) {
@@ -83,11 +112,16 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
   const pendingCount = documents.filter((document) => document.statut === "EN_VERIFICATION").length;
   const validatedCount = documents.filter((document) => document.statut === "VALIDE").length;
   const rejectedCount = documents.filter((document) => document.statut === "REJETE").length;
+  const hasActiveFilters = Boolean(statut || type);
 
   return (
     <div className="space-y-8">
       {success === "generated" ? (
-        <FeedbackBanner message="Le PDF a ete genere et ajoute aux documents." />
+        <FeedbackBanner
+          title="PDF genere"
+          message="Le PDF a ete genere et ajoute aux documents."
+          description="Vous pouvez maintenant l ouvrir, le verifier ou le traiter dans le workflow documentaire."
+        />
       ) : null}
 
       <PageHeader
@@ -127,6 +161,9 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
         <div>
           <p className="text-sm font-medium text-primary">Filtres</p>
           <h2 className="mt-1 text-2xl font-semibold tracking-tight">Cibler un lot documentaire</h2>
+          <p className="mt-2 text-sm leading-6 text-muted">
+            Filtrez par statut ou type pour retrouver rapidement le bon document a traiter.
+          </p>
         </div>
 
         <form className="grid gap-4 md:grid-cols-3">
@@ -160,13 +197,13 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
               type="submit"
               className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
             >
-              Appliquer
+              Appliquer les filtres
             </button>
             <Link
               href="/documents"
               className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary"
             >
-              Reinitialiser
+              Revenir a la liste complete
             </Link>
           </div>
         </form>
@@ -191,6 +228,7 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
                   <div className="flex flex-wrap gap-2">
                     <StatusBadge status={getDocumentStatusLabel(document.statut)} />
                     <StatusBadge status={getDocumentSourceLabel(document.source)} />
+                    <StatusBadge status={getSignatureStatusLabel(document.signatureStatus)} />
                   </div>
                   <h2 className="text-2xl font-semibold tracking-tight">{document.nom}</h2>
                   <p className="text-sm leading-6 text-muted">
@@ -225,10 +263,13 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
                   <p className="mt-2 text-sm font-medium">
                     {`${document.auteur.prenom} ${document.auteur.nom}`.trim()}
                   </p>
+                  <p className="mt-1 text-xs text-muted">Maj {formatDate(document.updatedAt)}</p>
                 </div>
                 <div className="rounded-[22px] border border-border bg-background p-4">
-                  <p className="text-sm text-muted">Maj</p>
-                  <p className="mt-2 text-sm font-medium">{formatDate(document.updatedAt)}</p>
+                  <p className="text-sm text-muted">Action attendue</p>
+                  <p className="mt-2 text-sm font-medium">
+                    {getDocumentNextActionLabel(document.statut, document.signatureStatus)}
+                  </p>
                 </div>
               </div>
             </Card>
@@ -236,10 +277,17 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
         </div>
       ) : (
         <EmptyState
-          title="Aucun document a afficher"
-          description="Aucun document ne correspond aux filtres actuels ou a votre perimetre."
-          actionHref="/documents"
-          actionLabel="Voir tous les documents"
+          eyebrow="Documents"
+          title={hasActiveFilters ? "Aucun document ne correspond a ces filtres" : "Aucun document a afficher"}
+          description={
+            hasActiveFilters
+              ? "Revenez a la vue complete pour retrouver tous les documents visibles dans votre perimetre."
+              : session.user.role === "STAGIAIRE"
+                ? "Aucun document n est actuellement disponible dans votre espace."
+                : "Aucun document n est visible pour le moment dans le perimetre courant."
+          }
+          actionHref={hasActiveFilters ? "/documents" : "/dashboard"}
+          actionLabel={hasActiveFilters ? "Voir tous les documents" : "Retour au dashboard"}
         />
       )}
     </div>

@@ -9,6 +9,8 @@ import {
   shouldAuditDocumentDownload,
 } from "@/lib/documents";
 import { prisma } from "@/lib/prisma";
+import { buildActorRateLimitKey, buildRateLimitedResponse, extractRequestIp } from "@/lib/security/request";
+import { consumeRateLimit, securityRateLimits } from "@/lib/security/rate-limit";
 
 type RouteContext = {
   params: Promise<{
@@ -21,6 +23,17 @@ export async function GET(_request: Request, { params }: RouteContext) {
 
   if (!session?.user) {
     return new NextResponse("Non authentifie", { status: 401 });
+  }
+
+  const rateLimitResult = consumeRateLimit({
+    ...securityRateLimits.documentDownload,
+    key: buildActorRateLimitKey(session.user.id, extractRequestIp(_request) ?? "unknown"),
+  });
+
+  if (!rateLimitResult.allowed) {
+    return buildRateLimitedResponse(rateLimitResult, {
+      body: "Trop de telechargements sensibles ont ete demandes. Merci de patienter avant de reessayer.",
+    });
   }
 
   const { id } = await params;

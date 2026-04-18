@@ -9,6 +9,8 @@ import {
 } from "@/lib/github/oauth";
 import { hasRole } from "@/lib/rbac";
 import { githubService } from "@/lib/github/service";
+import { buildActorRateLimitKey, buildRateLimitedResponse, extractRequestIp } from "@/lib/security/request";
+import { consumeRateLimit, securityRateLimits } from "@/lib/security/rate-limit";
 
 function buildRedirectUrl(origin: string, returnTo: string, params: Record<string, string>) {
   const url = new URL(returnTo, origin);
@@ -48,6 +50,20 @@ export async function GET(request: NextRequest) {
 
   if (!hasRole(session.user.role, ["ADMIN", "RH"])) {
     return redirectWithClearedCookie(request, "/acces-refuse", {});
+  }
+
+  const rateLimitResult = consumeRateLimit({
+    ...securityRateLimits.githubCallback,
+    key: buildActorRateLimitKey(session.user.id, extractRequestIp(request) ?? "unknown"),
+  });
+
+  if (!rateLimitResult.allowed) {
+    return buildRateLimitedResponse(rateLimitResult, {
+      body: "Trop de callbacks GitHub ont ete recus sur une courte periode.",
+      headers: {
+        "Set-Cookie": `${getGithubOAuthCookieName()}=; Max-Age=0; Path=/`,
+      },
+    });
   }
 
   if (!cookiePayload || cookiePayload.actorUserId !== session.user.id || cookiePayload.state !== state) {

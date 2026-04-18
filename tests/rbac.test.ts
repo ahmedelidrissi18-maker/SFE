@@ -21,6 +21,9 @@ describe("rbac helpers", () => {
     expect(canAccessPath("/evaluations/eval-1", "ENCADRANT")).toBe(true);
     expect(canAccessPath("/documents", "STAGIAIRE")).toBe(true);
     expect(canAccessPath("/documents/doc-1", "ENCADRANT")).toBe(true);
+    expect(canAccessPath("/securite", "ADMIN")).toBe(true);
+    expect(canAccessPath("/securite", "RH")).toBe(true);
+    expect(canAccessPath("/securite", "ENCADRANT")).toBe(false);
     expect(canAccessPath("/stagiaires", "STAGIAIRE")).toBe(false);
     expect(canAccessPath("/stagiaires/stagiaire-1/github", "STAGIAIRE")).toBe(false);
     expect(canAccessPath("/stagiaires/stagiaire-1/github", "ENCADRANT")).toBe(false);

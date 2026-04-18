@@ -656,9 +656,114 @@ Complexe (tres eleve avec equipe de 2)
 - rollback rehearsal execute en preprod en moins de 30 minutes
 - disponibilite en canary >= 99.5% sur fenetre de validation
 
+### Plan d execution detaille Sprint 6
+
+#### Sous-lot 6A - Securite et durcissement
+
+- brancher le 2FA pour les profils sensibles (`ADMIN`, `RH`)
+- ajouter une protection brute-force sur l authentification et les endpoints sensibles
+- durcir les sessions JWT :
+  - duree de vie
+  - renouvellement
+  - verification des flags cookies
+- revoir les surfaces API exposees :
+  - `/api/auth/[...nextauth]`
+  - `/api/github/connect`
+  - `/api/github/callback`
+  - `/api/notifications/process`
+  - `/api/documents/[id]`
+  - `/api/analytics/export`
+- corriger les anomalies de securite et de permissions detectees pendant la revue
+
+#### Sous-lot 6B - Qualite finale, release et rollback
+
+- completer les tests E2E Playwright sur les parcours critiques :
+  - login
+  - dashboard
+  - stagiaires
+  - rapports
+  - documents
+  - analytics
+- executer la campagne de non-regression V1
+- verifier la couverture unitaire Sprint 6 et atteindre le seuil >= 80%
+- finaliser les documents de release :
+  - `docs/release-v2.md`
+  - `docs/rollback-v2.md`
+- executer un rehearsal de rollback en preproduction
+- preparer le go/no-go final V2
+
+### Ordonnancement recommande Sprint 6
+
+1. securite auth/session/2FA
+2. protection brute-force et revue API
+3. tests unitaires et integration Sprint 6
+4. E2E Playwright et campagne de non-regression
+5. finalisation release/rollback
+6. rehearsal de rollback
+7. go/no-go final
+
+### Checklist Go / No-Go Sprint 6
+
+#### Go si
+
+- le flux 2FA est operationnel pour les roles sensibles cibles
+- la protection brute-force est active sur l authentification
+- `npm run lint` passe
+- `npm test` passe
+- `npm run build` passe
+- les E2E critiques V2 passent
+- la non-regression V1 atteint au moins 98%
+- les documents `release-v2` et `rollback-v2` sont valides
+- le rehearsal de rollback est execute dans la cible du sprint
+- aucun bug bloquant n est ouvert
+
+#### No-Go si
+
+- l authentification ou le RBAC regressent
+- le 2FA est partiellement implemente mais non fiable
+- une migration ou une route critique reste instable
+- les tests critiques ou la build echouent
+- le rollback n est pas repetable en preproduction
+
+### Livrables documentaires associes Sprint 6
+
+- rapport global application : `docs/rapport-global-application.md`
+- runbook release V2 : `docs/release-v2.md`
+- plan rollback V2 : `docs/rollback-v2.md`
+- README mis a jour sur le sprint actif et l etat global V2
+- CHANGELOG aligne avec les lots effectivement livres
+
+### Sortie attendue de Sprint 6
+
+- version `2.0.0-beta.x` prete pour validation finale ou `2.0.0` si tous les criteres sont remplis
+- application V2 stable, securisee et documentee
+- decision explicite :
+  - go production
+  - go canary
+  - no-go avec plan d actions restant
+
 ---
 
 ## Resume de la V2
+
+### Statut global du plan
+
+- Sprint 0A : termine
+- Sprint 0B : termine
+- Sprint 1 : termine
+- Sprint 2 : termine
+- Sprint 3 : termine
+- Sprint 4 : termine
+- Sprint 5 : termine
+- Sprint 6 : en cours
+
+### Chemin critique restant avant cloture V2
+
+- finaliser la securite auth/session/2FA
+- poser la protection brute-force
+- completer les tests E2E critiques
+- atteindre les criteres de qualite du Sprint 6
+- valider la release et le rollback en preproduction
 
 ### Modules inclus dans la V2
 
@@ -697,3 +802,19 @@ Si la V1 est stable et l equipe est de 2 developpeurs :
 - declencher la demo mi-parcours apres Sprint 3 pour revalidation metier
 
 Si l equipe est de 4 a 5 developpeurs, les lots Should peuvent etre tenus sans allonger la timeline.
+
+## Cloture attendue du plan V2
+
+Le plan V2 sera considere comme totalement execute lorsque :
+
+- tous les criteres du Sprint 6 seront valides
+- la decision go/no-go sera tracee
+- la release candidate V2 sera approuvee
+- le rollback rehearsal sera documente et reussi
+- la documentation de livraison sera complete et coherente
+
+Le prochain point de pilotage recommande apres ce document est :
+
+- suivi d execution Sprint 6A
+- revue securite
+- puis revue go/no-go finale V2

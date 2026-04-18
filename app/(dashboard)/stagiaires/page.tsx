@@ -4,7 +4,7 @@ import { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { toggleStagiaireArchiveAction } from "@/app/(dashboard)/stagiaires/actions";
 import { FeedbackBanner } from "@/components/ui/feedback-banner";
-import { getAccountStatusLabel, getLatestStageInfo } from "@/lib/stagiaires";
+import { formatDate, getAccountStatusLabel, getLatestStageInfo } from "@/lib/stagiaires";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { MetricCard } from "@/components/ui/metric-card";
@@ -92,17 +92,30 @@ export default async function StagiairesPage({ searchParams }: StagiairesPagePro
   const activeCount = stagiaires.filter((stagiaire) => stagiaire.user.isActive).length;
   const archivedCount = stagiaires.length - activeCount;
   const withAssignedStageCount = stagiaires.filter((stagiaire) => stagiaire.stages[0]).length;
+  const hasActiveFilters = Boolean(query || etablissement || departement || statut || encadrantId);
 
   return (
     <div className="space-y-8">
       {success === "created" ? (
-        <FeedbackBanner message="Le stagiaire a ete cree avec succes." />
+        <FeedbackBanner
+          title="Stagiaire cree"
+          message="Le stagiaire a ete cree avec succes."
+          description="Vous pouvez maintenant lui rattacher un stage, ajouter des documents ou ouvrir sa fiche detaillee."
+        />
       ) : null}
       {success === "archived" ? (
-        <FeedbackBanner message="Le stagiaire a ete archive avec succes." />
+        <FeedbackBanner
+          title="Compte archive"
+          message="Le stagiaire a ete archive avec succes."
+          description="Le compte reste visible dans l historique mais n est plus actif pour la connexion."
+        />
       ) : null}
       {success === "restored" ? (
-        <FeedbackBanner message="Le stagiaire a ete reactive avec succes." />
+        <FeedbackBanner
+          title="Compte reactive"
+          message="Le stagiaire a ete reactive avec succes."
+          description="Le stagiaire peut de nouveau acceder a la plateforme si ses autres droits sont en place."
+        />
       ) : null}
 
       <PageHeader
@@ -150,6 +163,9 @@ export default async function StagiairesPage({ searchParams }: StagiairesPagePro
         <div>
           <p className="text-sm font-medium text-primary">Filtres</p>
           <h2 className="mt-1 text-2xl font-semibold tracking-tight">Affiner la liste</h2>
+          <p className="mt-2 text-sm leading-6 text-muted">
+            Combinez les criteres ci-dessous pour retrouver rapidement un stagiaire ou revenir a un perimetre plus large.
+          </p>
         </div>
         <form className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
           <label className="space-y-2 text-sm">
@@ -222,7 +238,7 @@ export default async function StagiairesPage({ searchParams }: StagiairesPagePro
               href="/stagiaires"
               className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary"
             >
-              Reinitialiser
+              Revenir a la liste complete
             </Link>
           </div>
         </form>
@@ -245,7 +261,13 @@ export default async function StagiairesPage({ searchParams }: StagiairesPagePro
                     <h2 className="text-2xl font-semibold tracking-tight">
                       {`${stagiaire.user.prenom} ${stagiaire.user.nom}`.trim()}
                     </h2>
+                    <p className="text-sm font-medium text-foreground">
+                      {stagiaire.specialite ?? "Specialite non renseignee"}
+                    </p>
                     <p className="text-sm leading-6 text-muted">{stagiaire.user.email}</p>
+                    <p className="text-sm leading-6 text-muted">
+                      {latestStage?.sujet ?? "Aucun stage rattache pour le moment."}
+                    </p>
                   </div>
 
                   <div className="flex flex-wrap gap-3">
@@ -280,6 +302,10 @@ export default async function StagiairesPage({ searchParams }: StagiairesPagePro
                     <p className="mt-2 text-sm font-medium">{stagiaire.etablissement ?? "Non renseigne"}</p>
                   </div>
                   <div className="rounded-[22px] border border-border bg-background p-4">
+                    <p className="text-sm text-muted">Sujet du stage</p>
+                    <p className="mt-2 text-sm font-medium">{latestStage?.sujet ?? "Aucun stage rattache"}</p>
+                  </div>
+                  <div className="rounded-[22px] border border-border bg-background p-4">
                     <p className="text-sm text-muted">Departement</p>
                     <p className="mt-2 text-sm font-medium">{latestStageInfo.departement}</p>
                   </div>
@@ -296,8 +322,8 @@ export default async function StagiairesPage({ searchParams }: StagiairesPagePro
                     <p className="mt-2 text-sm font-medium">{stagiaire.specialite ?? "Non renseignee"}</p>
                   </div>
                   <div className="rounded-[22px] border border-border bg-background p-4">
-                    <p className="text-sm text-muted">CIN</p>
-                    <p className="mt-2 text-sm font-medium">{stagiaire.cin}</p>
+                    <p className="text-sm text-muted">Derniere maj</p>
+                    <p className="mt-2 text-sm font-medium">{formatDate(stagiaire.updatedAt)}</p>
                   </div>
                 </div>
               </Card>
@@ -306,10 +332,17 @@ export default async function StagiairesPage({ searchParams }: StagiairesPagePro
         </div>
       ) : (
         <EmptyState
-          title="Aucun stagiaire pour ces criteres"
-          description="Essayez d elargir les filtres ou creez une nouvelle fiche stagiaire pour alimenter la plateforme."
-          actionHref="/stagiaires/nouveau"
-          actionLabel="Creer un stagiaire"
+          eyebrow="Stagiaires"
+          title={hasActiveFilters ? "Aucun stagiaire ne correspond a ces filtres" : "Aucun stagiaire disponible"}
+          description={
+            hasActiveFilters
+              ? "Elargissez les filtres ou revenez a la liste complete pour reprendre un perimetre plus large."
+              : "Commencez par creer une fiche stagiaire afin d alimenter le suivi, les stages et les workflows associes."
+          }
+          actionHref={hasActiveFilters ? "/stagiaires" : "/stagiaires/nouveau"}
+          actionLabel={hasActiveFilters ? "Voir tous les stagiaires" : "Creer un stagiaire"}
+          secondaryActionHref={hasActiveFilters ? "/stagiaires/nouveau" : undefined}
+          secondaryActionLabel={hasActiveFilters ? "Creer un stagiaire" : undefined}
         />
       )}
     </div>

@@ -4,6 +4,7 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import Link from "next/link";
 import type { StagiaireActionState } from "@/app/(dashboard)/stagiaires/actions";
+import { FeedbackBanner } from "@/components/ui/feedback-banner";
 import type { StagiaireFormValues } from "@/lib/validations/stagiaire";
 
 type StagiaireFormProps = {
@@ -42,12 +43,18 @@ function Field({
   type = "text",
   defaultValue,
   required = false,
+  hint,
+  placeholder,
+  autoComplete,
 }: {
   label: string;
   name: string;
   type?: string;
   defaultValue?: string;
   required?: boolean;
+  hint?: string;
+  placeholder?: string;
+  autoComplete?: string;
 }) {
   return (
     <label className="space-y-2 text-sm">
@@ -57,8 +64,11 @@ function Field({
         type={type}
         defaultValue={defaultValue}
         required={required}
-        className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+        placeholder={placeholder}
+        autoComplete={autoComplete}
+        className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
       />
+      {hint ? <p className="text-xs leading-5 text-muted">{hint}</p> : null}
     </label>
   );
 }
@@ -90,12 +100,46 @@ export function StagiaireForm({
         <input type="hidden" name="stagiaireId" value={defaultValues?.stagiaireId ?? ""} />
         <input type="hidden" name="userId" value={defaultValues?.userId ?? ""} />
 
+        <section className="space-y-2">
+          <p className="text-sm font-medium text-primary">Identite et acces</p>
+          <p className="text-sm leading-6 text-muted">
+            Renseignez les informations de compte et d identification utiles pour le suivi.
+          </p>
+        </section>
+
         <section className="grid gap-4 md:grid-cols-2">
-          <Field label="Nom" name="nom" defaultValue={defaultValues?.nom} required />
-          <Field label="Prenom" name="prenom" defaultValue={defaultValues?.prenom} required />
-          <Field label="Email" name="email" type="email" defaultValue={defaultValues?.email} required />
-          <Field label="CIN" name="cin" defaultValue={defaultValues?.cin} required />
-          <Field label="Telephone" name="telephone" defaultValue={defaultValues?.telephone} />
+          <Field label="Nom" name="nom" defaultValue={defaultValues?.nom} required autoComplete="family-name" />
+          <Field
+            label="Prenom"
+            name="prenom"
+            defaultValue={defaultValues?.prenom}
+            required
+            autoComplete="given-name"
+          />
+          <Field
+            label="Email"
+            name="email"
+            type="email"
+            defaultValue={defaultValues?.email}
+            required
+            autoComplete="email"
+            placeholder="prenom.nom@organisation.ma"
+            hint="Cet email servira au compte de connexion du stagiaire."
+          />
+          <Field
+            label="CIN"
+            name="cin"
+            defaultValue={defaultValues?.cin}
+            required
+            hint="Utilisez l identifiant officiel du stagiaire pour fiabiliser le dossier."
+          />
+          <Field
+            label="Telephone"
+            name="telephone"
+            defaultValue={defaultValues?.telephone}
+            autoComplete="tel"
+            placeholder="+212 ..."
+          />
           <Field
             label="Date de naissance"
             name="dateNaissance"
@@ -104,28 +148,61 @@ export function StagiaireForm({
           />
         </section>
 
+        <section className="space-y-2">
+          <p className="text-sm font-medium text-primary">Parcours</p>
+          <p className="text-sm leading-6 text-muted">
+            Ces informations facilitent le tri des stagiaires et la lecture des fiches.
+          </p>
+        </section>
+
         <section className="grid gap-4 md:grid-cols-2">
-          <Field label="Etablissement" name="etablissement" defaultValue={defaultValues?.etablissement} />
-          <Field label="Specialite" name="specialite" defaultValue={defaultValues?.specialite} />
-          <Field label="Niveau" name="niveau" defaultValue={defaultValues?.niveau} />
-          <Field label="Annee universitaire" name="annee" defaultValue={defaultValues?.annee} />
+          <Field
+            label="Etablissement"
+            name="etablissement"
+            defaultValue={defaultValues?.etablissement}
+            placeholder="ENSA, EMI, FST..."
+          />
+          <Field
+            label="Specialite"
+            name="specialite"
+            defaultValue={defaultValues?.specialite}
+            placeholder="Data, reseaux, genie logiciel..."
+          />
+          <Field label="Niveau" name="niveau" defaultValue={defaultValues?.niveau} placeholder="Licence, Master..." />
+          <Field
+            label="Annee universitaire"
+            name="annee"
+            defaultValue={defaultValues?.annee}
+            placeholder="2025-2026"
+          />
+        </section>
+
+        <section className="space-y-2">
+          <p className="text-sm font-medium text-primary">Visuel</p>
         </section>
 
         <section className="grid gap-4">
-          <Field label="Photo URL" name="photoUrl" type="url" defaultValue={defaultValues?.photoUrl} />
+          <Field
+            label="Photo URL"
+            name="photoUrl"
+            type="url"
+            defaultValue={defaultValues?.photoUrl}
+            placeholder="https://..."
+            hint="Optionnel. Utilisez une URL directe si une photo doit apparaitre sur la fiche."
+          />
         </section>
 
         {showCredentialsHint ? (
-          <div className="rounded-2xl border border-dashed border-border bg-background px-4 py-3 text-sm text-muted">
-            Le compte stagiaire est cree avec le mot de passe initial{" "}
-            <strong>{credentialsHint ?? "defini par DEFAULT_USER_PASSWORD"}</strong>.
-          </div>
+          <FeedbackBanner
+            kind="info"
+            title="Compte initial"
+            message={`Le compte stagiaire sera cree avec le mot de passe initial ${credentialsHint ?? "defini par DEFAULT_USER_PASSWORD"}.`}
+            description="Pensez a transmettre ce mot de passe de maniere securisee au stagiaire."
+          />
         ) : null}
 
         {state.error ? (
-          <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-            {state.error}
-          </div>
+          <FeedbackBanner kind="error" title="Enregistrement impossible" message={state.error} />
         ) : null}
 
         <div className="flex flex-wrap items-center gap-3">

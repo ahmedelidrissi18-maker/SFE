@@ -7,6 +7,7 @@ import { DocumentReviewForm } from "@/components/features/documents/document-rev
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FeedbackBanner } from "@/components/ui/feedback-banner";
+import { MetricCard } from "@/components/ui/metric-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
 import {
@@ -47,6 +48,34 @@ function formatDateTime(date?: Date | null) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date);
+}
+
+function getDocumentNextActionLabel(status: string, signatureStatus: string) {
+  if (status === "REJETE") {
+    return "Corriger le document ou recharger une nouvelle version.";
+  }
+
+  if (status === "DEPOSE") {
+    return "Soumettre le document au workflow de verification.";
+  }
+
+  if (status === "EN_VERIFICATION") {
+    return "Finaliser la revue documentaire et statuer sur le document.";
+  }
+
+  if (status === "VALIDE" && signatureStatus === "NOT_REQUESTED") {
+    return "Preparer la signature si ce document en a besoin.";
+  }
+
+  if (status === "VALIDE" && signatureStatus === "READY") {
+    return "Finaliser la signature du document.";
+  }
+
+  if (status === "VALIDE" && signatureStatus === "SIGNED") {
+    return "Document finalise, pret pour consultation et telechargement.";
+  }
+
+  return "Consulter le detail pour confirmer la prochaine action.";
 }
 
 export default async function DocumentDetailPage({
@@ -104,6 +133,10 @@ export default async function DocumentDetailPage({
   const canMarkSigned =
     canPrepareDocumentSignature(session.user.role) &&
     document.signatureStatus === "READY";
+  const encadrantLabel = document.stage.encadrant
+    ? `${document.stage.encadrant.prenom} ${document.stage.encadrant.nom}`.trim()
+    : "Non affecte";
+  const nextActionLabel = getDocumentNextActionLabel(document.statut, document.signatureStatus);
 
   const timelineItems = [
     {
@@ -147,19 +180,40 @@ export default async function DocumentDetailPage({
   return (
     <div className="space-y-8">
       {success === "submitted" ? (
-        <FeedbackBanner message="Le document a ete envoye en verification." />
+        <FeedbackBanner
+          title="Document envoye"
+          message="Le document a ete envoye en verification."
+          description="Il est maintenant positionne dans le workflow de revue documentaire."
+        />
       ) : null}
       {success === "validated" ? (
-        <FeedbackBanner message="Le document a ete valide." />
+        <FeedbackBanner
+          title="Document valide"
+          message="Le document a ete valide."
+          description="Le document peut poursuivre son cycle, y compris la preparation a la signature."
+        />
       ) : null}
       {success === "rejected" ? (
-        <FeedbackBanner message="Le document a ete rejete avec motif." />
+        <FeedbackBanner
+          kind="warning"
+          title="Document rejete"
+          message="Le document a ete rejete avec motif."
+          description="Le motif de rejet reste visible plus bas pour faciliter la correction."
+        />
       ) : null}
       {success === "signature-prepared" ? (
-        <FeedbackBanner message="Le socle de signature a ete prepare pour ce document." />
+        <FeedbackBanner
+          title="Signature preparee"
+          message="Le socle de signature a ete prepare pour ce document."
+          description="Le document peut maintenant entrer dans l etape finale de signature."
+        />
       ) : null}
       {success === "signed" ? (
-        <FeedbackBanner message="Le document est marque comme signe." />
+        <FeedbackBanner
+          title="Document signe"
+          message="Le document est marque comme signe."
+          description="Le cycle documentaire est termine pour cette version."
+        />
       ) : null}
 
       <PageHeader
@@ -186,26 +240,30 @@ export default async function DocumentDetailPage({
       />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Card>
-          <p className="text-sm text-muted">Type</p>
-          <p className="mt-3 text-sm font-medium">{getDocumentTypeLabel(document.type)}</p>
-        </Card>
-        <Card>
-          <p className="text-sm text-muted">Source</p>
-          <div className="mt-3">
-            <StatusBadge status={getDocumentSourceLabel(document.source)} />
-          </div>
-        </Card>
-        <Card>
-          <p className="text-sm text-muted">Taille</p>
-          <p className="mt-3 text-sm font-medium">{formatDocumentSize(document.tailleOctets)}</p>
-        </Card>
-        <Card>
-          <p className="text-sm text-muted">Signature</p>
-          <div className="mt-3">
-            <StatusBadge status={getSignatureStatusLabel(document.signatureStatus)} />
-          </div>
-        </Card>
+        <MetricCard
+          label="Type"
+          value={getDocumentTypeLabel(document.type)}
+          helper="Nature du document traite dans le workflow"
+          accent={<FileArchive className="h-5 w-5" />}
+        />
+        <MetricCard
+          label="Source"
+          value={<StatusBadge status={getDocumentSourceLabel(document.source)} />}
+          helper="Origine du document dans la plateforme"
+          accent={<FileClock className="h-5 w-5" />}
+        />
+        <MetricCard
+          label="Taille"
+          value={formatDocumentSize(document.tailleOctets)}
+          helper="Volume actuel de la version visible"
+          accent={<CheckCircle2 className="h-5 w-5" />}
+        />
+        <MetricCard
+          label="Signature"
+          value={<StatusBadge status={getSignatureStatusLabel(document.signatureStatus)} />}
+          helper="Etat de preparation ou de completion de signature"
+          accent={<ShieldCheck className="h-5 w-5" />}
+        />
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
@@ -213,6 +271,38 @@ export default async function DocumentDetailPage({
           <div>
             <p className="text-sm font-medium text-primary">Timeline</p>
             <h2 className="mt-1 text-2xl font-semibold tracking-tight">Parcours du document</h2>
+            <p className="mt-2 text-sm leading-6 text-muted">
+              Suivez l historique du depot, de la revue et de la signature avec les points de
+              contexte utiles.
+            </p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-[22px] border border-border bg-background p-4">
+              <p className="text-sm text-muted">Stagiaire</p>
+              <p className="mt-2 text-sm font-medium">
+                {`${document.stage.stagiaire.user.prenom} ${document.stage.stagiaire.user.nom}`.trim()}
+              </p>
+            </div>
+            <div className="rounded-[22px] border border-border bg-background p-4">
+              <p className="text-sm text-muted">Encadrant</p>
+              <p className="mt-2 text-sm font-medium">{encadrantLabel}</p>
+            </div>
+            <div className="rounded-[22px] border border-border bg-background p-4">
+              <p className="text-sm text-muted">Auteur</p>
+              <p className="mt-2 text-sm font-medium">
+                {`${document.auteur.prenom} ${document.auteur.nom}`.trim()}
+              </p>
+            </div>
+            <div className="rounded-[22px] border border-border bg-background p-4">
+              <p className="text-sm text-muted">Version</p>
+              <p className="mt-2 text-sm font-medium">v{document.version}</p>
+            </div>
+          </div>
+
+          <div className="rounded-[22px] border border-primary/15 bg-primary/5 p-4">
+            <p className="text-sm font-medium text-primary">Action attendue</p>
+            <p className="mt-2 text-sm leading-6 text-foreground">{nextActionLabel}</p>
           </div>
 
           <div className="space-y-4">
@@ -246,6 +336,10 @@ export default async function DocumentDetailPage({
           <div>
             <p className="text-sm font-medium text-primary">Details</p>
             <h2 className="mt-1 text-2xl font-semibold tracking-tight">Contexte et decisions</h2>
+            <p className="mt-2 text-sm leading-6 text-muted">
+              Regroupez ici les informations de revision, les motifs de rejet et l etat de
+              signature.
+            </p>
           </div>
 
           <div className="grid gap-4 md:grid-cols-2">
@@ -274,7 +368,10 @@ export default async function DocumentDetailPage({
               </p>
             </div>
             <div className="rounded-[22px] border border-border bg-background p-4 md:col-span-2">
-              <p className="text-sm text-muted">Signature</p>
+              <div className="flex flex-wrap items-center gap-2">
+                <p className="text-sm text-muted">Signature</p>
+                <StatusBadge status={getSignatureStatusLabel(document.signatureStatus)} />
+              </div>
               <p className="mt-2 text-sm font-medium">
                 Provider: {document.signatureProvider ?? "Non configure"} · Reference:{" "}
                 {document.signatureReference ?? "Aucune"} · Signe le {formatDate(document.signedAt)}

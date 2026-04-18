@@ -38,6 +38,7 @@ Definir la marche a suivre si la mise en production V2 introduit une regression 
 ### 3. Verification fonctionnelle rapide
 
 - login
+- verification d un compte sensible avec 2FA desactive cote applicatif si la mitigation l exige
 - dashboard
 - stagiaires
 - rapports
@@ -52,6 +53,7 @@ Definir la marche a suivre si la mise en production V2 introduit une regression 
 ## Strategie base de donnees
 
 - schema V2 base sur une approche expand/contract
+- la migration `0008_security_hardening` est additive et ne supprime aucune colonne existante
 - aucune suppression destructive ne doit accompagner la meme release que les ajouts
 - backup complet requis avant release
 - restauration DB reservee aux cas de corruption ou perte de coherence

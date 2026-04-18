@@ -3,6 +3,7 @@
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import type { RapportActionState } from "@/app/(dashboard)/rapports/actions";
+import { FeedbackBanner } from "@/components/ui/feedback-banner";
 
 type RapportReviewFormProps = {
   rapportId: string;
@@ -62,14 +63,15 @@ export function RapportReviewForm({ rapportId, defaultComment, action }: Rapport
           name="commentaireEncadrant"
           defaultValue={defaultComment}
           rows={5}
-          className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+          className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
         />
+        <p className="text-xs leading-5 text-muted">
+          Si vous retournez le rapport, expliquez clairement ce qui doit etre corrige.
+        </p>
       </label>
 
       {state.error ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {state.error}
-        </div>
+        <FeedbackBanner kind="error" title="Action impossible" message={state.error} />
       ) : null}
 
       <ReviewButtons />

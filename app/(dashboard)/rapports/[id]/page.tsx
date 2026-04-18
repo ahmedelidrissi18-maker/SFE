@@ -8,6 +8,7 @@ import { RapportReviewForm } from "@/components/features/rapports/rapport-review
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FeedbackBanner } from "@/components/ui/feedback-banner";
+import { MetricCard } from "@/components/ui/metric-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { prisma } from "@/lib/prisma";
@@ -24,6 +25,21 @@ type RapportDetailPageProps = {
 
 function getStringParam(value?: string | string[]) {
   return Array.isArray(value) ? value[0] : value;
+}
+
+function getRapportNextActionLabel(status: string) {
+  switch (status) {
+    case "BROUILLON":
+      return "Completer le contenu puis soumettre le rapport a votre encadrant.";
+    case "SOUMIS":
+      return "Attendre la relecture et la decision de validation.";
+    case "RETOURNE":
+      return "Prendre en compte le commentaire encadrant avant une nouvelle soumission.";
+    case "VALIDE":
+      return "Aucune action immediate n est attendue sur ce rapport.";
+    default:
+      return "Consulter le detail du rapport pour confirmer la prochaine etape.";
+  }
 }
 
 export default async function RapportDetailPage({ params, searchParams }: RapportDetailPageProps) {
@@ -74,6 +90,11 @@ export default async function RapportDetailPage({ params, searchParams }: Rappor
     hasRole(session.user.role, ["ADMIN", "RH", "ENCADRANT"]) &&
     (isStaffReviewer || isEncadrantOwner) &&
     canReviewRapport(rapport.statut);
+  const submittedAtLabel = rapport.dateSoumission ? formatDate(rapport.dateSoumission) : "Non soumis";
+  const encadrantLabel = rapport.stage.encadrant
+    ? `${rapport.stage.encadrant.prenom} ${rapport.stage.encadrant.nom}`.trim()
+    : "Non affecte";
+  const nextActionLabel = getRapportNextActionLabel(rapport.statut);
 
   const timelineItems = [
     {
@@ -113,16 +134,33 @@ export default async function RapportDetailPage({ params, searchParams }: Rappor
   return (
     <div className="space-y-8">
       {success === "saved" ? (
-        <FeedbackBanner message="Le rapport a ete enregistre en brouillon." />
+        <FeedbackBanner
+          title="Brouillon enregistre"
+          message="Le rapport a ete enregistre en brouillon."
+          description="Vous pouvez le completer ou le soumettre des que son contenu est pret."
+        />
       ) : null}
       {success === "submitted" ? (
-        <FeedbackBanner message="Le rapport a ete soumis." />
+        <FeedbackBanner
+          title="Rapport soumis"
+          message="Le rapport a ete transmis pour relecture."
+          description="Le workflow de validation est maintenant en cours sur cette semaine."
+        />
       ) : null}
       {success === "validated" ? (
-        <FeedbackBanner message="Le rapport a ete valide." />
+        <FeedbackBanner
+          title="Rapport valide"
+          message="Le rapport a ete valide."
+          description="Aucune action supplementaire n est attendue sur ce rapport."
+        />
       ) : null}
       {success === "returned" ? (
-        <FeedbackBanner message="Le rapport a ete retourne avec commentaire." />
+        <FeedbackBanner
+          kind="warning"
+          title="Rapport retourne"
+          message="Le rapport a ete retourne avec commentaire."
+          description="Le commentaire encadrant est visible plus bas pour guider la correction."
+        />
       ) : null}
 
       <PageHeader
@@ -143,26 +181,30 @@ export default async function RapportDetailPage({ params, searchParams }: Rappor
       />
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        <Card>
-          <p className="text-sm text-muted">Avancement</p>
-          <p className="mt-3 text-3xl font-semibold tracking-tight">{rapport.avancement}%</p>
-        </Card>
-        <Card>
-          <p className="text-sm text-muted">Soumis le</p>
-          <p className="mt-3 text-sm font-medium">{formatDate(rapport.dateSoumission)}</p>
-        </Card>
-        <Card>
-          <p className="text-sm text-muted">Stage</p>
-          <p className="mt-3 text-sm font-medium">{rapport.stage.sujet}</p>
-        </Card>
-        <Card>
-          <p className="text-sm text-muted">Encadrant</p>
-          <p className="mt-3 text-sm font-medium">
-            {rapport.stage.encadrant
-              ? `${rapport.stage.encadrant.prenom} ${rapport.stage.encadrant.nom}`.trim()
-              : "Non affecte"}
-          </p>
-        </Card>
+        <MetricCard
+          label="Avancement"
+          value={`${rapport.avancement}%`}
+          helper="Progression declaree pour cette semaine de stage"
+          accent={<CheckCircle2 className="h-5 w-5" />}
+        />
+        <MetricCard
+          label="Statut"
+          value={<StatusBadge status={getRapportStatusLabel(rapport.statut)} />}
+          helper="Etat actuel du rapport dans le workflow"
+          accent={<FileClock className="h-5 w-5" />}
+        />
+        <MetricCard
+          label="Soumis le"
+          value={submittedAtLabel}
+          helper="Date de transmission au workflow de revue"
+          accent={<Send className="h-5 w-5" />}
+        />
+        <MetricCard
+          label="Encadrant"
+          value={encadrantLabel}
+          helper="Responsable de la relecture sur le stage"
+          accent={<MessageSquareQuote className="h-5 w-5" />}
+        />
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[0.75fr_1.25fr]">
@@ -170,6 +212,35 @@ export default async function RapportDetailPage({ params, searchParams }: Rappor
           <div>
             <p className="text-sm font-medium text-primary">Timeline</p>
             <h2 className="mt-1 text-2xl font-semibold tracking-tight">Parcours du rapport</h2>
+            <p className="mt-2 text-sm leading-6 text-muted">
+              Retrouvez le contexte de stage, l action attendue et les etapes deja franchies.
+            </p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-[22px] border border-border bg-background p-4">
+              <p className="text-sm text-muted">Stagiaire</p>
+              <p className="mt-2 text-sm font-medium">
+                {`${rapport.stage.stagiaire.user.prenom} ${rapport.stage.stagiaire.user.nom}`.trim()}
+              </p>
+            </div>
+            <div className="rounded-[22px] border border-border bg-background p-4">
+              <p className="text-sm text-muted">Stage</p>
+              <p className="mt-2 text-sm font-medium">{rapport.stage.sujet}</p>
+            </div>
+            <div className="rounded-[22px] border border-border bg-background p-4">
+              <p className="text-sm text-muted">Departement</p>
+              <p className="mt-2 text-sm font-medium">{rapport.stage.departement}</p>
+            </div>
+            <div className="rounded-[22px] border border-border bg-background p-4">
+              <p className="text-sm text-muted">Derniere mise a jour</p>
+              <p className="mt-2 text-sm font-medium">{formatDate(rapport.updatedAt)}</p>
+            </div>
+          </div>
+
+          <div className="rounded-[22px] border border-primary/15 bg-primary/5 p-4">
+            <p className="text-sm font-medium text-primary">Action attendue</p>
+            <p className="mt-2 text-sm leading-6 text-foreground">{nextActionLabel}</p>
           </div>
 
           <div className="space-y-4">
@@ -227,6 +298,10 @@ export default async function RapportDetailPage({ params, searchParams }: Rappor
             <div>
               <p className="text-sm font-medium text-primary">Contenu</p>
               <h2 className="mt-1 text-2xl font-semibold tracking-tight">Corps du rapport</h2>
+              <p className="mt-2 text-sm leading-6 text-muted">
+                Consultez les taches declarees, les difficultes remontees et le plan de travail
+                suivant.
+              </p>
             </div>
 
             <div className="grid gap-4">
