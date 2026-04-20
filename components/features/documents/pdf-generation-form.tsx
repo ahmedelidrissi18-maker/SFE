@@ -18,7 +18,7 @@ type PdfGenerationFormProps = {
 
 const initialState: DocumentActionState = {};
 const fieldClassName =
-  "w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20";
+  "field-shell w-full rounded-2xl px-4 py-3 outline-none transition";
 
 function SubmitButton({ disabled }: { disabled?: boolean }) {
   const { pending } = useFormStatus();
@@ -28,7 +28,7 @@ function SubmitButton({ disabled }: { disabled?: boolean }) {
     <button
       type="submit"
       disabled={isDisabled}
-      className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
+      className="action-button action-button-primary px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70"
     >
       {pending ? "Generation..." : "Generer le PDF"}
     </button>
@@ -42,7 +42,7 @@ export function PdfGenerationForm({ stages, action }: PdfGenerationFormProps) {
   return (
     <form
       action={formAction}
-      className="space-y-5 rounded-[32px] border border-border/80 bg-card p-6 shadow-[0_18px_40px_-24px_rgba(15,23,42,0.28)] sm:p-8"
+      className="form-shell space-y-5 rounded-[32px] p-6 sm:p-8"
     >
       <div className="space-y-2">
         <h2 className="text-xl font-semibold">Generer un PDF standard</h2>

@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { BellRing, CheckCheck, Clock3 } from "lucide-react";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import {
@@ -11,6 +10,7 @@ import { LiveNotificationsListener } from "@/components/features/notifications/l
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FeedbackBanner } from "@/components/ui/feedback-banner";
+import { MaterialSymbol } from "@/components/ui/material-symbol";
 import { MetricCard } from "@/components/ui/metric-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -87,7 +87,7 @@ export default async function NotificationsPage({ searchParams }: NotificationsP
           <form action={markAllNotificationsReadAction}>
             <button
               type="submit"
-              className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary"
+              className="action-button action-button-secondary px-5 py-3 text-sm"
             >
               Tout marquer comme lu
             </button>
@@ -100,19 +100,19 @@ export default async function NotificationsPage({ searchParams }: NotificationsP
           label="Notifications"
           value={notifications.length}
           helper="Tous les evenements visibles dans votre espace"
-          accent={<BellRing className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="notifications" className="text-[20px]" filled />}
         />
         <MetricCard
           label="Non lues"
           value={unreadCount}
           helper="Elements qui demandent encore une lecture"
-          accent={<Clock3 className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="schedule" className="text-[20px]" />}
         />
         <MetricCard
           label="Derniere mise a jour"
           value={notifications[0] ? formatDate(notifications[0].createdAt) : "Aucune"}
           helper="Horodatage de la notification la plus recente"
-          accent={<CheckCheck className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="done_all" className="text-[20px]" />}
         />
       </section>
 
@@ -136,7 +136,7 @@ export default async function NotificationsPage({ searchParams }: NotificationsP
               <form
                 key={eventDefinition.type}
                 action={updateNotificationPreferenceAction}
-                className="rounded-[22px] border border-border bg-background p-4"
+                className="tonal-card rounded-[22px] p-4"
               >
                 <input type="hidden" name="eventType" value={eventDefinition.type} />
                 <div className="space-y-3">
@@ -164,7 +164,7 @@ export default async function NotificationsPage({ searchParams }: NotificationsP
                       <select
                         name="inAppEnabled"
                         defaultValue={String(preference?.inAppEnabled ?? true)}
-                        className="w-full rounded-2xl border border-border bg-card px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+                        className="field-shell w-full rounded-2xl px-4 py-3 outline-none transition"
                       >
                         <option value="true">Active</option>
                         <option value="false">Desactive</option>
@@ -176,7 +176,7 @@ export default async function NotificationsPage({ searchParams }: NotificationsP
                       <select
                         name="liveEnabled"
                         defaultValue={String(preference?.liveEnabled ?? true)}
-                        className="w-full rounded-2xl border border-border bg-card px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+                        className="field-shell w-full rounded-2xl px-4 py-3 outline-none transition"
                       >
                         <option value="true">Active</option>
                         <option value="false">Desactive</option>
@@ -186,7 +186,7 @@ export default async function NotificationsPage({ searchParams }: NotificationsP
 
                   <button
                     type="submit"
-                    className="rounded-full border border-border bg-card px-4 py-2.5 text-sm font-semibold transition hover:border-primary hover:text-primary"
+                    className="action-button action-button-secondary px-4 py-2.5 text-sm"
                   >
                     Enregistrer
                   </button>
@@ -202,7 +202,11 @@ export default async function NotificationsPage({ searchParams }: NotificationsP
           {notifications.map((notification) => (
             <Card
               key={notification.id}
-              className={notification.isRead ? "border-border/70" : "border-primary/30 bg-linear-to-br from-card via-card to-accent/35"}
+              className={
+                notification.isRead
+                  ? "bg-card"
+                  : "bg-linear-to-br from-card via-card to-accent/35"
+              }
             >
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="space-y-2">
@@ -223,7 +227,7 @@ export default async function NotificationsPage({ searchParams }: NotificationsP
                   {notification.lien ? (
                     <Link
                       href={notification.lien}
-                      className="rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                      className="action-button action-button-primary px-4 py-2.5 text-sm"
                     >
                       Ouvrir
                     </Link>
@@ -234,7 +238,7 @@ export default async function NotificationsPage({ searchParams }: NotificationsP
                       <input type="hidden" name="notificationId" value={notification.id} />
                       <button
                         type="submit"
-                        className="rounded-full border border-border bg-background px-4 py-2.5 text-sm font-semibold transition hover:border-primary hover:text-primary"
+                        className="action-button action-button-secondary px-4 py-2.5 text-sm"
                       >
                         Marquer comme lue
                       </button>

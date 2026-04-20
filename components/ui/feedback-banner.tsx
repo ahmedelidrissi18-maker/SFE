@@ -1,6 +1,5 @@
 import Link from "next/link";
-import type { LucideIcon } from "lucide-react";
-import { AlertCircle, CheckCircle2, Info, TriangleAlert } from "lucide-react";
+import { MaterialSymbol } from "@/components/ui/material-symbol";
 import { cn } from "@/lib/utils";
 
 type FeedbackBannerProps = {
@@ -10,38 +9,38 @@ type FeedbackBannerProps = {
   description?: string;
   actionLabel?: string;
   actionHref?: string;
-  icon?: LucideIcon;
+  icon?: string;
   className?: string;
 };
 
 const styles = {
   success: {
-    container: "border-emerald-200/80 bg-linear-to-br from-emerald-50 to-card text-emerald-900",
-    icon: "bg-emerald-600 text-white",
-    action: "hover:bg-emerald-100/80",
+    container: "bg-secondary-fixed text-on-secondary-fixed",
+    icon: "bg-white/70 text-on-secondary-fixed",
+    action: "text-on-secondary-fixed",
   },
   error: {
-    container: "border-red-200/80 bg-linear-to-br from-red-50 to-card text-red-900",
-    icon: "bg-red-600 text-white",
-    action: "hover:bg-red-100/80",
+    container: "bg-error-container text-on-error-container",
+    icon: "bg-white/70 text-on-error-container",
+    action: "text-on-error-container",
   },
   info: {
-    container: "border-sky-200/80 bg-linear-to-br from-sky-50 to-card text-sky-900",
-    icon: "bg-sky-600 text-white",
-    action: "hover:bg-sky-100/80",
+    container: "bg-primary-fixed text-on-primary-fixed-variant",
+    icon: "bg-white/70 text-on-primary-fixed-variant",
+    action: "text-on-primary-fixed-variant",
   },
   warning: {
-    container: "border-amber-200/80 bg-linear-to-br from-amber-50 to-card text-amber-900",
-    icon: "bg-amber-600 text-white",
-    action: "hover:bg-amber-100/80",
+    container: "bg-tertiary-fixed text-on-tertiary-fixed-variant",
+    icon: "bg-white/70 text-on-tertiary-fixed-variant",
+    action: "text-on-tertiary-fixed-variant",
   },
 };
 
 const icons = {
-  success: CheckCircle2,
-  error: AlertCircle,
-  info: Info,
-  warning: TriangleAlert,
+  success: "task_alt",
+  error: "error",
+  info: "info",
+  warning: "warning",
 };
 
 export function FeedbackBanner({
@@ -54,14 +53,14 @@ export function FeedbackBanner({
   icon,
   className,
 }: FeedbackBannerProps) {
-  const Icon = icon ?? icons[kind];
+  const glyph = icon ?? icons[kind];
   const style = styles[kind];
 
   return (
     <div
       role={kind === "error" || kind === "warning" ? "alert" : "status"}
       className={cn(
-        "rounded-[26px] border px-4 py-4 shadow-[var(--shadow-soft)] sm:px-5",
+        "rounded-[26px] px-4 py-4 shadow-[var(--shadow-soft)] sm:px-5",
         style.container,
         className,
       )}
@@ -70,11 +69,11 @@ export function FeedbackBanner({
         <div className="flex gap-3">
           <div
             className={cn(
-              "mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] shadow-[0_18px_34px_-24px_rgba(15,23,42,0.45)]",
+              "mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px]",
               style.icon,
             )}
           >
-            <Icon className="h-5 w-5" />
+            <MaterialSymbol icon={glyph} className="text-[20px]" filled />
           </div>
           <div className="space-y-1">
             {title ? <p className="text-sm font-semibold tracking-tight">{title}</p> : null}
@@ -87,7 +86,7 @@ export function FeedbackBanner({
           <Link
             href={actionHref}
             className={cn(
-              "inline-flex min-h-10 shrink-0 items-center justify-center rounded-full border border-current/15 bg-white/60 px-4 py-2 text-sm font-semibold shadow-[0_16px_30px_-24px_rgba(15,23,42,0.32)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current/25 focus-visible:ring-offset-2",
+              "inline-flex min-h-10 shrink-0 items-center justify-center rounded-full bg-white/70 px-4 py-2 text-sm font-semibold shadow-[0px_12px_32px_rgba(26,28,29,0.04)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current/20 focus-visible:ring-offset-2",
               style.action,
             )}
           >

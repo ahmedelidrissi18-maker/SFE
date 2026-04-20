@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { CheckCircle2, FileClock, MessageSquareQuote, Send } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { reviewRapportAction, saveRapportAction } from "@/app/(dashboard)/rapports/actions";
@@ -8,6 +7,7 @@ import { RapportReviewForm } from "@/components/features/rapports/rapport-review
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FeedbackBanner } from "@/components/ui/feedback-banner";
+import { MaterialSymbol } from "@/components/ui/material-symbol";
 import { MetricCard } from "@/components/ui/metric-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -100,7 +100,7 @@ export default async function RapportDetailPage({ params, searchParams }: Rappor
     {
       label: "Creation du brouillon",
       date: rapport.createdAt,
-      icon: FileClock,
+      icon: "edit_document",
       helper: "Premiere version enregistree sur la plateforme",
     },
     ...(rapport.dateSoumission
@@ -108,7 +108,7 @@ export default async function RapportDetailPage({ params, searchParams }: Rappor
           {
             label: "Soumission",
             date: rapport.dateSoumission,
-            icon: Send,
+            icon: "send",
             helper: "Le rapport a ete transmis pour revue",
           },
         ]
@@ -118,7 +118,7 @@ export default async function RapportDetailPage({ params, searchParams }: Rappor
           {
             label: "Commentaire encadrant",
             date: rapport.updatedAt,
-            icon: MessageSquareQuote,
+            icon: "chat",
             helper: "Un retour a ete depose sur le rapport",
           },
         ]
@@ -126,7 +126,7 @@ export default async function RapportDetailPage({ params, searchParams }: Rappor
     {
       label: "Statut actuel",
       date: rapport.updatedAt,
-      icon: CheckCircle2,
+      icon: "task_alt",
       helper: `Etat courant : ${getRapportStatusLabel(rapport.statut)}`,
     },
   ];
@@ -172,7 +172,7 @@ export default async function RapportDetailPage({ params, searchParams }: Rappor
             <StatusBadge status={getRapportStatusLabel(rapport.statut)} />
             <Link
               href="/rapports"
-              className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary"
+              className="action-button action-button-secondary px-5 py-3 text-sm"
             >
               Retour aux rapports
             </Link>
@@ -185,25 +185,25 @@ export default async function RapportDetailPage({ params, searchParams }: Rappor
           label="Avancement"
           value={`${rapport.avancement}%`}
           helper="Progression declaree pour cette semaine de stage"
-          accent={<CheckCircle2 className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="task_alt" className="text-[20px]" filled />}
         />
         <MetricCard
           label="Statut"
           value={<StatusBadge status={getRapportStatusLabel(rapport.statut)} />}
           helper="Etat actuel du rapport dans le workflow"
-          accent={<FileClock className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="pending_actions" className="text-[20px]" />}
         />
         <MetricCard
           label="Soumis le"
           value={submittedAtLabel}
           helper="Date de transmission au workflow de revue"
-          accent={<Send className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="send" className="text-[20px]" />}
         />
         <MetricCard
           label="Encadrant"
           value={encadrantLabel}
           helper="Responsable de la relecture sur le stage"
-          accent={<MessageSquareQuote className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="chat" className="text-[20px]" />}
         />
       </section>
 
@@ -218,40 +218,38 @@ export default async function RapportDetailPage({ params, searchParams }: Rappor
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-[22px] border border-border bg-background p-4">
+            <div className="tonal-card rounded-[22px] p-4">
               <p className="text-sm text-muted">Stagiaire</p>
               <p className="mt-2 text-sm font-medium">
                 {`${rapport.stage.stagiaire.user.prenom} ${rapport.stage.stagiaire.user.nom}`.trim()}
               </p>
             </div>
-            <div className="rounded-[22px] border border-border bg-background p-4">
+            <div className="tonal-card rounded-[22px] p-4">
               <p className="text-sm text-muted">Stage</p>
               <p className="mt-2 text-sm font-medium">{rapport.stage.sujet}</p>
             </div>
-            <div className="rounded-[22px] border border-border bg-background p-4">
+            <div className="tonal-card rounded-[22px] p-4">
               <p className="text-sm text-muted">Departement</p>
               <p className="mt-2 text-sm font-medium">{rapport.stage.departement}</p>
             </div>
-            <div className="rounded-[22px] border border-border bg-background p-4">
+            <div className="tonal-card rounded-[22px] p-4">
               <p className="text-sm text-muted">Derniere mise a jour</p>
               <p className="mt-2 text-sm font-medium">{formatDate(rapport.updatedAt)}</p>
             </div>
           </div>
 
-          <div className="rounded-[22px] border border-primary/15 bg-primary/5 p-4">
+          <div className="rounded-[22px] bg-primary-fixed p-4 text-on-primary-fixed-variant">
             <p className="text-sm font-medium text-primary">Action attendue</p>
             <p className="mt-2 text-sm leading-6 text-foreground">{nextActionLabel}</p>
           </div>
 
           <div className="space-y-4">
             {timelineItems.map((item, index) => {
-              const Icon = item.icon;
-
               return (
                 <div key={`${item.label}-${index}`} className="flex gap-4">
                   <div className="flex w-10 flex-col items-center">
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-                      <Icon className="h-5 w-5" />
+                      <MaterialSymbol icon={item.icon} className="text-[20px]" />
                     </div>
                     {index < timelineItems.length - 1 ? (
                       <div className="mt-2 min-h-8 w-px flex-1 bg-border" />
@@ -305,18 +303,18 @@ export default async function RapportDetailPage({ params, searchParams }: Rappor
             </div>
 
             <div className="grid gap-4">
-              <section className="rounded-[22px] border border-border bg-background p-4">
+              <section className="tonal-card rounded-[22px] p-4">
                 <p className="text-sm text-muted">Taches realisees</p>
                 <p className="mt-3 whitespace-pre-wrap text-sm leading-6">{rapport.tachesRealisees}</p>
               </section>
               <section className="grid gap-4 md:grid-cols-2">
-                <div className="rounded-[22px] border border-border bg-background p-4">
+                <div className="tonal-card rounded-[22px] p-4">
                   <p className="text-sm text-muted">Difficultes</p>
                   <p className="mt-3 whitespace-pre-wrap text-sm leading-6">
                     {rapport.difficultes ?? "Aucune difficulte renseignee."}
                   </p>
                 </div>
-                <div className="rounded-[22px] border border-border bg-background p-4">
+                <div className="tonal-card rounded-[22px] p-4">
                   <p className="text-sm text-muted">Plan suivant</p>
                   <p className="mt-3 whitespace-pre-wrap text-sm leading-6">
                     {rapport.planSuivant ?? "Aucun plan suivant renseigne."}
@@ -326,9 +324,9 @@ export default async function RapportDetailPage({ params, searchParams }: Rappor
             </div>
 
             {rapport.commentaireEncadrant ? (
-              <div className="rounded-[22px] border border-orange-200 bg-orange-50/60 p-4">
-                <p className="text-sm font-medium text-orange-700">Commentaire de l encadrant</p>
-                <p className="mt-3 whitespace-pre-wrap text-sm leading-6 text-orange-950/80">
+              <div className="rounded-[22px] bg-tertiary-fixed p-4 text-on-tertiary-fixed-variant">
+                <p className="text-sm font-medium">Commentaire de l encadrant</p>
+                <p className="mt-3 whitespace-pre-wrap text-sm leading-6">
                   {rapport.commentaireEncadrant}
                 </p>
               </div>

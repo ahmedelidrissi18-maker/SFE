@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { CheckCircle2, ClipboardCheck, History, MessageSquareQuote } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import {
@@ -12,6 +11,7 @@ import { EvaluationReviewForm } from "@/components/features/evaluations/evaluati
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FeedbackBanner } from "@/components/ui/feedback-banner";
+import { MaterialSymbol } from "@/components/ui/material-symbol";
 import { MetricCard } from "@/components/ui/metric-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -210,7 +210,7 @@ export default async function EvaluationDetailPage({
             <StatusBadge status={getEvaluationStatusLabel(evaluation.status)} />
             <Link
               href="/evaluations"
-              className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary"
+              className="rounded-full bg-surface-container-low px-5 py-3 text-sm font-semibold text-on-surface shadow-[var(--shadow-soft)] transition hover:bg-surface-container-high hover:text-primary"
             >
               Retour aux evaluations
             </Link>
@@ -223,25 +223,25 @@ export default async function EvaluationDetailPage({
           label="Score"
           value={`${evaluation.totalScore}/${evaluation.maxScore}`}
           helper="Note globale calculee sur la grille active"
-          accent={<ClipboardCheck className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="grading" className="text-[20px]" />}
         />
         <MetricCard
           label="Statut"
           value={<StatusBadge status={getEvaluationStatusLabel(evaluation.status)} />}
           helper="Etat actuel dans le workflow de validation"
-          accent={<CheckCircle2 className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="task_alt" className="text-[20px]" filled />}
         />
         <MetricCard
           label="Planifiee le"
           value={formatDate(evaluation.scheduledFor)}
           helper="Date cible de realisation de l evaluation"
-          accent={<History className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="history" className="text-[20px]" />}
         />
         <MetricCard
           label="Revisions"
           value={evaluation.revisions.length}
           helper={`${encadrantLabel}, prochaine action : ${nextActionLabel}`}
-          accent={<MessageSquareQuote className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="chat" className="text-[20px]" />}
         />
       </section>
 
@@ -292,11 +292,11 @@ export default async function EvaluationDetailPage({
                     <div className="flex w-10 flex-col items-center">
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
                         {index === 0 ? (
-                          <ClipboardCheck className="h-5 w-5" />
+                          <MaterialSymbol icon="grading" className="text-[20px]" />
                         ) : index % 2 === 0 ? (
-                          <History className="h-5 w-5" />
+                          <MaterialSymbol icon="history" className="text-[20px]" />
                         ) : (
-                          <CheckCircle2 className="h-5 w-5" />
+                          <MaterialSymbol icon="task_alt" className="text-[20px]" filled />
                         )}
                       </div>
                       {index < evaluation.revisions.length - 1 ? (
@@ -407,7 +407,7 @@ export default async function EvaluationDetailPage({
 
             <div className="rounded-[22px] border border-border bg-background p-4">
               <div className="flex items-center gap-2">
-                <MessageSquareQuote className="h-4 w-4 text-primary" />
+                <MaterialSymbol icon="chat" className="text-[16px] text-primary" />
                 <p className="text-sm font-medium text-muted">Commentaire RH</p>
               </div>
               <p className="mt-3 whitespace-pre-wrap text-sm leading-6">

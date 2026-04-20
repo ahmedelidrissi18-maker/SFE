@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { CalendarRange, Clock3, FolderKanban, Users } from "lucide-react";
 import { auth } from "@/auth";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FeedbackBanner } from "@/components/ui/feedback-banner";
+import { MaterialSymbol } from "@/components/ui/material-symbol";
 import { MetricCard } from "@/components/ui/metric-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -78,7 +78,7 @@ export default async function StagesPage({ searchParams }: StagesPageProps) {
           session?.user.role !== "ENCADRANT" ? (
             <Link
               href="/stagiaires"
-              className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+              className="action-button action-button-primary px-5 py-3 text-sm"
             >
               Creer un stage
             </Link>
@@ -91,25 +91,25 @@ export default async function StagesPage({ searchParams }: StagesPageProps) {
           label="Stages visibles"
           value={stages.length}
           helper="Nombre de stages affiches selon vos filtres et votre role"
-          accent={<FolderKanban className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="work_history" className="text-[20px]" filled />}
         />
         <MetricCard
           label="Actifs"
           value={activeCount}
           helper="Stages planifies, en cours ou temporairement suspendus"
-          accent={<Clock3 className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="schedule" className="text-[20px]" />}
         />
         <MetricCard
           label="Fin proche"
           value={endingSoonCount}
           helper="Stages se terminant dans les quinze prochains jours"
-          accent={<CalendarRange className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="date_range" className="text-[20px]" />}
         />
         <MetricCard
           label="Stagiaires couverts"
           value={new Set(stages.map((stage) => stage.stagiaireId)).size}
           helper="Nombre de stagiaires concernes par les stages affiches"
-          accent={<Users className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="group" className="text-[20px]" filled />}
         />
       </section>
 
@@ -127,7 +127,7 @@ export default async function StagesPage({ searchParams }: StagesPageProps) {
             <select
               name="statut"
               defaultValue={statut}
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+              className="field-shell w-full rounded-2xl px-4 py-3 outline-none transition"
             >
               <option value="">Tous</option>
               <option value="PLANIFIE">Planifie</option>
@@ -144,20 +144,20 @@ export default async function StagesPage({ searchParams }: StagesPageProps) {
               name="departement"
               defaultValue={departement}
               placeholder="Infrastructure, Cloud..."
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+              className="field-shell w-full rounded-2xl px-4 py-3 outline-none transition"
             />
           </label>
 
           <div className="flex flex-wrap items-end gap-3">
             <button
               type="submit"
-              className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+              className="action-button action-button-primary px-5 py-3 text-sm"
             >
               Appliquer les filtres
             </button>
             <Link
               href="/stages"
-              className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary"
+              className="action-button action-button-secondary px-5 py-3 text-sm"
             >
               Revenir a la liste complete
             </Link>
@@ -180,14 +180,14 @@ export default async function StagesPage({ searchParams }: StagesPageProps) {
                 <div className="flex flex-wrap gap-3">
                   <Link
                     href={`/stagiaires/${stage.stagiaireId}`}
-                    className="rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                    className="action-button action-button-primary px-4 py-2.5 text-sm"
                   >
                     Voir stagiaire
                   </Link>
                   {session?.user.role !== "ENCADRANT" ? (
                     <Link
                       href={`/stages/${stage.id}/modifier`}
-                      className="rounded-full border border-border bg-background px-4 py-2.5 text-sm font-semibold transition hover:border-primary hover:text-primary"
+                      className="action-button action-button-secondary px-4 py-2.5 text-sm"
                     >
                       Modifier
                     </Link>
@@ -196,13 +196,13 @@ export default async function StagesPage({ searchParams }: StagesPageProps) {
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                <div className="rounded-[22px] border border-border bg-background p-4">
+                <div className="tonal-card rounded-[22px] p-4">
                   <p className="text-sm text-muted">Stagiaire</p>
                   <p className="mt-2 text-sm font-medium">
                     {`${stage.stagiaire.user.prenom} ${stage.stagiaire.user.nom}`.trim()}
                   </p>
                 </div>
-                <div className="rounded-[22px] border border-border bg-background p-4">
+                <div className="tonal-card rounded-[22px] p-4">
                   <p className="text-sm text-muted">Encadrant</p>
                   <p className="mt-2 text-sm font-medium">
                     {stage.encadrant
@@ -210,15 +210,15 @@ export default async function StagesPage({ searchParams }: StagesPageProps) {
                       : "Non affecte"}
                   </p>
                 </div>
-                <div className="rounded-[22px] border border-border bg-background p-4">
+                <div className="tonal-card rounded-[22px] p-4">
                   <p className="text-sm text-muted">Debut</p>
                   <p className="mt-2 text-sm font-medium">{formatDate(stage.dateDebut)}</p>
                 </div>
-                <div className="rounded-[22px] border border-border bg-background p-4">
+                <div className="tonal-card rounded-[22px] p-4">
                   <p className="text-sm text-muted">Fin</p>
                   <p className="mt-2 text-sm font-medium">{formatDate(stage.dateFin)}</p>
                 </div>
-                <div className="rounded-[22px] border border-border bg-background p-4 sm:col-span-2 xl:col-span-2">
+                <div className="tonal-card rounded-[22px] p-4 sm:col-span-2 xl:col-span-2">
                   <p className="text-sm text-muted">Depot GitHub</p>
                   <p className="mt-2 truncate text-sm font-medium">
                     {stage.githubRepo ?? "Non renseigne"}

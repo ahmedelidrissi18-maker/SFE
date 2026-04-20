@@ -1,11 +1,11 @@
 import Link from "next/link";
-import { FileArchive, FileCheck2, FileClock, FileX2 } from "lucide-react";
 import { auth } from "@/auth";
 import { requestPdfGenerationAction } from "@/app/(dashboard)/documents/actions";
 import { PdfGenerationForm } from "@/components/features/documents/pdf-generation-form";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FeedbackBanner } from "@/components/ui/feedback-banner";
+import { MaterialSymbol } from "@/components/ui/material-symbol";
 import { MetricCard } from "@/components/ui/metric-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -135,25 +135,25 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
           label="Documents visibles"
           value={documents.length}
           helper="Documents accessibles selon votre role et votre perimetre"
-          accent={<FileArchive className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="folder" className="text-[20px]" />}
         />
         <MetricCard
           label="En verification"
           value={pendingCount}
           helper="Documents en attente de revue ou de validation"
-          accent={<FileClock className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="pending_actions" className="text-[20px]" />}
         />
         <MetricCard
           label="Valides"
           value={validatedCount}
           helper="Documents valides et prets a etre telecharges"
-          accent={<FileCheck2 className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="task_alt" className="text-[20px]" filled />}
         />
         <MetricCard
           label="Rejetes"
           value={rejectedCount}
           helper="Documents retournes avec action attendue"
-          accent={<FileX2 className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="cancel" className="text-[20px]" filled />}
         />
       </section>
 
@@ -172,7 +172,7 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
             <select
               name="statut"
               defaultValue={statut}
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+              className="field-shell w-full rounded-2xl px-4 py-3 outline-none transition"
             >
               <option value="">Tous</option>
               <option value="DEPOSE">Depose</option>
@@ -188,20 +188,20 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
               name="type"
               defaultValue={type}
               placeholder="CONVENTION, RAPPORT..."
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+              className="field-shell w-full rounded-2xl px-4 py-3 outline-none transition"
             />
           </label>
 
           <div className="flex flex-wrap items-end gap-3">
             <button
               type="submit"
-              className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+              className="action-button action-button-primary px-5 py-3 text-sm"
             >
               Appliquer les filtres
             </button>
             <Link
               href="/documents"
-              className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary"
+              className="action-button action-button-secondary px-5 py-3 text-sm"
             >
               Revenir a la liste complete
             </Link>
@@ -239,33 +239,33 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
 
                 <Link
                   href={`/documents/${document.id}`}
-                  className="rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                  className="action-button action-button-primary px-4 py-2.5 text-sm"
                 >
                   Ouvrir
                 </Link>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                <div className="rounded-[22px] border border-border bg-background p-4">
+                <div className="tonal-card rounded-[22px] p-4">
                   <p className="text-sm text-muted">Type</p>
                   <p className="mt-2 text-sm font-medium">{getDocumentTypeLabel(document.type)}</p>
                 </div>
-                <div className="rounded-[22px] border border-border bg-background p-4">
+                <div className="tonal-card rounded-[22px] p-4">
                   <p className="text-sm text-muted">Taille</p>
                   <p className="mt-2 text-sm font-medium">{formatDocumentSize(document.tailleOctets)}</p>
                 </div>
-                <div className="rounded-[22px] border border-border bg-background p-4">
+                <div className="tonal-card rounded-[22px] p-4">
                   <p className="text-sm text-muted">Version</p>
                   <p className="mt-2 text-sm font-medium">v{document.version}</p>
                 </div>
-                <div className="rounded-[22px] border border-border bg-background p-4 sm:col-span-2">
+                <div className="tonal-card rounded-[22px] p-4 sm:col-span-2">
                   <p className="text-sm text-muted">Auteur</p>
                   <p className="mt-2 text-sm font-medium">
                     {`${document.auteur.prenom} ${document.auteur.nom}`.trim()}
                   </p>
                   <p className="mt-1 text-xs text-muted">Maj {formatDate(document.updatedAt)}</p>
                 </div>
-                <div className="rounded-[22px] border border-border bg-background p-4">
+                <div className="tonal-card rounded-[22px] p-4">
                   <p className="text-sm text-muted">Action attendue</p>
                   <p className="mt-2 text-sm font-medium">
                     {getDocumentNextActionLabel(document.statut, document.signatureStatus)}

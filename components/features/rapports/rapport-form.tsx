@@ -23,6 +23,8 @@ type RapportFormProps = {
 };
 
 const initialState: RapportActionState = {};
+const fieldClassName =
+  "field-shell w-full rounded-2xl px-4 py-3 outline-none transition";
 
 function SubmitButtons() {
   const { pending } = useFormStatus();
@@ -34,7 +36,7 @@ function SubmitButtons() {
         name="intent"
         value="draft"
         disabled={pending}
-        className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-70"
+        className="action-button action-button-secondary px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70"
       >
         {pending ? "Enregistrement..." : "Enregistrer en brouillon"}
       </button>
@@ -43,7 +45,7 @@ function SubmitButtons() {
         name="intent"
         value="submit"
         disabled={pending}
-        className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
+        className="action-button action-button-primary px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70"
       >
         {pending ? "Soumission..." : "Soumettre pour relecture"}
       </button>
@@ -72,7 +74,7 @@ export function RapportForm({
 
       <form
         action={formAction}
-        className="space-y-8 rounded-[32px] border border-border/80 bg-card p-6 shadow-[0_18px_40px_-24px_rgba(15,23,42,0.28)] sm:p-8"
+        className="form-shell space-y-8 rounded-[32px] p-6 sm:p-8"
       >
         <input type="hidden" name="rapportId" value={defaultValues?.rapportId ?? ""} />
 
@@ -89,7 +91,7 @@ export function RapportForm({
               name="stageId"
               defaultValue={defaultValues?.stageId}
               disabled={lockStage}
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 disabled:opacity-70"
+              className={`${fieldClassName} disabled:opacity-70`}
             >
               <option value="">Selectionner un stage</option>
               {stages.map((stage) => (
@@ -112,7 +114,7 @@ export function RapportForm({
               min={1}
               max={52}
               defaultValue={defaultValues?.semaine}
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+              className={fieldClassName}
             />
             <p className="text-xs leading-5 text-muted">
               Indiquez la semaine de suivi correspondant a ce rapport.
@@ -127,7 +129,7 @@ export function RapportForm({
               name="tachesRealisees"
               defaultValue={defaultValues?.tachesRealisees}
               rows={6}
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+              className={fieldClassName}
             />
             <p className="text-xs leading-5 text-muted">
               Decrivez les taches terminees ou avancees pendant la semaine.
@@ -141,7 +143,7 @@ export function RapportForm({
                 name="difficultes"
                 defaultValue={defaultValues?.difficultes}
                 rows={4}
-                className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+                className={fieldClassName}
               />
               <p className="text-xs leading-5 text-muted">
                 Mentionnez les blocages, dependances ou besoins d arbitrage.
@@ -154,7 +156,7 @@ export function RapportForm({
                 name="planSuivant"
                 defaultValue={defaultValues?.planSuivant}
                 rows={4}
-                className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+                className={fieldClassName}
               />
               <p className="text-xs leading-5 text-muted">
                 Expliquez ce qui est prevu sur la prochaine periode de travail.
@@ -170,7 +172,7 @@ export function RapportForm({
               min={0}
               max={100}
               defaultValue={defaultValues?.avancement ?? 0}
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+              className={fieldClassName}
             />
             <p className="text-xs leading-5 text-muted">
               Donnez une estimation globale de progression entre 0 et 100.
@@ -186,7 +188,7 @@ export function RapportForm({
           <SubmitButtons />
           <Link
             href={cancelHref}
-            className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary"
+            className="action-button action-button-secondary px-5 py-3 text-sm"
           >
             Annuler
           </Link>

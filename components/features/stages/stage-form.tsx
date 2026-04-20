@@ -27,6 +27,8 @@ type StageFormProps = {
 };
 
 const initialState: StageActionState = {};
+const fieldClassName =
+  "field-shell w-full rounded-2xl px-4 py-3 outline-none transition";
 
 function SubmitButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
@@ -35,7 +37,7 @@ function SubmitButton({ label }: { label: string }) {
     <button
       type="submit"
       disabled={pending}
-      className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
+      className="action-button action-button-primary px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70"
     >
       {pending ? "Enregistrement..." : label}
     </button>
@@ -68,7 +70,7 @@ function Field({
         defaultValue={defaultValue}
         required={required}
         placeholder={placeholder}
-        className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+        className={fieldClassName}
       />
       {hint ? <p className="text-xs leading-5 text-muted">{hint}</p> : null}
     </label>
@@ -98,7 +100,7 @@ export function StageForm({
 
       <form
         action={formAction}
-        className="space-y-8 rounded-[32px] border border-border/80 bg-card p-6 shadow-[0_18px_40px_-24px_rgba(15,23,42,0.28)] sm:p-8"
+        className="form-shell space-y-8 rounded-[32px] p-6 sm:p-8"
       >
         <input type="hidden" name="stageId" value={defaultValues?.stageId ?? ""} />
 
@@ -123,7 +125,7 @@ export function StageForm({
               name="stagiaireId"
               defaultValue={defaultValues?.stagiaireId}
               disabled={lockStagiaire}
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 disabled:opacity-70"
+              className={`${fieldClassName} disabled:opacity-70`}
             >
               <option value="">Selectionner un stagiaire</option>
               {stagiaires.map((stagiaire) => (
@@ -143,7 +145,7 @@ export function StageForm({
             <select
               name="encadrantId"
               defaultValue={defaultValues?.encadrantId}
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+              className={fieldClassName}
             >
               <option value="">Non affecte</option>
               {encadrants.map((encadrant) => (
@@ -184,7 +186,7 @@ export function StageForm({
             <select
               name="statut"
               defaultValue={defaultValues?.statut ?? StageStatus.PLANIFIE}
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+              className={fieldClassName}
             >
               {Object.values(StageStatus).map((status) => (
                 <option key={status} value={status}>
@@ -209,7 +211,7 @@ export function StageForm({
               name="sujet"
               defaultValue={defaultValues?.sujet}
               rows={5}
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+              className={fieldClassName}
             />
             <p className="text-xs leading-5 text-muted">
               Decrivez le sujet de facon concise pour faciliter la lecture des fiches et des rapports.
@@ -234,7 +236,7 @@ export function StageForm({
           <SubmitButton label={submitLabel} />
           <Link
             href={cancelHref}
-            className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary"
+            className="action-button action-button-secondary px-5 py-3 text-sm"
           >
             Annuler
           </Link>

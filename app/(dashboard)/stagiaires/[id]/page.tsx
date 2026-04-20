@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { FileText, FolderOpenDot, GraduationCap, Mail, UserSquare2 } from "lucide-react";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { uploadDocumentAction } from "@/app/(dashboard)/documents/actions";
@@ -7,12 +6,13 @@ import {
   linkGithubAccountAction,
   syncGithubActivityAction,
 } from "@/app/(dashboard)/stagiaires/github-actions";
-import { toggleStagiaireArchiveAction } from "@/app/(dashboard)/stagiaires/actions";
 import { DocumentUploadForm } from "@/components/features/documents/document-upload-form";
 import { GithubIntegrationCard } from "@/components/features/github/github-integration-card";
+import { StagiaireArchiveToggle } from "@/components/features/stagiaires/stagiaire-archive-toggle";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FeedbackBanner } from "@/components/ui/feedback-banner";
+import { MaterialSymbol } from "@/components/ui/material-symbol";
 import { MetricCard } from "@/components/ui/metric-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -40,8 +40,8 @@ type StagiaireDetailPageProps = {
 
 function DetailItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[22px] border border-border bg-background p-4">
-      <p className="text-sm text-muted">{label}</p>
+    <div className="rounded-[22px] bg-surface-container-low p-4">
+      <p className="text-sm text-on-surface-variant">{label}</p>
       <p className="mt-2 text-sm font-medium leading-6">{value}</p>
     </div>
   );
@@ -64,6 +64,22 @@ function getGithubErrorMessage(code: string) {
   };
 
   return messages[code] ?? "";
+}
+
+function getProfileStatusLabel(isActive: boolean, stageStatus?: string | null) {
+  if (stageStatus === "SUSPENDU") {
+    return "Suspendu";
+  }
+
+  if (stageStatus === "TERMINE") {
+    return "Termine";
+  }
+
+  if (isActive) {
+    return "Actif";
+  }
+
+  return "Archive";
 }
 
 export default async function StagiaireDetailPage({
@@ -113,6 +129,7 @@ export default async function StagiaireDetailPage({
 
   const latestStage = stagiaire.stages[0] ?? null;
   const latestStageInfo = getLatestStageInfo(latestStage);
+  const profileStatusLabel = getProfileStatusLabel(stagiaire.user.isActive, latestStage?.statut);
   const githubSummary = await githubService.getSummary(stagiaire.id);
   const latestGithubPayload =
     githubSummary.latestSync?.payload &&
@@ -201,38 +218,28 @@ export default async function StagiaireDetailPage({
           <>
             <Link
               href="/stagiaires"
-              className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary"
+              className="action-button action-button-secondary px-5 py-3 text-sm"
             >
               Retour a la liste
             </Link>
             <Link
               href={`/stagiaires/${stagiaire.id}/modifier`}
-              className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+              className="action-button action-button-primary px-5 py-3 text-sm"
             >
               Modifier
             </Link>
-            <form action={toggleStagiaireArchiveAction}>
-              <input type="hidden" name="stagiaireId" value={stagiaire.id} />
-              <input type="hidden" name="userId" value={stagiaire.user.id} />
-              <input
-                type="hidden"
-                name="nextActiveValue"
-                value={String(!stagiaire.user.isActive)}
-              />
-              <input type="hidden" name="returnTo" value={`/stagiaires/${stagiaire.id}`} />
-              <button
-                type="submit"
-                className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary"
-              >
-                {stagiaire.user.isActive ? "Archiver" : "Reactiver"}
-              </button>
-            </form>
+            <StagiaireArchiveToggle
+              stagiaireId={stagiaire.id}
+              userId={stagiaire.user.id}
+              isActive={stagiaire.user.isActive}
+              returnTo={`/stagiaires/${stagiaire.id}`}
+            />
           </>
         }
       />
 
       <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-        <Card className="space-y-5 bg-linear-to-br from-card via-card to-accent/40">
+        <Card className="space-y-5 bg-card">
           <div className="flex items-center gap-4">
             {stagiaire.photoUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -243,13 +250,12 @@ export default async function StagiaireDetailPage({
               />
             ) : (
               <div className="flex h-20 w-20 items-center justify-center rounded-[24px] bg-primary/10 text-primary">
-                <UserSquare2 className="h-9 w-9" />
+                <MaterialSymbol icon="person" className="text-[36px]" filled />
               </div>
             )}
             <div className="space-y-2">
               <div className="flex flex-wrap gap-2">
-                <StatusBadge status={getAccountStatusLabel(stagiaire.user.isActive)} />
-                <StatusBadge status={latestStageInfo.statut} />
+                <StatusBadge status={profileStatusLabel} />
               </div>
               <h2 className="text-2xl font-semibold tracking-tight">
                 {`${stagiaire.user.prenom} ${stagiaire.user.nom}`.trim()}
@@ -273,30 +279,50 @@ export default async function StagiaireDetailPage({
           </div>
         </Card>
 
-        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:[grid-template-columns:repeat(4,minmax(120px,1fr))]">
           <MetricCard
             label="Compte"
             value={getAccountStatusLabel(stagiaire.user.isActive)}
             helper="Etat actuel du compte de connexion"
-            accent={<Mail className="h-5 w-5" />}
+            accent={<MaterialSymbol icon="mail" className="text-[20px]" />}
+            className="h-full min-w-[120px]"
+            contentClassName="overflow-hidden"
+            labelClassName="truncate"
+            valueClassName="truncate text-2xl sm:text-[1.75rem]"
+            helperClassName="overflow-hidden whitespace-nowrap text-ellipsis"
           />
           <MetricCard
             label="Stage"
             value={latestStage ? getStageStatusLabel(latestStage.statut) : "Aucun"}
             helper="Dernier stage rattache a la fiche"
-            accent={<FolderOpenDot className="h-5 w-5" />}
+            accent={<MaterialSymbol icon="work_history" className="text-[20px]" filled />}
+            className="h-full min-w-[120px]"
+            contentClassName="overflow-hidden"
+            labelClassName="truncate"
+            valueClassName="truncate text-2xl sm:text-[1.75rem]"
+            helperClassName="overflow-hidden whitespace-nowrap text-ellipsis"
           />
           <MetricCard
             label="Documents"
             value={latestStage?.documents.length ?? 0}
             helper="Pieces visibles sur le stage courant"
-            accent={<FileText className="h-5 w-5" />}
+            accent={<MaterialSymbol icon="description" className="text-[20px]" />}
+            className="h-full min-w-[120px]"
+            contentClassName="overflow-hidden"
+            labelClassName="truncate"
+            valueClassName="truncate text-2xl sm:text-[1.75rem]"
+            helperClassName="overflow-hidden whitespace-nowrap text-ellipsis"
           />
           <MetricCard
             label="Evaluations"
             value={latestStage?.evaluations.length ?? 0}
             helper="Evaluations planifiees ou historisees sur ce stage"
-            accent={<GraduationCap className="h-5 w-5" />}
+            accent={<MaterialSymbol icon="school" className="text-[20px]" />}
+            className="h-full min-w-[120px]"
+            contentClassName="overflow-hidden"
+            labelClassName="truncate"
+            valueClassName="truncate text-2xl sm:text-[1.75rem]"
+            helperClassName="overflow-hidden whitespace-nowrap text-ellipsis"
           />
         </section>
       </section>
@@ -353,14 +379,14 @@ export default async function StagiaireDetailPage({
           {latestStage ? (
             <Link
               href={`/stages/${latestStage.id}/modifier`}
-              className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+              className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-on-primary shadow-[var(--shadow-soft)] transition hover:opacity-90"
             >
               Modifier le stage
             </Link>
           ) : (
             <Link
               href={`/stagiaires/${stagiaire.id}/stage/nouveau`}
-              className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+              className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-on-primary shadow-[var(--shadow-soft)] transition hover:opacity-90"
             >
               Creer un stage
             </Link>
@@ -374,8 +400,8 @@ export default async function StagiaireDetailPage({
             <DetailItem label="Encadrant" value={latestStageInfo.encadrant} />
             <DetailItem label="Date de debut" value={formatDate(latestStage.dateDebut)} />
             <DetailItem label="Date de fin" value={formatDate(latestStage.dateFin)} />
-            <div className="rounded-[22px] border border-border bg-background p-4">
-              <p className="text-sm text-muted">Statut</p>
+            <div className="rounded-[22px] bg-surface-container-low p-4">
+              <p className="text-sm text-on-surface-variant">Statut</p>
               <div className="mt-2">
                 <StatusBadge status={getStageStatusLabel(latestStage.statut)} />
               </div>
@@ -441,7 +467,7 @@ export default async function StagiaireDetailPage({
 
             <Link
               href={`/evaluations/nouvelle?stageId=${latestStage.id}&type=DEBUT_STAGE`}
-              className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+              className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-on-primary shadow-[var(--shadow-soft)] transition hover:opacity-90"
             >
               Planifier une evaluation
             </Link>
@@ -453,7 +479,7 @@ export default async function StagiaireDetailPage({
                 <Link
                   key={evaluation.id}
                   href={`/evaluations/${evaluation.id}`}
-                  className="block rounded-[22px] border border-border bg-background p-4 transition hover:border-primary/40"
+                  className="block rounded-[22px] bg-surface-container-low p-4 shadow-[var(--shadow-soft)] transition hover:bg-surface-container-high"
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="space-y-2">
@@ -497,11 +523,11 @@ export default async function StagiaireDetailPage({
             {latestStage.rapports.length > 0 ? (
               <div className="space-y-4">
                 {latestStage.rapports.map((rapport) => (
-                  <Link
-                    key={rapport.id}
-                    href={`/rapports/${rapport.id}`}
-                    className="block rounded-[22px] border border-border bg-background p-4 transition hover:border-primary/40"
-                  >
+                <Link
+                  key={rapport.id}
+                  href={`/rapports/${rapport.id}`}
+                  className="block rounded-[22px] bg-surface-container-low p-4 shadow-[var(--shadow-soft)] transition hover:bg-surface-container-high"
+                >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                       <div className="space-y-2">
                         <div className="flex flex-wrap items-center gap-2">
@@ -546,7 +572,7 @@ export default async function StagiaireDetailPage({
                     <Link
                       key={document.id}
                       href={`/documents/${document.id}`}
-                      className="block rounded-[22px] border border-border bg-background p-4 transition hover:border-primary/40"
+                      className="block rounded-[22px] bg-surface-container-low p-4 shadow-[var(--shadow-soft)] transition hover:bg-surface-container-high"
                     >
                       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                         <div className="space-y-1">

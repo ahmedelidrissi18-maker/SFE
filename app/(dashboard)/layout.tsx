@@ -25,13 +25,15 @@ export default async function DashboardLayout({ children }: DashboardLayoutProps
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-[28rem] bg-[radial-gradient(circle_at_top,_rgba(15,118,110,0.18),_transparent_58%)]" />
-      <div className="pointer-events-none fixed bottom-[-10rem] right-[-8rem] -z-10 h-[24rem] w-[24rem] rounded-full bg-[rgba(14,165,233,0.08)] blur-3xl" />
-      <div className="mx-auto grid min-h-screen max-w-[98rem] items-start gap-4 px-3 py-3 sm:gap-5 sm:px-4 sm:py-4 lg:grid-cols-[320px_minmax(0,1fr)] lg:gap-6">
+      <div className="pointer-events-none fixed inset-x-0 top-0 -z-10 h-[28rem] bg-[radial-gradient(circle_at_top,_rgba(36,56,156,0.12),_transparent_58%)]" />
+      <div className="pointer-events-none fixed bottom-[-10rem] right-[-8rem] -z-10 h-[24rem] w-[24rem] rounded-full bg-[rgba(255,183,132,0.08)] blur-3xl" />
+      <div className="lg:fixed lg:inset-y-0 lg:left-0 lg:z-30 lg:w-[240px] lg:p-4">
         <AppSidebar role={session.user.role} />
-        <div className="min-w-0 flex min-h-[calc(100vh-1.5rem)] flex-col overflow-hidden rounded-[32px] border border-border/80 bg-linear-to-br from-card via-card to-surface shadow-[var(--shadow-card)] supports-[backdrop-filter]:backdrop-blur-xl sm:min-h-[calc(100vh-2rem)]">
+      </div>
+      <div className="min-w-0 px-3 py-3 sm:px-4 sm:py-4 lg:ml-[240px] lg:p-4">
+        <div className="min-w-0 flex min-h-[calc(100vh-1.5rem)] flex-col rounded-[32px] bg-surface-container-low p-3 shadow-[var(--shadow-card)] sm:min-h-[calc(100vh-2rem)] sm:p-4">
           <AppHeader user={session.user} unreadNotificationsCount={unreadNotificationsCount} />
-          <main className="min-w-0 flex-1 px-4 py-5 sm:px-6 lg:px-8">{children}</main>
+          <main className="min-w-0 flex-1 px-2 py-5 sm:px-4 lg:px-5">{children}</main>
         </div>
       </div>
     </div>

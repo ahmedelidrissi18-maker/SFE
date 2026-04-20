@@ -1,7 +1,6 @@
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "node:crypto";
 import QRCode from "qrcode";
 import {
-  generate,
   generateSecret,
   generateSync,
   generateURI,

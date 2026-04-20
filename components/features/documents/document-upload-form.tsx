@@ -13,6 +13,8 @@ type DocumentUploadFormProps = {
 };
 
 const initialState: DocumentActionState = {};
+const fieldClassName =
+  "field-shell w-full rounded-2xl px-4 py-3 outline-none transition";
 const manualDocumentTypes = [
   DocumentType.CONVENTION,
   DocumentType.CIN,
@@ -30,7 +32,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
+      className="action-button action-button-primary px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70"
     >
       {pending ? "Televersement..." : "Ajouter le document"}
     </button>
@@ -43,7 +45,7 @@ export function DocumentUploadForm({ stageId, action }: DocumentUploadFormProps)
   return (
     <form
       action={formAction}
-      className="space-y-5 rounded-[32px] border border-border/80 bg-card p-6 shadow-[0_18px_40px_-24px_rgba(15,23,42,0.28)] sm:p-8"
+      className="form-shell space-y-5 rounded-[32px] p-6 sm:p-8"
     >
       <input type="hidden" name="stageId" value={stageId} />
 
@@ -66,7 +68,7 @@ export function DocumentUploadForm({ stageId, action }: DocumentUploadFormProps)
           <select
             name="type"
             defaultValue={DocumentType.CONVENTION}
-            className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+            className={fieldClassName}
           >
             {manualDocumentTypes.map((type) => (
               <option key={type} value={type}>
@@ -85,7 +87,7 @@ export function DocumentUploadForm({ stageId, action }: DocumentUploadFormProps)
             name="file"
             type="file"
             accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
-            className="w-full rounded-2xl border border-border bg-background px-4 py-3 text-sm outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+            className={`${fieldClassName} text-sm`}
           />
           <p className="text-xs leading-5 text-muted">
             Selectionnez un fichier unique. Le depot sera rattache au stage courant.

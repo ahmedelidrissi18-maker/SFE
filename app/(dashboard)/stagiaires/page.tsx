@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Building2, GraduationCap, Search, Users } from "lucide-react";
 import { Role } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { toggleStagiaireArchiveAction } from "@/app/(dashboard)/stagiaires/actions";
@@ -7,6 +6,7 @@ import { FeedbackBanner } from "@/components/ui/feedback-banner";
 import { formatDate, getAccountStatusLabel, getLatestStageInfo } from "@/lib/stagiaires";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { MaterialSymbol } from "@/components/ui/material-symbol";
 import { MetricCard } from "@/components/ui/metric-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -125,7 +125,7 @@ export default async function StagiairesPage({ searchParams }: StagiairesPagePro
         actions={
           <Link
             href="/stagiaires/nouveau"
-            className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+            className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-semibold text-on-primary shadow-[var(--shadow-soft)] transition hover:opacity-90"
           >
             Nouveau stagiaire
           </Link>
@@ -137,25 +137,25 @@ export default async function StagiairesPage({ searchParams }: StagiairesPagePro
           label="Stagiaires filtres"
           value={stagiaires.length}
           helper="Resultats correspondant aux criteres actuels"
-          accent={<Users className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="groups" className="text-[20px]" filled />}
         />
         <MetricCard
           label="Comptes actifs"
           value={activeCount}
           helper="Stagiaires pouvant se connecter a la plateforme"
-          accent={<Search className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="person_search" className="text-[20px]" />}
         />
         <MetricCard
           label="Avec stage"
           value={withAssignedStageCount}
           helper="Stagiaires possedant au moins un stage rattache"
-          accent={<Building2 className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="apartment" className="text-[20px]" />}
         />
         <MetricCard
           label="Archives"
           value={archivedCount}
           helper="Comptes preserves pour l historique et le suivi"
-          accent={<GraduationCap className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="school" className="text-[20px]" />}
         />
       </section>
 
@@ -174,7 +174,7 @@ export default async function StagiairesPage({ searchParams }: StagiairesPagePro
               name="q"
               defaultValue={query}
               placeholder="Nom, prenom ou email"
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+              className="field-shell w-full rounded-2xl px-4 py-3 outline-none transition"
             />
           </label>
 
@@ -184,7 +184,7 @@ export default async function StagiairesPage({ searchParams }: StagiairesPagePro
               name="etablissement"
               defaultValue={etablissement}
               placeholder="ENSA, EMI, FST..."
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+              className="field-shell w-full rounded-2xl px-4 py-3 outline-none transition"
             />
           </label>
 
@@ -194,7 +194,7 @@ export default async function StagiairesPage({ searchParams }: StagiairesPagePro
               name="departement"
               defaultValue={departement}
               placeholder="Transformation digitale..."
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+              className="field-shell w-full rounded-2xl px-4 py-3 outline-none transition"
             />
           </label>
 
@@ -203,7 +203,7 @@ export default async function StagiairesPage({ searchParams }: StagiairesPagePro
             <select
               name="statut"
               defaultValue={statut}
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+              className="field-shell w-full rounded-2xl px-4 py-3 outline-none transition"
             >
               <option value="">Tous</option>
               <option value="actif">Actif</option>
@@ -216,7 +216,7 @@ export default async function StagiairesPage({ searchParams }: StagiairesPagePro
             <select
               name="encadrantId"
               defaultValue={encadrantId}
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+              className="field-shell w-full rounded-2xl px-4 py-3 outline-none transition"
             >
               <option value="">Tous</option>
               {encadrants.map((encadrant) => (
@@ -230,13 +230,13 @@ export default async function StagiairesPage({ searchParams }: StagiairesPagePro
           <div className="flex flex-wrap items-center gap-3 md:col-span-2 xl:col-span-5">
             <button
               type="submit"
-              className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+              className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-on-primary shadow-[var(--shadow-soft)] transition hover:opacity-90"
             >
               Appliquer les filtres
             </button>
             <Link
               href="/stagiaires"
-              className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary"
+              className="rounded-full bg-surface-container-low px-5 py-3 text-sm font-semibold text-on-surface shadow-[var(--shadow-soft)] transition hover:bg-surface-container-high hover:text-primary"
             >
               Revenir a la liste complete
             </Link>
@@ -273,7 +273,7 @@ export default async function StagiairesPage({ searchParams }: StagiairesPagePro
                   <div className="flex flex-wrap gap-3">
                     <Link
                       href={`/stagiaires/${stagiaire.id}`}
-                      className="rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                      className="rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary shadow-[var(--shadow-soft)] transition hover:opacity-90"
                     >
                       Voir la fiche
                     </Link>
@@ -288,7 +288,7 @@ export default async function StagiairesPage({ searchParams }: StagiairesPagePro
                       <input type="hidden" name="returnTo" value="/stagiaires" />
                       <button
                         type="submit"
-                        className="rounded-full border border-border bg-background px-4 py-2.5 text-sm font-semibold transition hover:border-primary hover:text-primary"
+                        className="rounded-full bg-surface-container-low px-4 py-2.5 text-sm font-semibold text-on-surface shadow-[var(--shadow-soft)] transition hover:bg-surface-container-high hover:text-primary"
                       >
                         {stagiaire.user.isActive ? "Archiver" : "Reactiver"}
                       </button>

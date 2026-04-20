@@ -1,13 +1,12 @@
 import Link from "next/link";
-import type { LucideIcon } from "lucide-react";
-import { Inbox } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { MaterialSymbol } from "@/components/ui/material-symbol";
 import { cn } from "@/lib/utils";
 
 type EmptyStateProps = {
   title: string;
   description: string;
-  icon?: LucideIcon;
+  icon?: string;
   eyebrow?: string;
   actionLabel?: string;
   actionHref?: string;
@@ -19,7 +18,7 @@ type EmptyStateProps = {
 export function EmptyState({
   title,
   description,
-  icon: Icon = Inbox,
+  icon,
   eyebrow,
   actionHref,
   actionLabel,
@@ -30,7 +29,7 @@ export function EmptyState({
   return (
     <Card
       className={cn(
-        "overflow-hidden bg-linear-to-br from-card via-card to-primary-soft/20",
+        "overflow-hidden bg-card",
         align === "center" ? "text-center" : "text-left",
       )}
     >
@@ -40,18 +39,18 @@ export function EmptyState({
           align === "center" ? "mx-auto items-center" : "items-start",
         )}
       >
-        <div className="absolute left-1/2 top-10 h-24 w-24 -translate-x-1/2 rounded-full bg-primary/8 blur-3xl" />
-        <div className="relative flex h-16 w-16 items-center justify-center rounded-[22px] bg-primary text-primary-foreground shadow-[0_22px_42px_-28px_rgba(15,118,110,0.7)]">
-          <Icon className="h-7 w-7" />
+        <div className="absolute left-1/2 top-10 h-24 w-24 -translate-x-1/2 rounded-full bg-primary-fixed blur-3xl opacity-80" />
+        <div className="relative flex h-16 w-16 items-center justify-center rounded-[22px] bg-surface-container-low text-primary">
+          <MaterialSymbol icon={icon ?? "inbox"} className="text-[28px]" filled />
         </div>
         <div className="relative space-y-2">
           {eyebrow ? (
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary/80">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">
               {eyebrow}
             </p>
           ) : null}
           <h3 className="text-xl font-semibold tracking-tight">{title}</h3>
-          <p className="text-sm leading-6 text-muted">{description}</p>
+          <p className="text-sm leading-6 text-on-surface-variant">{description}</p>
         </div>
         {actionHref && actionLabel ? (
           <div
@@ -62,14 +61,14 @@ export function EmptyState({
           >
             <Link
               href={actionHref}
-              className="inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-[0_22px_42px_-28px_rgba(15,118,110,0.72)] transition hover:-translate-y-0.5 hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2"
+              className="inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-semibold text-on-primary shadow-[var(--shadow-ambient)] transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2"
             >
               {actionLabel}
             </Link>
             {secondaryActionHref && secondaryActionLabel ? (
               <Link
                 href={secondaryActionHref}
-                className="inline-flex min-h-11 items-center justify-center rounded-full border border-border bg-linear-to-b from-background to-card px-5 py-3 text-sm font-semibold shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:border-primary/30 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2"
+                className="inline-flex min-h-11 items-center justify-center rounded-full bg-surface-container-low px-5 py-3 text-sm font-semibold text-on-surface shadow-[var(--shadow-soft)] transition hover:bg-surface-container-high focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2"
               >
                 {secondaryActionLabel}
               </Link>

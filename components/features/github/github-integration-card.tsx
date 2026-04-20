@@ -1,11 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { GitBranch, Github, RefreshCcw } from "lucide-react";
 import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import type { GithubActionState } from "@/app/(dashboard)/stagiaires/github-actions";
 import { Card } from "@/components/ui/card";
+import { MaterialSymbol } from "@/components/ui/material-symbol";
 import { StatusBadge } from "@/components/ui/status-badge";
 
 type GithubIntegrationCardProps = {
@@ -66,8 +66,8 @@ function SubmitButton({
       disabled={pending}
       className={
         variant === "primary"
-          ? "rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
-          : "rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-70"
+          ? "rounded-full bg-primary px-5 py-3 text-sm font-semibold text-on-primary shadow-[var(--shadow-soft)] transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
+          : "rounded-full bg-surface-container-low px-5 py-3 text-sm font-semibold text-on-surface shadow-[var(--shadow-soft)] transition hover:bg-surface-container-high hover:text-primary disabled:cursor-not-allowed disabled:opacity-70"
       }
     >
       {pending ? pendingLabel : label}
@@ -83,8 +83,8 @@ function StatCard({
   value: string | number;
 }) {
   return (
-    <div className="rounded-[22px] border border-border bg-background p-4">
-      <p className="text-sm text-muted">{label}</p>
+    <div className="rounded-[22px] bg-surface-container-low p-4">
+      <p className="text-sm text-on-surface-variant">{label}</p>
       <p className="mt-2 text-lg font-semibold">{value}</p>
     </div>
   );
@@ -108,7 +108,7 @@ export function GithubIntegrationCard({
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div className="space-y-2">
           <div className="flex items-center gap-3 text-primary">
-            <Github className="h-5 w-5" />
+            <MaterialSymbol icon="code" className="text-[20px]" />
             <p className="text-sm font-medium">Sprint 1 - Integration GitHub</p>
           </div>
           <h2 className="text-2xl font-semibold tracking-tight">Suivi technique du stagiaire</h2>
@@ -134,34 +134,34 @@ export function GithubIntegrationCard({
       <div className="flex flex-wrap gap-3">
         <Link
           href={oauthConnectHref}
-          className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+          className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-on-primary shadow-[var(--shadow-soft)] transition hover:opacity-90"
         >
           Connecter via OAuth GitHub
         </Link>
         <Link
           href={summaryHref}
-          className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary"
+          className="rounded-full bg-surface-container-low px-5 py-3 text-sm font-semibold text-on-surface shadow-[var(--shadow-soft)] transition hover:bg-surface-container-high hover:text-primary"
         >
           Ouvrir la synthese GitHub
         </Link>
       </div>
 
       {connection ? (
-        <div className="rounded-[24px] border border-border bg-background p-5">
+        <div className="rounded-[24px] bg-surface-container-low p-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div className="space-y-2">
-              <p className="text-sm text-muted">Profil lie</p>
+              <p className="text-sm text-on-surface-variant">Profil lie</p>
               <div className="flex items-center gap-3">
                 {connection.avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={connection.avatarUrl}
                     alt={connection.username}
-                    className="h-12 w-12 rounded-full border border-border object-cover"
+                    className="h-12 w-12 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-12 w-12 items-center justify-center rounded-full border border-border bg-accent text-primary">
-                    <GitBranch className="h-5 w-5" />
+                  <div className="flex h-12 w-12 items-center justify-center rounded-full bg-surface-container-lowest text-primary">
+                    <MaterialSymbol icon="account_tree" className="text-[20px]" />
                   </div>
                 )}
                 <div>
@@ -194,7 +194,7 @@ export function GithubIntegrationCard({
       ) : (
         <form
           action={linkFormAction}
-          className="grid gap-4 rounded-[24px] border border-border bg-background p-5 lg:grid-cols-[1fr_auto]"
+          className="grid gap-4 rounded-[24px] bg-surface-container-low p-5 lg:grid-cols-[1fr_auto]"
         >
           <input type="hidden" name="stagiaireId" value={stagiaireId} />
           <label className="space-y-2 text-sm">
@@ -202,7 +202,7 @@ export function GithubIntegrationCard({
             <input
               name="username"
               placeholder="exemple: octocat"
-              className="w-full rounded-2xl border border-border bg-card px-4 py-3 outline-none transition focus:border-primary"
+              className="field-shell w-full rounded-2xl px-4 py-3 outline-none transition"
               required
             />
           </label>
@@ -213,20 +213,20 @@ export function GithubIntegrationCard({
       )}
 
       {linkState.error ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-2xl bg-error-container px-4 py-3 text-sm text-on-error-container">
           {linkState.error}
         </div>
       ) : null}
 
       {syncState.error ? (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-2xl bg-error-container px-4 py-3 text-sm text-on-error-container">
           {syncState.error}
         </div>
       ) : null}
 
       <div className="grid gap-4 lg:grid-cols-[0.9fr_1.1fr]">
-        <div className="rounded-[24px] border border-border bg-background p-5">
-          <p className="text-sm text-muted">Depot associe</p>
+        <div className="rounded-[24px] bg-surface-container-low p-5">
+          <p className="text-sm text-on-surface-variant">Depot associe</p>
           {repositoryUrl ? (
             <Link
               href={repositoryUrl}
@@ -234,11 +234,11 @@ export function GithubIntegrationCard({
               rel="noreferrer"
               className="mt-2 inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
             >
-              <GitBranch className="h-4 w-4" />
+              <MaterialSymbol icon="account_tree" className="text-[16px]" />
               {repositoryUrl}
             </Link>
           ) : (
-            <p className="mt-2 text-sm leading-6 text-muted">
+            <p className="mt-2 text-sm leading-6 text-on-surface-variant">
               Aucun depot GitHub n est encore renseigne sur le stage. La liaison du compte peut
               etre preparee, mais la synchronisation restera inactive tant qu une URL de depot n a
               pas ete ajoutee.
@@ -246,9 +246,9 @@ export function GithubIntegrationCard({
           )}
         </div>
 
-        <div className="rounded-[24px] border border-border bg-background p-5">
+        <div className="rounded-[24px] bg-surface-container-low p-5">
           <div className="flex items-center gap-2 text-primary">
-            <RefreshCcw className="h-4 w-4" />
+            <MaterialSymbol icon="sync" className="text-[16px]" />
             <p className="text-sm font-medium">Dernier resume technique</p>
           </div>
 
@@ -260,15 +260,15 @@ export function GithubIntegrationCard({
                   href={commit.htmlUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="block rounded-2xl border border-border px-4 py-3 transition hover:border-primary/40"
+                  className="block rounded-2xl bg-surface-container-lowest px-4 py-3 transition hover:bg-white"
                 >
                   <p className="text-sm font-medium">{commit.message}</p>
-                  <p className="mt-1 text-xs text-muted">{commit.sha.slice(0, 7)}</p>
+                  <p className="mt-1 text-xs text-on-surface-variant">{commit.sha.slice(0, 7)}</p>
                 </Link>
               ))}
             </div>
           ) : (
-            <p className="mt-3 text-sm leading-6 text-muted">
+            <p className="mt-3 text-sm leading-6 text-on-surface-variant">
               Aucune activite GitHub synchronisee pour le moment. Lancez une premiere
               synchronisation apres la liaison du compte.
             </p>

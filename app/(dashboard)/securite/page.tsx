@@ -1,5 +1,4 @@
 import Image from "next/image";
-import { ShieldCheck, ShieldEllipsis } from "lucide-react";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import {
@@ -10,6 +9,7 @@ import {
 } from "@/app/(dashboard)/securite/actions";
 import { FeedbackBanner } from "@/components/ui/feedback-banner";
 import { Card } from "@/components/ui/card";
+import { MaterialSymbol } from "@/components/ui/material-symbol";
 import { PageHeader } from "@/components/ui/page-header";
 import { prisma } from "@/lib/prisma";
 import {
@@ -101,7 +101,7 @@ export default async function SecurityPage({ searchParams }: SecurityPageProps) 
         <Card className="space-y-5">
           <div className="flex items-start gap-4">
             <div className="rounded-2xl bg-primary/10 p-3 text-primary">
-              <ShieldCheck className="h-5 w-5" />
+              <MaterialSymbol icon="shield" className="text-[20px]" />
             </div>
             <div className="space-y-2">
               <p className="text-sm font-medium text-primary">Authentification forte</p>
@@ -117,13 +117,13 @@ export default async function SecurityPage({ searchParams }: SecurityPageProps) 
 
           {user.twoFactorEnabled ? (
             <div className="space-y-4">
-              <div className="rounded-[24px] border border-emerald-200 bg-emerald-50 p-5">
-                <p className="text-sm font-medium text-emerald-700">Protection active</p>
-                <p className="mt-2 text-sm leading-6 text-emerald-700">
+              <div className="rounded-[24px] bg-secondary-fixed p-5 text-on-secondary-fixed">
+                <p className="text-sm font-medium">Protection active</p>
+                <p className="mt-2 text-sm leading-6">
                   Votre compte exige maintenant un mot de passe et un code temporaire lors
                   de la connexion.
                 </p>
-                <p className="mt-3 text-xs text-emerald-700/90">
+                <p className="mt-3 text-xs opacity-80">
                   Activation le{" "}
                   {user.twoFactorEnabledAt ? formatDate(user.twoFactorEnabledAt) : "date indisponible"}
                 </p>
@@ -139,13 +139,13 @@ export default async function SecurityPage({ searchParams }: SecurityPageProps) 
                     pattern="[0-9]{6}"
                     maxLength={6}
                     placeholder="123456"
-                    className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+                    className="field-shell w-full rounded-2xl px-4 py-3 outline-none transition"
                     required
                   />
                 </label>
                 <button
                   type="submit"
-                  className="rounded-full border border-red-200 bg-red-50 px-5 py-3 text-sm font-semibold text-red-700 transition hover:bg-red-100"
+                  className="action-button action-button-danger px-5 py-3 text-sm"
                 >
                   Desactiver le 2FA
                 </button>
@@ -153,9 +153,9 @@ export default async function SecurityPage({ searchParams }: SecurityPageProps) 
             </div>
           ) : pendingSecret && qrCodeDataUrl ? (
             <div className="grid gap-5 lg:grid-cols-[0.9fr_1.1fr]">
-              <div className="rounded-[24px] border border-border bg-background p-5">
+              <div className="tonal-card rounded-[24px] p-5">
                 <p className="text-sm font-medium text-primary">1. Scanner le QR code</p>
-                <div className="mt-4 flex justify-center rounded-[20px] border border-border bg-white p-4">
+                <div className="mt-4 flex justify-center rounded-[20px] bg-white p-4 shadow-[var(--shadow-soft)]">
                   <Image
                     src={qrCodeDataUrl}
                     alt="QR code 2FA"
@@ -167,7 +167,7 @@ export default async function SecurityPage({ searchParams }: SecurityPageProps) 
                 </div>
               </div>
 
-              <div className="space-y-4 rounded-[24px] border border-border bg-background p-5">
+              <div className="tonal-card space-y-4 rounded-[24px] p-5">
                 <div>
                   <p className="text-sm font-medium text-primary">2. Saisir le code genere</p>
                   <h3 className="mt-1 text-xl font-semibold tracking-tight">
@@ -175,7 +175,7 @@ export default async function SecurityPage({ searchParams }: SecurityPageProps) 
                   </h3>
                 </div>
 
-                <div className="rounded-2xl border border-border bg-card px-4 py-3 text-sm">
+                <div className="rounded-2xl bg-surface-container-lowest px-4 py-3 text-sm shadow-[var(--shadow-soft)]">
                   <p className="font-medium">Cle manuelle</p>
                   <p className="mt-2 font-mono tracking-[0.2em] text-primary">
                     {formatTwoFactorSecret(pendingSecret)}
@@ -192,14 +192,14 @@ export default async function SecurityPage({ searchParams }: SecurityPageProps) 
                       pattern="[0-9]{6}"
                       maxLength={6}
                       placeholder="123456"
-                      className="w-full rounded-2xl border border-border bg-card px-4 py-3 outline-none transition focus:border-primary"
+                      className="field-shell w-full rounded-2xl px-4 py-3 outline-none transition"
                       required
                     />
                   </label>
                   <div className="flex flex-wrap gap-3">
                     <button
                       type="submit"
-                      className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                      className="action-button action-button-primary px-5 py-3 text-sm"
                     >
                       Confirmer l activation
                     </button>
@@ -209,7 +209,7 @@ export default async function SecurityPage({ searchParams }: SecurityPageProps) 
                 <form action={cancelTwoFactorSetupAction}>
                   <button
                     type="submit"
-                    className="rounded-full border border-border bg-card px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary"
+                    className="action-button action-button-secondary px-5 py-3 text-sm"
                   >
                     Annuler cette preparation
                   </button>
@@ -218,9 +218,9 @@ export default async function SecurityPage({ searchParams }: SecurityPageProps) 
             </div>
           ) : (
             <div className="space-y-4">
-              <div className="rounded-[24px] border border-amber-200 bg-amber-50 p-5">
-                <p className="text-sm font-medium text-amber-700">Protection recommandee</p>
-                <p className="mt-2 text-sm leading-6 text-amber-700">
+              <div className="rounded-[24px] bg-tertiary-fixed p-5 text-on-tertiary-fixed-variant">
+                <p className="text-sm font-medium">Protection recommandee</p>
+                <p className="mt-2 text-sm leading-6">
                   Votre role fait partie des profils sensibles de la V2. L activation du 2FA
                   ajoute une verification forte au moment de la connexion.
                 </p>
@@ -229,7 +229,7 @@ export default async function SecurityPage({ searchParams }: SecurityPageProps) 
               <form action={prepareTwoFactorSetupAction}>
                 <button
                   type="submit"
-                  className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                  className="action-button action-button-primary px-5 py-3 text-sm"
                 >
                   Generer un QR code 2FA
                 </button>
@@ -241,7 +241,7 @@ export default async function SecurityPage({ searchParams }: SecurityPageProps) 
         <Card className="space-y-5">
           <div className="flex items-start gap-4">
             <div className="rounded-2xl bg-primary/10 p-3 text-primary">
-              <ShieldEllipsis className="h-5 w-5" />
+              <MaterialSymbol icon="verified_user" className="text-[20px]" />
             </div>
             <div className="space-y-2">
               <p className="text-sm font-medium text-primary">Hardening Sprint 6</p>

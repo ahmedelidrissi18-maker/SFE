@@ -1,20 +1,9 @@
 import Link from "next/link";
-import {
-  Activity,
-  AlertTriangle,
-  BarChart3,
-  ClipboardList,
-  Download,
-  FileClock,
-  FolderKanban,
-  Gauge,
-  Radar,
-  TimerReset,
-} from "lucide-react";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { MaterialSymbol } from "@/components/ui/material-symbol";
 import { MetricCard } from "@/components/ui/metric-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -56,42 +45,42 @@ function formatDateTime(value: string) {
 
 function getMonitoringTone(status: MonitoringStatus) {
   if (status === "critical") {
-    return "border-rose-200 bg-rose-50 text-rose-700";
+    return "bg-error-container text-on-error-container";
   }
 
   if (status === "warning") {
-    return "border-amber-200 bg-amber-50 text-amber-700";
+    return "bg-tertiary-fixed text-on-tertiary-fixed-variant";
   }
 
-  return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  return "bg-secondary-fixed text-on-secondary-fixed";
 }
 
 function getAlertTone(severity: "critical" | "warning" | "info") {
   if (severity === "critical") {
-    return "border-rose-200 bg-rose-50 text-rose-700";
+    return "bg-error-container text-on-error-container";
   }
 
   if (severity === "warning") {
-    return "border-amber-200 bg-amber-50 text-amber-700";
+    return "bg-tertiary-fixed text-on-tertiary-fixed-variant";
   }
 
-  return "border-sky-200 bg-sky-50 text-sky-700";
+  return "bg-primary-fixed text-on-primary-fixed-variant";
 }
 
 function getAttentionTone(key: "critical" | "warning" | "stable") {
   if (key === "critical") {
-    return "border-rose-200 bg-rose-50 text-rose-700";
+    return "bg-error-container text-on-error-container";
   }
 
   if (key === "warning") {
-    return "border-amber-200 bg-amber-50 text-amber-700";
+    return "bg-tertiary-fixed text-on-tertiary-fixed-variant";
   }
 
-  return "border-emerald-200 bg-emerald-50 text-emerald-700";
+  return "bg-secondary-fixed text-on-secondary-fixed";
 }
 
-const metricIcons = [TimerReset, ClipboardList, FileClock, FolderKanban];
-const focusIcons = [ClipboardList, TimerReset, BarChart3, FileClock];
+const metricIcons = ["schedule", "assignment", "pending_actions", "work_history"];
+const focusIcons = ["assignment", "schedule", "analytics", "description"];
 
 export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps) {
   const session = await auth();
@@ -166,28 +155,28 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
           <>
             <Link
               href={`/api/analytics/export?${overviewExportParams.toString()}`}
-              className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+              className="action-button action-button-primary px-5 py-3 text-sm"
             >
-              <Download className="h-4 w-4" />
+              <MaterialSymbol icon="download" className="text-[18px]" />
               Export KPI
             </Link>
             <Link
               href={`/api/analytics/export?${detailedExportParams.toString()}`}
-              className="inline-flex items-center justify-center gap-2 rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary"
+              className="action-button action-button-secondary px-5 py-3 text-sm"
             >
-              <Radar className="h-4 w-4" />
+              <MaterialSymbol icon="radar" className="text-[18px]" />
               Export detail
             </Link>
             <Link
               href={`/api/analytics/export?${departmentExportParams.toString()}`}
-              className="inline-flex items-center justify-center gap-2 rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary"
+              className="action-button action-button-secondary px-5 py-3 text-sm"
             >
-              <BarChart3 className="h-4 w-4" />
+              <MaterialSymbol icon="bar_chart" className="text-[18px]" />
               Export departements
             </Link>
             <Link
               href="/dashboard"
-              className="inline-flex items-center justify-center rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary"
+              className="action-button action-button-secondary px-5 py-3 text-sm"
             >
               Retour dashboard
             </Link>
@@ -211,7 +200,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
               Genere le <span className="font-medium text-foreground">{formatDateTime(meta.generatedAt)}</span>
             </p>
             <span
-              className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold ${meta.cached ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-slate-100 text-slate-700"}`}
+              className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${meta.cached ? "bg-secondary-fixed text-on-secondary-fixed" : "bg-surface-container-high text-on-surface-variant"}`}
             >
               {meta.cached ? "Cache analytics actif" : "Calcul direct"}
             </span>
@@ -224,7 +213,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
             <select
               name="period"
               defaultValue={period}
-              className="min-w-[220px] rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+              className="field-shell min-w-[220px] rounded-2xl px-4 py-3 outline-none transition"
             >
               {getAnalyticsPeriodOptions().map((option) => (
                 <option key={option.value} value={option.value}>
@@ -239,7 +228,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
             <select
               name="department"
               defaultValue={departmentFilter ?? ""}
-              className="min-w-[220px] rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+              className="field-shell min-w-[220px] rounded-2xl px-4 py-3 outline-none transition"
             >
               <option value="">Tous les departements</option>
               {departmentOptions.map((department) => (
@@ -255,7 +244,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
             <select
               name="attention"
               defaultValue={attentionFilter}
-              className="min-w-[220px] rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+              className="field-shell min-w-[220px] rounded-2xl px-4 py-3 outline-none transition"
             >
               {attentionOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -270,7 +259,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
             <select
               name="limit"
               defaultValue={detailLimit}
-              className="min-w-[180px] rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+              className="field-shell min-w-[180px] rounded-2xl px-4 py-3 outline-none transition"
             >
               {getAnalyticsStageDetailLimitOptions().map((option) => (
                 <option key={option.value} value={option.value}>
@@ -282,23 +271,23 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
 
           <button
             type="submit"
-            className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary"
+            className="action-button action-button-secondary px-5 py-3 text-sm"
           >
             Appliquer les filtres
           </button>
         </form>
 
         <div className="flex flex-wrap gap-2 text-xs text-muted">
-          <span className="rounded-full border border-border bg-background px-3 py-1">
+          <span className="rounded-full bg-surface-container-high px-3 py-1">
             Periode : {analyticsPeriodDefinitions[period].shortLabel}
           </span>
-          <span className="rounded-full border border-border bg-background px-3 py-1">
+          <span className="rounded-full bg-surface-container-high px-3 py-1">
             Departement : {departmentFilter ?? "Tous"}
           </span>
-          <span className="rounded-full border border-border bg-background px-3 py-1">
+          <span className="rounded-full bg-surface-container-high px-3 py-1">
             Vigilance : {attentionFilterLabel}
           </span>
-          <span className="rounded-full border border-border bg-background px-3 py-1">
+          <span className="rounded-full bg-surface-container-high px-3 py-1">
             Detail : {detailLimit} lignes
           </span>
         </div>
@@ -306,7 +295,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {overview.metrics.map((metric, index) => {
-          const Icon = metricIcons[index] ?? BarChart3;
+          const icon = metricIcons[index] ?? "bar_chart";
 
           return (
             <MetricCard
@@ -314,7 +303,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
               label={metric.label}
               value={metric.value}
               helper={metric.helper}
-              accent={<Icon className="h-5 w-5" />}
+              accent={<MaterialSymbol icon={icon} className="text-[20px]" />}
             />
           );
         })}
@@ -322,7 +311,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {overview.focusItems.map((item, index) => {
-          const Icon = focusIcons[index] ?? BarChart3;
+          const icon = focusIcons[index] ?? "insights";
 
           return (
             <MetricCard
@@ -330,7 +319,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
               label={item.label}
               value={item.value}
               helper={item.helper}
-              accent={<Icon className="h-5 w-5" />}
+              accent={<MaterialSymbol icon={icon} className="text-[20px]" />}
             />
           );
         })}
@@ -355,7 +344,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
               {filteredDepartments.map((department) => (
                 <div
                   key={department.departement}
-                  className="rounded-[24px] border border-border bg-background p-4"
+                  className="tonal-card rounded-[24px] p-4"
                 >
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="space-y-2">
@@ -371,11 +360,11 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
                     </div>
 
                     <div className="grid min-w-[220px] gap-3 sm:grid-cols-2">
-                      <div className="rounded-[20px] border border-border/80 bg-card p-3">
+                      <div className="rounded-[20px] bg-surface-container-lowest p-3 shadow-[var(--shadow-soft)]">
                         <p className="text-xs uppercase tracking-[0.16em] text-muted">Progression</p>
                         <p className="mt-2 text-lg font-semibold">{department.averageProgressLabel}</p>
                       </div>
-                      <div className="rounded-[20px] border border-border/80 bg-card p-3">
+                      <div className="rounded-[20px] bg-surface-container-lowest p-3 shadow-[var(--shadow-soft)]">
                         <p className="text-xs uppercase tracking-[0.16em] text-muted">Completion</p>
                         <p className="mt-2 text-lg font-semibold">{department.completionRateLabel}</p>
                       </div>
@@ -409,19 +398,19 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
           </div>
 
           <div className="grid gap-3">
-            <div className="rounded-[22px] border border-border bg-background p-4">
+            <div className="tonal-card rounded-[22px] p-4">
               <p className="text-sm text-muted">Stages inclus</p>
               <p className="mt-2 text-2xl font-semibold">{overview.totals.stageCount}</p>
             </div>
-            <div className="rounded-[22px] border border-border bg-background p-4">
+            <div className="tonal-card rounded-[22px] p-4">
               <p className="text-sm text-muted">Rapports traites</p>
               <p className="mt-2 text-2xl font-semibold">{overview.totals.reportCount}</p>
             </div>
-            <div className="rounded-[22px] border border-border bg-background p-4">
+            <div className="tonal-card rounded-[22px] p-4">
               <p className="text-sm text-muted">Evaluations suivies</p>
               <p className="mt-2 text-2xl font-semibold">{overview.totals.evaluationCount}</p>
             </div>
-            <div className="rounded-[22px] border border-border bg-background p-4">
+            <div className="tonal-card rounded-[22px] p-4">
               <p className="text-sm text-muted">Documents valides</p>
               <p className="mt-2 text-2xl font-semibold">{overview.totals.documentCount}</p>
             </div>
@@ -436,7 +425,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
               <p className="text-sm font-medium text-primary">Surveillance metier</p>
               <h2 className="mt-1 text-2xl font-semibold tracking-tight">Alertes actives</h2>
             </div>
-            <AlertTriangle className="h-5 w-5 text-primary" />
+            <MaterialSymbol icon="warning" className="text-[20px] text-primary" />
           </div>
 
           {overview.alerts.length > 0 ? (
@@ -444,14 +433,14 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
               {overview.alerts.map((alert) => (
                 <div
                   key={alert.id}
-                  className={`rounded-[24px] border p-4 ${getAlertTone(alert.severity)}`}
+                  className={`rounded-[24px] p-4 ${getAlertTone(alert.severity)}`}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-sm font-semibold">{alert.title}</p>
                       <p className="mt-2 text-sm leading-6">{alert.description}</p>
                     </div>
-                    <span className="rounded-full border border-current/20 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]">
+                    <span className="rounded-full bg-white/60 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em]">
                       {alert.severity}
                     </span>
                   </div>
@@ -489,7 +478,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
           <div className="grid gap-3 sm:grid-cols-2">
             {[overviewHealth, exportHealth].map((scope) =>
               scope ? (
-                <div key={scope.scope} className="rounded-[22px] border border-border bg-background p-4">
+                <div key={scope.scope} className="tonal-card rounded-[22px] p-4">
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <p className="text-sm font-medium">{scope.label}</p>
@@ -497,7 +486,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
                         Cible {scope.targetMs} ms
                       </p>
                     </div>
-                    <Activity className="h-4 w-4 text-primary" />
+                    <MaterialSymbol icon="monitoring" className="text-[18px] text-primary" />
                   </div>
 
                   <div className="mt-4 space-y-2 text-sm">
@@ -529,7 +518,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
               {monitoring.alerts.map((alert) => (
                 <div
                   key={alert.id}
-                  className={`rounded-[20px] border p-4 ${getMonitoringTone(alert.status)}`}
+                  className={`rounded-[20px] p-4 ${getMonitoringTone(alert.status)}`}
                 >
                   <p className="text-sm font-semibold">{alert.title}</p>
                   <p className="mt-2 text-sm leading-6">{alert.description}</p>
@@ -537,7 +526,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
               ))}
             </div>
           ) : (
-            <div className="rounded-[20px] border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
+            <div className="rounded-[20px] bg-secondary-fixed p-4 text-sm text-on-secondary-fixed">
               Aucun depassement technique detecte sur la fenetre recente.
             </div>
           )}
@@ -555,7 +544,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
             </p>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted">
-            <Gauge className="h-4 w-4" />
+            <MaterialSymbol icon="speed" className="text-[18px]" />
             {filteredStageDetails.length} stage
             {filteredStageDetails.length > 1 ? "s" : ""} affiche
             {filteredStageDetails.length > 1 ? "s" : ""} sur {scopedStageDetails.length}
@@ -566,7 +555,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
           {attentionSummary.map((summary) => (
             <div
               key={summary.key}
-              className={`rounded-[22px] border p-4 ${getAttentionTone(summary.key)}`}
+              className={`rounded-[22px] p-4 ${getAttentionTone(summary.key)}`}
             >
               <p className="text-xs uppercase tracking-[0.16em]">Vigilance</p>
               <p className="mt-2 text-lg font-semibold">{summary.label}</p>
@@ -578,13 +567,13 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
         {filteredStageDetails.length > 0 ? (
           <div className="grid gap-3">
             {filteredStageDetails.map((stage) => (
-              <div key={stage.stageId} className="rounded-[24px] border border-border bg-background p-4">
+              <div key={stage.stageId} className="tonal-card rounded-[24px] p-4">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                   <div className="space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <StatusBadge status={stage.stageStatusLabel} />
                       <span
-                        className={`rounded-full border px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${stage.attentionLabel === "Critique" ? "border-rose-200 bg-rose-50 text-rose-700" : stage.attentionLabel === "Attention" ? "border-amber-200 bg-amber-50 text-amber-700" : "border-emerald-200 bg-emerald-50 text-emerald-700"}`}
+                        className={`rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] ${stage.attentionLabel === "Critique" ? "bg-error-container text-on-error-container" : stage.attentionLabel === "Attention" ? "bg-tertiary-fixed text-on-tertiary-fixed-variant" : "bg-secondary-fixed text-on-secondary-fixed"}`}
                       >
                         {stage.attentionLabel}
                       </span>
@@ -600,29 +589,29 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
                   </div>
 
                   <div className="grid min-w-[260px] gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                    <div className="rounded-[18px] border border-border/80 bg-card p-3">
+                    <div className="rounded-[18px] bg-surface-container-lowest p-3 shadow-[var(--shadow-soft)]">
                       <p className="text-xs uppercase tracking-[0.16em] text-muted">Progression</p>
                       <p className="mt-2 text-sm font-semibold">{stage.latestProgressLabel}</p>
                     </div>
-                    <div className="rounded-[18px] border border-border/80 bg-card p-3">
+                    <div className="rounded-[18px] bg-surface-container-lowest p-3 shadow-[var(--shadow-soft)]">
                       <p className="text-xs uppercase tracking-[0.16em] text-muted">Dernier rapport</p>
                       <p className="mt-2 text-sm font-semibold">{stage.latestReportAtLabel}</p>
                     </div>
-                    <div className="rounded-[18px] border border-border/80 bg-card p-3">
+                    <div className="rounded-[18px] bg-surface-container-lowest p-3 shadow-[var(--shadow-soft)]">
                       <p className="text-xs uppercase tracking-[0.16em] text-muted">Echeance</p>
                       <p className="mt-2 text-sm font-semibold">{stage.daysUntilEndLabel}</p>
                     </div>
-                    <div className="rounded-[18px] border border-border/80 bg-card p-3">
+                    <div className="rounded-[18px] bg-surface-container-lowest p-3 shadow-[var(--shadow-soft)]">
                       <p className="text-xs uppercase tracking-[0.16em] text-muted">Rapports</p>
                       <p className="mt-2 text-sm font-semibold">{stage.pendingReportsCount} en attente</p>
                     </div>
-                    <div className="rounded-[18px] border border-border/80 bg-card p-3">
+                    <div className="rounded-[18px] bg-surface-container-lowest p-3 shadow-[var(--shadow-soft)]">
                       <p className="text-xs uppercase tracking-[0.16em] text-muted">Evaluations</p>
                       <p className="mt-2 text-sm font-semibold">
                         {stage.pendingEvaluationsCount} a valider
                       </p>
                     </div>
-                    <div className="rounded-[18px] border border-border/80 bg-card p-3">
+                    <div className="rounded-[18px] bg-surface-container-lowest p-3 shadow-[var(--shadow-soft)]">
                       <p className="text-xs uppercase tracking-[0.16em] text-muted">Documents</p>
                       <p className="mt-2 text-sm font-semibold">
                         {stage.documentAttentionCount} a revoir

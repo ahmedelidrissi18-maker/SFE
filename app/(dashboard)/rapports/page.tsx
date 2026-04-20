@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { Clock3, FileText, Send, ShieldCheck } from "lucide-react";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FeedbackBanner } from "@/components/ui/feedback-banner";
+import { MaterialSymbol } from "@/components/ui/material-symbol";
 import { MetricCard } from "@/components/ui/metric-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -157,7 +157,7 @@ export default async function RapportsPage({ searchParams }: RapportsPageProps) 
           userRole === "STAGIAIRE" && activeStage ? (
             <Link
               href="/rapports/nouveau"
-              className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+              className="action-button action-button-primary px-5 py-3 text-sm"
             >
               Nouveau rapport
             </Link>
@@ -170,25 +170,25 @@ export default async function RapportsPage({ searchParams }: RapportsPageProps) 
           label="Rapports"
           value={metrics.total}
           helper="Historique visible selon votre role"
-          accent={<FileText className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="description" className="text-[20px]" />}
         />
         <MetricCard
           label="Brouillons"
           value={metrics.brouillons}
           helper="Rapports encore modifiables par le stagiaire"
-          accent={<Clock3 className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="edit_document" className="text-[20px]" />}
         />
         <MetricCard
           label="Soumis"
           value={metrics.soumis}
           helper="Rapports en attente de relecture"
-          accent={<Send className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="send" className="text-[20px]" />}
         />
         <MetricCard
           label="Valides"
           value={metrics.valides}
           helper="Rapports clotures ou acceptes"
-          accent={<ShieldCheck className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="task_alt" className="text-[20px]" filled />}
         />
       </section>
 
@@ -206,7 +206,7 @@ export default async function RapportsPage({ searchParams }: RapportsPageProps) 
             <select
               name="statut"
               defaultValue={statut}
-              className="min-w-48 rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+              className="field-shell min-w-48 rounded-2xl px-4 py-3 outline-none transition"
             >
               <option value="">Tous</option>
               <option value="BROUILLON">Brouillon</option>
@@ -218,13 +218,13 @@ export default async function RapportsPage({ searchParams }: RapportsPageProps) 
 
           <button
             type="submit"
-            className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+            className="action-button action-button-primary px-5 py-3 text-sm"
           >
             Appliquer les filtres
           </button>
           <Link
             href="/rapports"
-            className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary"
+            className="action-button action-button-secondary px-5 py-3 text-sm"
           >
             Revenir a la liste complete
           </Link>
@@ -235,9 +235,9 @@ export default async function RapportsPage({ searchParams }: RapportsPageProps) 
         <div className="grid gap-4">
           {rapports.map((rapport) => (
             <Link key={rapport.id} href={`/rapports/${rapport.id}`}>
-              <Card className="overflow-hidden p-0 transition hover:border-primary/40 hover:shadow-[0_18px_36px_-28px_rgba(15,118,110,0.45)]">
+              <Card className="overflow-hidden p-0 transition hover:-translate-y-0.5 hover:shadow-[0px_18px_36px_rgba(26,28,29,0.08)]">
                 <div className="grid gap-0 lg:grid-cols-[150px_1fr]">
-                  <div className="bg-linear-to-b from-primary/10 to-primary/5 px-5 py-6 lg:border-r lg:border-border">
+                  <div className="bg-linear-to-b from-primary/10 to-primary/5 px-5 py-6">
                     <p className="text-xs uppercase tracking-[0.2em] text-primary/80">Semaine</p>
                     <p className="mt-2 text-4xl font-semibold tracking-tight">{rapport.semaine}</p>
                     <p className="mt-3 text-sm text-muted">{rapport.avancement}% d avancement</p>
@@ -264,7 +264,7 @@ export default async function RapportsPage({ searchParams }: RapportsPageProps) 
                     </div>
 
                     <div className="grid gap-4 md:grid-cols-3">
-                      <div className="rounded-[22px] border border-border bg-background p-4">
+                      <div className="tonal-card rounded-[22px] p-4">
                         <p className="text-sm text-muted">
                           {rapport.commentaireEncadrant ? "Retour encadrant" : "Action attendue"}
                         </p>
@@ -272,13 +272,13 @@ export default async function RapportsPage({ searchParams }: RapportsPageProps) 
                           {rapport.commentaireEncadrant ?? getRapportNextActionLabel(rapport.statut)}
                         </p>
                       </div>
-                      <div className="rounded-[22px] border border-border bg-background p-4">
+                      <div className="tonal-card rounded-[22px] p-4">
                         <p className="text-sm text-muted">Soumis le</p>
                         <p className="mt-2 text-sm font-medium">
                           {rapport.dateSoumission ? formatDate(rapport.dateSoumission) : "Non soumis"}
                         </p>
                       </div>
-                      <div className="rounded-[22px] border border-border bg-background p-4">
+                      <div className="tonal-card rounded-[22px] p-4">
                         <p className="text-sm text-muted">Encadrant</p>
                         <p className="mt-2 text-sm font-medium">
                           {rapport.stage.encadrant

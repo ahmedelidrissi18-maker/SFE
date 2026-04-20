@@ -22,6 +22,8 @@ type StagiaireFormProps = {
 };
 
 const initialState: StagiaireActionState = {};
+const fieldClassName =
+  "field-shell w-full rounded-2xl px-4 py-3 outline-none transition";
 
 function SubmitButton({ label }: { label: string }) {
   const { pending } = useFormStatus();
@@ -30,7 +32,7 @@ function SubmitButton({ label }: { label: string }) {
     <button
       type="submit"
       disabled={pending}
-      className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
+      className="action-button action-button-primary px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70"
     >
       {pending ? "Enregistrement..." : label}
     </button>
@@ -66,7 +68,7 @@ function Field({
         required={required}
         placeholder={placeholder}
         autoComplete={autoComplete}
-        className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+        className={fieldClassName}
       />
       {hint ? <p className="text-xs leading-5 text-muted">{hint}</p> : null}
     </label>
@@ -95,7 +97,7 @@ export function StagiaireForm({
 
       <form
         action={formAction}
-        className="space-y-8 rounded-[32px] border border-border/80 bg-card p-6 shadow-[0_18px_40px_-24px_rgba(15,23,42,0.28)] sm:p-8"
+        className="form-shell space-y-8 rounded-[32px] p-6 sm:p-8"
       >
         <input type="hidden" name="stagiaireId" value={defaultValues?.stagiaireId ?? ""} />
         <input type="hidden" name="userId" value={defaultValues?.userId ?? ""} />
@@ -209,7 +211,7 @@ export function StagiaireForm({
           <SubmitButton label={submitLabel} />
           <Link
             href={cancelHref}
-            className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary"
+            className="action-button action-button-secondary px-5 py-3 text-sm"
           >
             Annuler
           </Link>

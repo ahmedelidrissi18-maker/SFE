@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { ExternalLink, Github, GitPullRequest, History, MessageSquareDot } from "lucide-react";
 import { notFound } from "next/navigation";
 import { auth } from "@/auth";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { MaterialSymbol } from "@/components/ui/material-symbol";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { githubService, getGithubSyncStatusLabel } from "@/lib/github/service";
@@ -56,10 +56,10 @@ function formatDateTime(date?: Date | null) {
 
 function StatCard({ label, value, helper }: { label: string; value: string | number; helper: string }) {
   return (
-    <div className="rounded-[22px] border border-border bg-background p-4">
-      <p className="text-sm text-muted">{label}</p>
+    <div className="rounded-[22px] bg-surface-container-low p-4">
+      <p className="text-sm text-on-surface-variant">{label}</p>
       <p className="mt-2 text-2xl font-semibold tracking-tight">{value}</p>
-      <p className="mt-2 text-sm leading-6 text-muted">{helper}</p>
+      <p className="mt-2 text-sm leading-6 text-on-surface-variant">{helper}</p>
     </div>
   );
 }
@@ -119,7 +119,7 @@ export default async function GithubSummaryPage({ params }: GithubSummaryPagePro
           <>
             <Link
               href={`/stagiaires/${stagiaire.id}`}
-              className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary"
+              className="action-button action-button-secondary px-5 py-3 text-sm"
             >
               Retour a la fiche
             </Link>
@@ -127,7 +127,7 @@ export default async function GithubSummaryPage({ params }: GithubSummaryPagePro
               href={`/api/github/connect?stagiaireId=${stagiaire.id}&returnTo=${encodeURIComponent(
                 `/stagiaires/${stagiaire.id}/github`,
               )}`}
-              className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+              className="action-button action-button-primary px-5 py-3 text-sm"
             >
               Reconnecter via OAuth
             </Link>
@@ -163,7 +163,7 @@ export default async function GithubSummaryPage({ params }: GithubSummaryPagePro
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="flex items-center gap-2 text-primary">
-                <Github className="h-5 w-5" />
+                <MaterialSymbol icon="code" className="text-[20px]" />
                 <p className="text-sm font-medium">Connexion GitHub</p>
               </div>
               <h2 className="mt-2 text-2xl font-semibold tracking-tight">Etat de liaison</h2>
@@ -182,11 +182,11 @@ export default async function GithubSummaryPage({ params }: GithubSummaryPagePro
                   <img
                     src={githubSummary.connection.avatarUrl}
                     alt={githubSummary.connection.username}
-                    className="h-16 w-16 rounded-full border border-border object-cover"
+                    className="h-16 w-16 rounded-full object-cover"
                   />
                 ) : (
-                  <div className="flex h-16 w-16 items-center justify-center rounded-full border border-border bg-accent text-primary">
-                    <Github className="h-6 w-6" />
+                  <div className="flex h-16 w-16 items-center justify-center rounded-full bg-surface-container-low text-primary">
+                    <MaterialSymbol icon="code" className="text-[24px]" />
                   </div>
                 )}
                 <div className="space-y-1">
@@ -198,19 +198,19 @@ export default async function GithubSummaryPage({ params }: GithubSummaryPagePro
                     className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
                   >
                     Voir le profil GitHub
-                    <ExternalLink className="h-4 w-4" />
+                    <MaterialSymbol icon="open_in_new" className="text-[16px]" />
                   </Link>
                 </div>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-[22px] border border-border bg-background p-4">
+                <div className="tonal-card rounded-[22px] p-4">
                   <p className="text-sm text-muted">Derniere synchronisation</p>
                   <p className="mt-2 text-sm font-medium">
                     {formatDateTime(githubSummary.connection.lastSyncAt)}
                   </p>
                 </div>
-                <div className="rounded-[22px] border border-border bg-background p-4">
+                <div className="tonal-card rounded-[22px] p-4">
                   <p className="text-sm text-muted">Depot stage</p>
                   <p className="mt-2 text-sm font-medium">
                     {latestStage?.githubRepo ?? "Non renseigne"}
@@ -219,7 +219,7 @@ export default async function GithubSummaryPage({ params }: GithubSummaryPagePro
               </div>
 
               {githubSummary.connection.lastSyncError ? (
-                <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                <div className="rounded-2xl bg-error-container px-4 py-3 text-sm text-on-error-container">
                   {githubSummary.connection.lastSyncError}
                 </div>
               ) : null}
@@ -234,7 +234,7 @@ export default async function GithubSummaryPage({ params }: GithubSummaryPagePro
 
         <Card className="space-y-5">
           <div className="flex items-center gap-2 text-primary">
-            <History className="h-5 w-5" />
+            <MaterialSymbol icon="history" className="text-[20px]" />
             <div>
               <p className="text-sm font-medium">Historique</p>
               <h2 className="mt-1 text-2xl font-semibold tracking-tight">
@@ -248,7 +248,7 @@ export default async function GithubSummaryPage({ params }: GithubSummaryPagePro
               {stagiaire.githubConnection.syncLogs.map((syncLog) => (
                 <div
                   key={syncLog.id}
-                  className="rounded-[22px] border border-border bg-background p-4"
+                  className="tonal-card rounded-[22px] p-4"
                 >
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                     <div className="space-y-2">
@@ -281,7 +281,7 @@ export default async function GithubSummaryPage({ params }: GithubSummaryPagePro
       <section className="grid gap-4 xl:grid-cols-3">
         <Card className="space-y-5 xl:col-span-1">
           <div className="flex items-center gap-2 text-primary">
-            <Github className="h-5 w-5" />
+            <MaterialSymbol icon="folder" className="text-[20px]" />
             <div>
               <p className="text-sm font-medium">Depot cible</p>
               <h2 className="mt-1 text-2xl font-semibold tracking-tight">
@@ -299,7 +299,7 @@ export default async function GithubSummaryPage({ params }: GithubSummaryPagePro
                 className="inline-flex items-center gap-2 text-sm font-semibold text-primary hover:underline"
               >
                 {latestPayload.repository.fullName}
-                <ExternalLink className="h-4 w-4" />
+                <MaterialSymbol icon="open_in_new" className="text-[16px]" />
               </Link>
               <p className="text-sm leading-6 text-muted">
                 {latestPayload.repository.description ?? "Aucune description fournie par GitHub."}
@@ -315,7 +315,7 @@ export default async function GithubSummaryPage({ params }: GithubSummaryPagePro
 
         <Card className="space-y-5">
           <div className="flex items-center gap-2 text-primary">
-            <Github className="h-5 w-5" />
+            <MaterialSymbol icon="commit" className="text-[20px]" />
             <div>
               <p className="text-sm font-medium">Commits</p>
               <h2 className="mt-1 text-2xl font-semibold tracking-tight">Activite recente</h2>
@@ -330,7 +330,7 @@ export default async function GithubSummaryPage({ params }: GithubSummaryPagePro
                   href={commit.htmlUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="block rounded-[22px] border border-border bg-background p-4 transition hover:border-primary/40"
+                  className="block rounded-[22px] bg-surface-container-low p-4 shadow-[var(--shadow-soft)] transition hover:bg-surface-container-high"
                 >
                   <p className="text-sm font-medium">{commit.message}</p>
                   <p className="mt-2 text-xs text-muted">{commit.sha.slice(0, 7)}</p>
@@ -347,7 +347,7 @@ export default async function GithubSummaryPage({ params }: GithubSummaryPagePro
 
         <Card className="space-y-5">
           <div className="flex items-center gap-2 text-primary">
-            <GitPullRequest className="h-5 w-5" />
+            <MaterialSymbol icon="merge_type" className="text-[20px]" />
             <div>
               <p className="text-sm font-medium">PR et issues</p>
               <h2 className="mt-1 text-2xl font-semibold tracking-tight">Travail ouvert</h2>
@@ -362,7 +362,7 @@ export default async function GithubSummaryPage({ params }: GithubSummaryPagePro
                   href={pullRequest.htmlUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="block rounded-[22px] border border-border bg-background p-4 transition hover:border-primary/40"
+                  className="block rounded-[22px] bg-surface-container-low p-4 shadow-[var(--shadow-soft)] transition hover:bg-surface-container-high"
                 >
                   <p className="text-sm font-medium">PR #{pullRequest.number}</p>
                   <p className="mt-1 text-sm text-muted">{pullRequest.title}</p>
@@ -375,10 +375,10 @@ export default async function GithubSummaryPage({ params }: GithubSummaryPagePro
                   href={issue.htmlUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="block rounded-[22px] border border-border bg-background p-4 transition hover:border-primary/40"
+                  className="block rounded-[22px] bg-surface-container-low p-4 shadow-[var(--shadow-soft)] transition hover:bg-surface-container-high"
                 >
                   <div className="flex items-center gap-2">
-                    <MessageSquareDot className="h-4 w-4 text-primary" />
+                    <MaterialSymbol icon="forum" className="text-[16px] text-primary" />
                     <p className="text-sm font-medium">Issue #{issue.number}</p>
                   </div>
                   <p className="mt-1 text-sm text-muted">{issue.title}</p>

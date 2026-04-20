@@ -4,11 +4,12 @@ import { useActionState } from "react";
 import { useFormStatus } from "react-dom";
 import { loginAction, type LoginActionState } from "@/app/login/actions";
 import { FeedbackBanner } from "@/components/ui/feedback-banner";
+import { MaterialSymbol } from "@/components/ui/material-symbol";
 
 const initialState: LoginActionState = {};
 const fieldClassName =
-  "w-full rounded-[22px] border border-border bg-linear-to-b from-background to-card px-4 py-3.5 text-sm outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20";
-const hintClassName = "text-xs leading-5 text-muted";
+  "field-shell h-12 w-full rounded-lg pl-12 pr-4 text-sm text-on-surface outline-none transition placeholder:text-outline-variant";
+const hintClassName = "text-xs leading-5 text-on-surface-variant";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -17,9 +18,10 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="w-full rounded-[22px] bg-primary px-4 py-3.5 text-sm font-semibold text-primary-foreground shadow-[0_22px_42px_-28px_rgba(15,118,110,0.72)] transition hover:-translate-y-0.5 hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
+      className="signature-gradient flex h-12 w-full items-center justify-center gap-2 rounded-lg px-4 py-3.5 text-sm font-semibold text-on-primary shadow-[var(--shadow-ambient)] transition hover:opacity-90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-70"
     >
-      {pending ? "Connexion en cours..." : "Se connecter"}
+      <span>{pending ? "Connexion en cours..." : "Se connecter"}</span>
+      <MaterialSymbol icon="arrow_forward" className="text-[18px]" />
     </button>
   );
 }
@@ -28,70 +30,87 @@ export function LoginForm() {
   const [state, formAction] = useActionState(loginAction, initialState);
 
   return (
-    <form action={formAction} className="mt-8 space-y-4">
-      <div className="space-y-2 rounded-[24px] border border-border/80 bg-linear-to-br from-card to-surface p-4 shadow-[var(--shadow-soft)] sm:p-5">
-        <label htmlFor="email" className="text-sm font-medium">
-          Email
+    <form action={formAction} className="mt-8 space-y-6">
+      <div className="space-y-2">
+        <label htmlFor="email" className="ml-1 block text-[13px] font-medium text-on-surface-variant">
+          Adresse e-mail
         </label>
-        <input
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          defaultValue={state.email}
-          placeholder="nom@organisation.ma"
-          className={fieldClassName}
-          required
-        />
+        <div className="relative">
+          <MaterialSymbol
+            icon="mail"
+            className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[20px] text-on-surface-variant"
+          />
+          <input
+            id="email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            defaultValue={state.email}
+            placeholder="nom@organisation.ma"
+            className={fieldClassName}
+            required
+          />
+        </div>
         <p className={hintClassName}>Utilisez l adresse rattachee a votre compte interne.</p>
       </div>
 
-      <div className="space-y-2 rounded-[24px] border border-border/80 bg-linear-to-br from-card to-surface p-4 shadow-[var(--shadow-soft)] sm:p-5">
-        <label htmlFor="password" className="text-sm font-medium">
-          Mot de passe
-        </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="current-password"
-          placeholder="********"
-          className={fieldClassName}
-          required
-        />
+      <div className="space-y-2">
+        <div className="ml-1 flex items-center justify-between gap-3">
+          <label htmlFor="password" className="block text-[13px] font-medium text-on-surface-variant">
+            Mot de passe
+          </label>
+          <span className="text-[13px] font-medium text-primary">Oublie ?</span>
+        </div>
+        <div className="relative">
+          <MaterialSymbol
+            icon="lock"
+            className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[20px] text-on-surface-variant"
+          />
+          <input
+            id="password"
+            name="password"
+            type="password"
+            autoComplete="current-password"
+            placeholder="••••••••"
+            className={fieldClassName}
+            required
+          />
+        </div>
         <p className={hintClassName}>Saisissez le mot de passe associe a ce compte.</p>
       </div>
 
-      <div className="space-y-2 rounded-[24px] border border-border/80 bg-linear-to-br from-card to-surface p-4 shadow-[var(--shadow-soft)] sm:p-5">
-        <div className="flex items-center justify-between gap-3">
-          <label htmlFor="twoFactorCode" className="text-sm font-medium">
-            Code 2FA
+      {state.requiresTwoFactor ? (
+        <div className="space-y-2 pt-2">
+          <div className="mb-6 soft-rule" />
+          <label htmlFor="twoFactorCode" className="ml-1 block text-[13px] font-medium text-on-surface-variant">
+            Code de double authentification (2FA)
           </label>
-          <span className="text-xs text-muted">Requis pour `ADMIN` et `RH` si active</span>
-        </div>
-        <input
-          id="twoFactorCode"
-          name="twoFactorCode"
-          type="text"
-          inputMode="numeric"
-          pattern="[0-9]{6}"
-          maxLength={6}
-          placeholder="123456"
-          className={fieldClassName}
-          required={state.requiresTwoFactor}
-        />
-        <p className={hintClassName}>
-          Renseignez ce champ uniquement si votre compte demande une verification en deux etapes.
-        </p>
-        {state.requiresTwoFactor ? (
+          <input
+            id="twoFactorCode"
+            name="twoFactorCode"
+            type="text"
+            inputMode="numeric"
+            pattern="[0-9]{6}"
+            maxLength={6}
+            placeholder="000000"
+            className="field-shell h-12 w-full rounded-lg px-4 text-center font-mono tracking-[0.35em] text-on-surface outline-none transition"
+            required
+          />
+          <p className={hintClassName}>
+            Entrez le code genere par votre application d authentification.
+          </p>
           <FeedbackBanner
             kind="info"
             title="Code 2FA attendu"
             message="Le compte detecte demande une verification en deux etapes."
             description="Ouvrez votre application d authentification puis saisissez le code temporaire a 6 chiffres."
           />
-        ) : null}
-      </div>
+        </div>
+      ) : (
+        <div className="rounded-xl bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant">
+          Le champ 2FA s affichera uniquement si votre compte demande une verification en deux etapes.
+        </div>
+      )}
 
       {state.error ? (
         <FeedbackBanner
@@ -102,8 +121,16 @@ export function LoginForm() {
         />
       ) : null}
 
-      <div className="rounded-[24px] border border-border/80 bg-linear-to-br from-card to-surface p-4 shadow-[var(--shadow-soft)] sm:p-5">
+      <div className="pt-2">
         <SubmitButton />
+      </div>
+
+      <div className="pt-6 text-center">
+        <div className="soft-rule mb-6" />
+        <p className="text-[13px] text-on-surface-variant">
+          Nouveau sur la plateforme ?
+          <span className="ml-1 font-semibold text-primary">Contactez votre administrateur</span>
+        </p>
       </div>
     </form>
   );

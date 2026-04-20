@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { CheckCircle2, FileArchive, FileClock, ShieldCheck } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { transitionDocumentWorkflowAction } from "@/app/(dashboard)/documents/actions";
@@ -7,6 +6,7 @@ import { DocumentReviewForm } from "@/components/features/documents/document-rev
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FeedbackBanner } from "@/components/ui/feedback-banner";
+import { MaterialSymbol } from "@/components/ui/material-symbol";
 import { MetricCard } from "@/components/ui/metric-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -143,7 +143,7 @@ export default async function DocumentDetailPage({
       label: "Depot initial",
       helper: `${getDocumentSourceLabel(document.source)} par ${document.auteur.prenom} ${document.auteur.nom}`.trim(),
       date: document.createdAt,
-      icon: FileArchive,
+      icon: "folder",
     },
     ...(document.validationRequestedAt
       ? [
@@ -151,7 +151,7 @@ export default async function DocumentDetailPage({
             label: "Demande de verification",
             helper: "Le document a ete envoye en revue documentaire.",
             date: document.validationRequestedAt,
-            icon: FileClock,
+            icon: "pending_actions",
           },
         ]
       : []),
@@ -161,7 +161,7 @@ export default async function DocumentDetailPage({
             label: "Revue documentaire",
             helper: `Statut final de revue : ${getDocumentStatusLabel(document.statut)}`,
             date: document.reviewedAt,
-            icon: CheckCircle2,
+            icon: "task_alt",
           },
         ]
       : []),
@@ -171,7 +171,7 @@ export default async function DocumentDetailPage({
             label: "Signature",
             helper: `Etat de signature : ${getSignatureStatusLabel(document.signatureStatus)}`,
             date: document.signedAt ?? document.signaturePreparedAt ?? document.updatedAt,
-            icon: ShieldCheck,
+            icon: "verified_user",
           },
         ]
       : []),
@@ -225,13 +225,13 @@ export default async function DocumentDetailPage({
             <StatusBadge status={getDocumentStatusLabel(document.statut)} />
             <Link
               href={`/api/documents/${document.id}`}
-              className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+              className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-on-primary shadow-[var(--shadow-soft)] transition hover:opacity-90"
             >
               Telecharger
             </Link>
             <Link
               href="/documents"
-              className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary"
+              className="rounded-full bg-surface-container-low px-5 py-3 text-sm font-semibold text-on-surface shadow-[var(--shadow-soft)] transition hover:bg-surface-container-high hover:text-primary"
             >
               Retour aux documents
             </Link>
@@ -244,25 +244,25 @@ export default async function DocumentDetailPage({
           label="Type"
           value={getDocumentTypeLabel(document.type)}
           helper="Nature du document traite dans le workflow"
-          accent={<FileArchive className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="folder" className="text-[20px]" />}
         />
         <MetricCard
           label="Source"
           value={<StatusBadge status={getDocumentSourceLabel(document.source)} />}
           helper="Origine du document dans la plateforme"
-          accent={<FileClock className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="schedule" className="text-[20px]" />}
         />
         <MetricCard
           label="Taille"
           value={formatDocumentSize(document.tailleOctets)}
           helper="Volume actuel de la version visible"
-          accent={<CheckCircle2 className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="task_alt" className="text-[20px]" filled />}
         />
         <MetricCard
           label="Signature"
           value={<StatusBadge status={getSignatureStatusLabel(document.signatureStatus)} />}
           helper="Etat de preparation ou de completion de signature"
-          accent={<ShieldCheck className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="verified_user" className="text-[20px]" />}
         />
       </section>
 
@@ -307,13 +307,11 @@ export default async function DocumentDetailPage({
 
           <div className="space-y-4">
             {timelineItems.map((item, index) => {
-              const Icon = item.icon;
-
               return (
                 <div key={`${item.label}-${index}`} className="flex gap-4">
                   <div className="flex w-10 flex-col items-center">
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
-                      <Icon className="h-5 w-5" />
+                      <MaterialSymbol icon={item.icon} className="text-[20px]" />
                     </div>
                     {index < timelineItems.length - 1 ? (
                       <div className="mt-2 min-h-8 w-px flex-1 bg-border" />

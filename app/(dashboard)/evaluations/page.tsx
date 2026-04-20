@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { ClipboardCheck, Clock3, RotateCcw, Trophy } from "lucide-react";
 import { EvaluationStatus, EvaluationType } from "@prisma/client";
 import { auth } from "@/auth";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { MaterialSymbol } from "@/components/ui/material-symbol";
 import { MetricCard } from "@/components/ui/metric-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -102,7 +102,7 @@ export default async function EvaluationsPage({ searchParams }: EvaluationsPageP
           session.user.role !== "STAGIAIRE" ? (
             <Link
               href="/evaluations/nouvelle"
-              className="inline-flex items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+              className="action-button action-button-primary px-5 py-3 text-sm"
             >
               Planifier une evaluation
             </Link>
@@ -115,25 +115,25 @@ export default async function EvaluationsPage({ searchParams }: EvaluationsPageP
           label="Evaluations visibles"
           value={evaluations.length}
           helper="Toutes les evaluations accessibles selon votre role"
-          accent={<ClipboardCheck className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="grading" className="text-[20px]" />}
         />
         <MetricCard
           label="A valider"
           value={submittedCount}
           helper="Evaluations soumises et en attente de validation RH"
-          accent={<Clock3 className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="schedule" className="text-[20px]" />}
         />
         <MetricCard
           label="Retournees"
           value={returnedCount}
           helper="Evaluations renvoyees pour correction ou ajustement"
-          accent={<RotateCcw className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="replay" className="text-[20px]" />}
         />
         <MetricCard
           label="Validees"
           value={validatedCount}
           helper={`${upcomingCount} evaluation${upcomingCount > 1 ? "s" : ""} planifiee${upcomingCount > 1 ? "s" : ""} sous 15 jours`}
-          accent={<Trophy className="h-5 w-5" />}
+          accent={<MaterialSymbol icon="military_tech" className="text-[20px]" />}
         />
       </section>
 
@@ -151,7 +151,7 @@ export default async function EvaluationsPage({ searchParams }: EvaluationsPageP
             <select
               name="statut"
               defaultValue={statut}
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+              className="field-shell w-full rounded-2xl px-4 py-3 outline-none transition"
             >
               <option value="">Tous</option>
               <option value={EvaluationStatus.BROUILLON}>Brouillon</option>
@@ -166,7 +166,7 @@ export default async function EvaluationsPage({ searchParams }: EvaluationsPageP
             <select
               name="type"
               defaultValue={type}
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary"
+              className="field-shell w-full rounded-2xl px-4 py-3 outline-none transition"
             >
               <option value="">Tous</option>
               <option value={EvaluationType.DEBUT_STAGE}>Debut de stage</option>
@@ -178,13 +178,13 @@ export default async function EvaluationsPage({ searchParams }: EvaluationsPageP
           <div className="flex flex-wrap items-end gap-3">
             <button
               type="submit"
-              className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+              className="action-button action-button-primary px-5 py-3 text-sm"
             >
               Appliquer les filtres
             </button>
             <Link
               href="/evaluations"
-              className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary"
+              className="action-button action-button-secondary px-5 py-3 text-sm"
             >
               Revenir a la liste complete
             </Link>
@@ -199,7 +199,7 @@ export default async function EvaluationsPage({ searchParams }: EvaluationsPageP
               key={evaluation.id}
               className={
                 highlight === evaluation.id
-                  ? "space-y-5 border-primary/50 shadow-[0_18px_35px_-28px_rgba(15,118,110,0.55)]"
+                  ? "space-y-5 bg-linear-to-br from-card via-card to-accent/35 shadow-[0px_18px_35px_rgba(26,28,29,0.08)]"
                   : "space-y-5"
               }
             >
@@ -219,24 +219,24 @@ export default async function EvaluationsPage({ searchParams }: EvaluationsPageP
 
                 <Link
                   href={`/evaluations/${evaluation.id}`}
-                  className="rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
+                  className="action-button action-button-primary px-4 py-2.5 text-sm"
                 >
                   Ouvrir
                 </Link>
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                <div className="rounded-[22px] border border-border bg-background p-4">
+                <div className="tonal-card rounded-[22px] p-4">
                   <p className="text-sm text-muted">Score</p>
                   <p className="mt-2 text-sm font-medium">
                     {evaluation.totalScore}/{evaluation.maxScore}
                   </p>
                 </div>
-                <div className="rounded-[22px] border border-border bg-background p-4">
+                <div className="tonal-card rounded-[22px] p-4">
                   <p className="text-sm text-muted">Planifiee le</p>
                   <p className="mt-2 text-sm font-medium">{formatDate(evaluation.scheduledFor)}</p>
                 </div>
-                <div className="rounded-[22px] border border-border bg-background p-4">
+                <div className="tonal-card rounded-[22px] p-4">
                   <p className="text-sm text-muted">Encadrant</p>
                   <p className="mt-2 text-sm font-medium">
                     {evaluation.stage.encadrant
@@ -244,11 +244,11 @@ export default async function EvaluationsPage({ searchParams }: EvaluationsPageP
                       : "Non affecte"}
                   </p>
                 </div>
-                <div className="rounded-[22px] border border-border bg-background p-4 sm:col-span-2 xl:col-span-3">
+                <div className="tonal-card rounded-[22px] p-4 sm:col-span-2 xl:col-span-3">
                   <p className="text-sm text-muted">Sujet</p>
                   <p className="mt-2 text-sm font-medium">{evaluation.stage.sujet}</p>
                 </div>
-                <div className="rounded-[22px] border border-border bg-background p-4 sm:col-span-2 xl:col-span-3">
+                <div className="tonal-card rounded-[22px] p-4 sm:col-span-2 xl:col-span-3">
                   <p className="text-sm text-muted">Action attendue</p>
                   <p className="mt-2 text-sm font-medium">
                     {getEvaluationNextActionLabel(evaluation.status)}

@@ -1,18 +1,12 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import {
-  ArrowRight,
-  FileClock,
-  FolderKanban,
-  ShieldCheck,
-  TimerReset,
-  Users,
-} from "lucide-react";
 import { Role } from "@prisma/client";
 import { auth } from "@/auth";
 import { LiveNotificationsListener } from "@/components/features/notifications/live-notifications-listener";
+import { TwoFactorInlineAlert } from "@/components/features/security/two-factor-inline-alert";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { MaterialSymbol } from "@/components/ui/material-symbol";
 import { MetricCard } from "@/components/ui/metric-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -43,6 +37,8 @@ type PriorityItem = {
   href: string;
   cta: string;
 };
+
+const dashboardIconClass = "text-[20px]";
 
 function getRoleIntro(role: UserRole) {
   switch (role) {
@@ -112,8 +108,8 @@ function getQuickActions(role: UserRole): QuickAction[] {
 
 function getQuickActionClassName(variant: QuickAction["variant"]) {
   return variant === "primary"
-    ? "inline-flex min-h-11 items-center justify-center rounded-[20px] bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground shadow-[0_22px_42px_-28px_rgba(15,118,110,0.72)] transition hover:-translate-y-0.5 hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
-    : "inline-flex min-h-11 items-center justify-center rounded-[20px] border border-border bg-linear-to-b from-background to-card px-5 py-3 text-sm font-semibold shadow-[var(--shadow-soft)] transition hover:-translate-y-0.5 hover:border-primary/30 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2 focus-visible:ring-offset-card";
+    ? "inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-on-primary shadow-[var(--shadow-ambient)] transition hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+    : "inline-flex min-h-11 items-center justify-center rounded-xl bg-surface-container-low px-5 py-3 text-sm font-semibold text-on-surface shadow-[var(--shadow-soft)] transition hover:bg-surface-container-high hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2 focus-visible:ring-offset-card";
 }
 
 function getEndingSoonStageHref(role: UserRole, stagiaireId: string) {
@@ -302,25 +298,25 @@ export default async function DashboardPage() {
             label: "Stage actif",
             value: myActiveStage ? getStageStatusLabel(myActiveStage.statut) : "Aucun",
             helper: "Statut actuellement visible pour votre stage",
-            accent: <FolderKanban className="h-5 w-5" />,
+            accent: <MaterialSymbol icon="work" className={dashboardIconClass} filled />,
           },
           {
             label: "Rapports soumis",
             value: String(pendingRapportsCount),
             helper: "Rapports deja transmis et encore en attente de retour",
-            accent: <FileClock className="h-5 w-5" />,
+            accent: <MaterialSymbol icon="pending_actions" className={dashboardIconClass} />,
           },
           {
             label: "Documents disponibles",
             value: String(activeStageDocumentsCount),
             helper: "Documents disponibles sur votre stage actif",
-            accent: <ShieldCheck className="h-5 w-5" />,
+            accent: <MaterialSymbol icon="description" className={dashboardIconClass} />,
           },
           {
             label: "Fin previsionnelle",
             value: myActiveStage ? formatDate(myActiveStage.dateFin) : "-",
             helper: "Date cible de cloture du stage",
-            accent: <TimerReset className="h-5 w-5" />,
+            accent: <MaterialSymbol icon="event_upcoming" className={dashboardIconClass} />,
           },
         ]
       : role === "ENCADRANT"
@@ -329,25 +325,25 @@ export default async function DashboardPage() {
               label: "Mes stages actifs",
               value: String(activeStagesCount),
               helper: "Stages en cours, planifies ou suspendus dans votre perimetre",
-              accent: <FolderKanban className="h-5 w-5" />,
+              accent: <MaterialSymbol icon="work_history" className={dashboardIconClass} filled />,
             },
             {
               label: "Rapports a relire",
               value: String(pendingRapportsCount),
               helper: "Rapports soumis qui attendent votre retour",
-              accent: <FileClock className="h-5 w-5" />,
+              accent: <MaterialSymbol icon="fact_check" className={dashboardIconClass} />,
             },
             {
               label: "Fin proche",
               value: String(endingSoonStages.length),
               helper: "Stages qui se terminent sous 15 jours",
-              accent: <TimerReset className="h-5 w-5" />,
+              accent: <MaterialSymbol icon="schedule" className={dashboardIconClass} />,
             },
             {
               label: "Notifications",
               value: String(unreadNotificationsCount),
               helper: "Notifications non lues a traiter depuis votre espace",
-              accent: <ShieldCheck className="h-5 w-5" />,
+              accent: <MaterialSymbol icon="notifications" className={dashboardIconClass} />,
             },
           ]
         : role === "RH"
@@ -356,25 +352,25 @@ export default async function DashboardPage() {
                 label: "Stagiaires actifs",
                 value: String(activeStagiairesCount),
                 helper: "Comptes stagiaires actifs prets pour le suivi",
-                accent: <Users className="h-5 w-5" />,
+                accent: <MaterialSymbol icon="groups" className={dashboardIconClass} filled />,
               },
               {
                 label: "Stages actifs",
                 value: String(activeStagesCount),
                 helper: "Planifies, en cours ou suspendus selon les donnees reelles",
-                accent: <FolderKanban className="h-5 w-5" />,
+                accent: <MaterialSymbol icon="work" className={dashboardIconClass} filled />,
               },
               {
                 label: "Rapports a relire",
                 value: String(pendingRapportsCount),
                 helper: "Rapports soumis en attente de validation ou retour",
-                accent: <FileClock className="h-5 w-5" />,
+                accent: <MaterialSymbol icon="description" className={dashboardIconClass} />,
               },
               {
                 label: "Documents visibles",
                 value: String(documentsCount),
                 helper: "Documents non supprimes relies aux stages actuellement visibles",
-                accent: <ShieldCheck className="h-5 w-5" />,
+                accent: <MaterialSymbol icon="folder" className={dashboardIconClass} />,
               },
             ]
           : [
@@ -382,25 +378,25 @@ export default async function DashboardPage() {
                 label: "Stagiaires actifs",
                 value: String(activeStagiairesCount),
                 helper: "Comptes stagiaires actifs prets pour le suivi",
-                accent: <Users className="h-5 w-5" />,
+                accent: <MaterialSymbol icon="group" className={dashboardIconClass} filled />,
               },
               {
                 label: "Stages actifs",
                 value: String(activeStagesCount),
                 helper: "Planifies, en cours ou suspendus selon les donnees reelles",
-                accent: <FolderKanban className="h-5 w-5" />,
+                accent: <MaterialSymbol icon="work" className={dashboardIconClass} filled />,
               },
               {
                 label: "Rapports a relire",
                 value: String(pendingRapportsCount),
                 helper: "Rapports soumis en attente de validation ou retour",
-                accent: <FileClock className="h-5 w-5" />,
+                accent: <MaterialSymbol icon="description" className={dashboardIconClass} />,
               },
               {
                 label: "Encadrants actifs",
                 value: String(encadrantsCount),
                 helper: "Encadrants actifs actuellement mobilises sur les stages suivis",
-                accent: <ShieldCheck className="h-5 w-5" />,
+                accent: <MaterialSymbol icon="verified_user" className={dashboardIconClass} />,
               },
             ];
 
@@ -559,26 +555,7 @@ export default async function DashboardPage() {
       />
 
       {isSensitiveTwoFactorRole(role) && !securityState?.twoFactorEnabled ? (
-        <Card className="border-amber-200/80 bg-linear-to-br from-amber-50/90 to-card">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="space-y-2">
-              <p className="text-sm font-medium text-amber-700">Action de securite recommandee</p>
-              <h2 className="text-xl font-semibold tracking-tight text-amber-900">
-                Activez le 2FA sur votre compte sensible
-              </h2>
-              <p className="text-sm leading-6 text-amber-800">
-                Le module est deja disponible dans votre espace securite pour renforcer la
-                protection des profils `ADMIN` et `RH`.
-              </p>
-            </div>
-            <Link
-              href="/securite"
-              className="inline-flex min-h-11 items-center justify-center rounded-[20px] bg-amber-700 px-5 py-3 text-sm font-semibold text-white shadow-[0_20px_38px_-24px_rgba(180,83,9,0.42)] transition hover:-translate-y-0.5 hover:bg-amber-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-300 focus-visible:ring-offset-2 focus-visible:ring-offset-amber-50"
-            >
-              Ouvrir la securite du compte
-            </Link>
-          </div>
-        </Card>
+        <TwoFactorInlineAlert userId={session.user.id} />
       ) : null}
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -589,6 +566,9 @@ export default async function DashboardPage() {
             value={metric.value}
             helper={metric.helper}
             accent={metric.accent}
+            className="h-full min-h-[176px]"
+            contentClassName="overflow-hidden"
+            helperClassName="overflow-hidden whitespace-nowrap text-ellipsis"
           />
         ))}
       </section>
@@ -611,7 +591,7 @@ export default async function DashboardPage() {
               <Link
                 key={item.title}
                 href={item.href}
-                className="flex flex-col gap-4 rounded-[24px] border border-border bg-background p-4 transition hover:border-primary/40 hover:shadow-[0_16px_30px_-24px_rgba(15,118,110,0.5)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2 focus-visible:ring-offset-card sm:flex-row sm:items-start sm:justify-between"
+                className="flex flex-col gap-4 rounded-[24px] bg-surface-container-low p-4 shadow-[var(--shadow-soft)] transition hover:bg-surface-container-high focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2 focus-visible:ring-offset-card sm:flex-row sm:items-start sm:justify-between"
               >
                 <div className="space-y-2">
                   <p className="text-base font-semibold">{item.title}</p>
@@ -621,7 +601,7 @@ export default async function DashboardPage() {
                   <div className="text-foreground">{item.value}</div>
                   <span className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.16em] text-primary">
                     {item.cta}
-                    <ArrowRight className="h-3.5 w-3.5" />
+                    <MaterialSymbol icon="arrow_outward" className="text-[14px]" />
                   </span>
                 </div>
               </Link>
@@ -630,17 +610,17 @@ export default async function DashboardPage() {
         </Card>
 
         <Card className="space-y-5">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-sm font-medium text-primary">Rapports recents</p>
-              <h2 className="mt-1 text-2xl font-semibold tracking-tight">{recentRapportsTitle}</h2>
-              <p className="mt-2 text-sm leading-6 text-muted">
-                Les rapports les plus recents apparaissent ici pour vous aider a reprendre vite le
-                contexte.
+          <div>
+            <p className="text-sm font-medium text-primary">Rapports recents</p>
+            <div className="mt-1 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="text-2xl font-semibold tracking-tight">{recentRapportsTitle}</h2>
+              <p className="text-[13px] text-on-surface-variant">
+                {recentRapports.length} rapport{recentRapports.length > 1 ? "s" : ""} sur la vue actuelle
               </p>
             </div>
-            <p className="text-sm text-muted">
-              {recentRapports.length} rapport{recentRapports.length > 1 ? "s" : ""} sur la vue actuelle
+            <p className="mt-2 text-sm leading-6 text-muted">
+              Les rapports les plus recents apparaissent ici pour vous aider a reprendre vite le
+              contexte.
             </p>
           </div>
 
@@ -650,7 +630,7 @@ export default async function DashboardPage() {
                 <Link
                   key={rapport.id}
                   href={`/rapports/${rapport.id}`}
-                  className="rounded-[24px] border border-border bg-background p-4 transition hover:border-primary/40 hover:shadow-[0_16px_30px_-24px_rgba(15,118,110,0.5)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+                  className="rounded-[24px] bg-surface-container-low p-4 shadow-[var(--shadow-soft)] transition hover:bg-surface-container-high focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
                 >
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="space-y-2">
@@ -693,7 +673,7 @@ export default async function DashboardPage() {
             <h2 className="mt-1 text-2xl font-semibold tracking-tight">{endingSoonTitle}</h2>
             <p className="mt-2 text-sm leading-6 text-muted">{endingSoonDescription}</p>
           </div>
-          <span className="rounded-full bg-accent px-3 py-1 text-xs font-semibold text-primary">
+          <span className="rounded-full bg-tertiary-fixed px-3 py-1 text-xs font-semibold text-on-tertiary-fixed-variant">
             Sous 15 jours
           </span>
         </div>
@@ -704,7 +684,7 @@ export default async function DashboardPage() {
               <Link
                 key={stage.id}
                 href={getEndingSoonStageHref(role, stage.stagiaireId)}
-                className="block rounded-[22px] border border-border bg-background p-4 transition hover:border-primary/40 hover:shadow-[0_16px_30px_-24px_rgba(15,118,110,0.5)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+                className="block rounded-[22px] bg-surface-container-low p-4 shadow-[var(--shadow-soft)] transition hover:bg-surface-container-high focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="space-y-1">

@@ -54,6 +54,8 @@ type EvaluationFormProps = {
 };
 
 const initialState: EvaluationActionState = {};
+const fieldClassName =
+  "field-shell w-full rounded-2xl px-4 py-3 outline-none transition";
 
 function buildCriteriaInputs(typeDefinition?: TypeDefinition) {
   if (!typeDefinition) {
@@ -80,7 +82,7 @@ function SubmitButtons() {
         name="intent"
         value="draft"
         disabled={pending}
-        className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold disabled:cursor-not-allowed disabled:opacity-70"
+        className="action-button action-button-secondary px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70"
       >
         {pending ? "Enregistrement..." : "Enregistrer"}
       </button>
@@ -89,7 +91,7 @@ function SubmitButtons() {
         name="intent"
         value="submit"
         disabled={pending}
-        className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
+        className="action-button action-button-primary px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70"
       >
         {pending ? "Soumission..." : "Soumettre a validation"}
       </button>
@@ -143,7 +145,7 @@ export function EvaluationForm({
 
       <form
         action={formAction}
-        className="space-y-8 rounded-[32px] border border-border/80 bg-card p-6 shadow-[0_18px_40px_-24px_rgba(15,23,42,0.28)] sm:p-8"
+        className="form-shell space-y-8 rounded-[32px] p-6 sm:p-8"
       >
         <input type="hidden" name="evaluationId" value={defaultValues?.evaluationId ?? ""} />
         <input type="hidden" name="notesJson" value={notesJson} />
@@ -162,7 +164,7 @@ export function EvaluationForm({
               name="stageId"
               defaultValue={defaultValues?.stageId}
               disabled={lockStage}
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 disabled:opacity-70"
+              className={`${fieldClassName} disabled:opacity-70`}
             >
               <option value="">Selectionner un stage</option>
               {stages.map((stage) => (
@@ -195,7 +197,7 @@ export function EvaluationForm({
                     : buildCriteriaInputs(nextDefinition),
                 );
               }}
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20 disabled:opacity-70"
+              className={`${fieldClassName} disabled:opacity-70`}
             >
               {typeDefinitions.map((definition) => (
                 <option key={definition.value} value={definition.value}>
@@ -215,14 +217,14 @@ export function EvaluationForm({
               name="scheduledFor"
               type="date"
               defaultValue={defaultValues?.scheduledFor}
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+              className={fieldClassName}
             />
             <p className="text-xs leading-5 text-muted">
               Optionnel. Cette date alimente le planning des evaluations a venir.
             </p>
           </label>
 
-          <div className="rounded-[24px] border border-border bg-background p-4">
+          <div className="tonal-card rounded-[24px] p-4">
             <p className="text-sm text-muted">Grille active</p>
             <p className="mt-2 text-base font-semibold">{typeDefinition?.label ?? "-"}</p>
             <p className="mt-2 text-sm leading-6 text-muted">
@@ -244,7 +246,7 @@ export function EvaluationForm({
             {criteria.map((criterion, index) => (
               <div
                 key={criterion.criterionId}
-                className="rounded-[24px] border border-border bg-background p-5"
+                className="tonal-card rounded-[24px] p-5"
               >
                 <div className="grid gap-4 lg:grid-cols-[1.2fr_0.4fr]">
                   <div className="space-y-2">
@@ -275,7 +277,7 @@ export function EvaluationForm({
                           ),
                         );
                       }}
-                      className="w-full rounded-2xl border border-border bg-card px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+                      className={fieldClassName}
                     />
                   </label>
                 </div>
@@ -298,7 +300,7 @@ export function EvaluationForm({
                         ),
                       );
                     }}
-                    className="w-full rounded-2xl border border-border bg-card px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+                    className={fieldClassName}
                   />
                 </label>
               </div>
@@ -313,7 +315,7 @@ export function EvaluationForm({
               name="commentaire"
               defaultValue={defaultValues?.commentaire}
               rows={5}
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+              className={fieldClassName}
             />
           </label>
 
@@ -323,7 +325,7 @@ export function EvaluationForm({
               name="commentaireEncadrant"
               defaultValue={defaultValues?.commentaireEncadrant}
               rows={5}
-              className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+              className={fieldClassName}
             />
           </label>
         </section>
@@ -336,7 +338,7 @@ export function EvaluationForm({
           <SubmitButtons />
           <Link
             href={cancelHref}
-            className="rounded-full border border-border bg-background px-5 py-3 text-sm font-semibold transition hover:border-primary hover:text-primary"
+            className="action-button action-button-secondary px-5 py-3 text-sm"
           >
             Annuler
           </Link>

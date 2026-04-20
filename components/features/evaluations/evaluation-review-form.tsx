@@ -12,6 +12,8 @@ type EvaluationReviewFormProps = {
 };
 
 const initialState: EvaluationActionState = {};
+const fieldClassName =
+  "field-shell w-full rounded-2xl px-4 py-3 outline-none transition";
 
 function ReviewButtons() {
   const { pending } = useFormStatus();
@@ -23,7 +25,7 @@ function ReviewButtons() {
         name="intent"
         value="return"
         disabled={pending}
-        className="rounded-full border border-orange-200 bg-orange-50 px-5 py-3 text-sm font-semibold text-orange-700 disabled:cursor-not-allowed disabled:opacity-70"
+        className="action-button action-button-warning px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70"
       >
         {pending ? "Traitement..." : "Retourner l evaluation"}
       </button>
@@ -32,7 +34,7 @@ function ReviewButtons() {
         name="intent"
         value="validate"
         disabled={pending}
-        className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
+        className="action-button action-button-primary px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70"
       >
         {pending ? "Traitement..." : "Valider l evaluation"}
       </button>
@@ -50,7 +52,7 @@ export function EvaluationReviewForm({
   return (
     <form
       action={formAction}
-      className="space-y-5 rounded-[32px] border border-border/80 bg-card p-6 shadow-[0_18px_40px_-24px_rgba(15,23,42,0.28)] sm:p-8"
+      className="form-shell space-y-5 rounded-[32px] p-6 sm:p-8"
     >
       <input type="hidden" name="evaluationId" value={evaluationId} />
 
@@ -67,7 +69,7 @@ export function EvaluationReviewForm({
           name="commentaireRh"
           defaultValue={defaultComment}
           rows={5}
-          className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+          className={fieldClassName}
         />
         <p className="text-xs leading-5 text-muted">
           En cas de retour, detaillez clairement les ajustements attendus pour l encadrant.

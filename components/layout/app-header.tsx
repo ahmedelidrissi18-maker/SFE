@@ -1,5 +1,9 @@
-import { LogoutButton } from "@/components/auth/logout-button";
+"use client";
+
+import { usePathname } from "next/navigation";
 import { LiveNotificationLink } from "@/components/features/notifications/live-notification-link";
+import { SessionDropdown } from "@/components/layout/session-dropdown";
+import { MaterialSymbol } from "@/components/ui/material-symbol";
 import type { UserRole } from "@/types";
 
 type AppHeaderProps = {
@@ -28,10 +32,25 @@ function getInitials(value: string) {
     .join("");
 }
 
+const pageTitles: Record<string, string> = {
+  dashboard: "Dashboard",
+  analytics: "Analytics",
+  stagiaires: "Stagiaires",
+  stages: "Stages",
+  rapports: "Rapports",
+  evaluations: "Evaluations",
+  documents: "Documents",
+  notifications: "Notifications",
+  securite: "Securite",
+};
+
 export function AppHeader({ user, unreadNotificationsCount = 0 }: AppHeaderProps) {
+  const pathname = usePathname();
   const displayName = [user.prenom, user.nom].filter(Boolean).join(" ") || user.email || "Utilisateur";
   const roleLabel = user.role ? roleLabels[user.role] : "Utilisateur";
   const initials = getInitials(displayName) || "UT";
+  const currentSection = pathname.split("/").filter(Boolean)[0] ?? "dashboard";
+  const pageTitle = pageTitles[currentSection] ?? "Gestion des stagiaires";
   const currentDateLabel = new Intl.DateTimeFormat("fr-FR", {
     weekday: "long",
     day: "numeric",
@@ -40,49 +59,48 @@ export function AppHeader({ user, unreadNotificationsCount = 0 }: AppHeaderProps
   }).format(new Date());
 
   return (
-    <header className="sticky top-0 z-20 border-b border-border/80 bg-linear-to-r from-card/95 via-card/90 to-surface/90 px-5 py-4 backdrop-blur-xl sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-20 rounded-[26px] bg-white/82 px-5 py-4 shadow-[0px_12px_32px_rgba(26,28,29,0.04)] backdrop-blur-md sm:px-6 lg:px-8">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-        <div className="space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex items-center rounded-full bg-primary-soft px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
-              Espace interne securise
-            </span>
-            <span className="inline-flex items-center rounded-full border border-border bg-background/80 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">
-              {roleLabel}
-            </span>
-          </div>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
           <div className="space-y-1">
-            <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
-              Gestion des stagiaires
-            </h1>
-            <p className="max-w-2xl text-sm leading-6 text-muted">
-              Suivi administratif, pedagogique et documentaire dans un espace unique, fiable et
-              lisible.
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
+              {roleLabel}
             </p>
+            <h1 className="text-xl font-bold tracking-tight text-on-surface sm:text-2xl">
+              {pageTitle}
+            </h1>
           </div>
+          <div className="hidden h-4 w-px bg-outline-variant/40 lg:block" />
+          <label className="relative w-full max-w-md">
+            <MaterialSymbol
+              icon="search"
+              className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant"
+            />
+            <input
+              type="search"
+              placeholder="Rechercher un stagiaire, un rapport, un document..."
+              className="w-full rounded-full border-none bg-surface-container-low pl-10 pr-4 py-2 text-sm text-on-surface shadow-none"
+            />
+          </label>
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-stretch sm:justify-end">
           <LiveNotificationLink initialUnreadCount={unreadNotificationsCount} />
-          <div className="min-w-[260px] rounded-[24px] border border-border/80 bg-linear-to-br from-background to-card px-4 py-3 text-sm shadow-[var(--shadow-soft)]">
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] bg-primary text-sm font-semibold text-primary-foreground shadow-[0_20px_36px_-24px_rgba(15,118,110,0.74)]">
-                {initials}
-              </div>
-              <div className="min-w-0">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-muted">
-                  Session active
-                </p>
-                <p className="truncate font-semibold text-foreground">{displayName}</p>
-                <p className="truncate text-sm text-muted">{user.email ?? roleLabel}</p>
-              </div>
-            </div>
-            <div className="mt-3 flex items-center justify-between gap-3 rounded-[18px] border border-border/70 bg-card/90 px-3 py-2 text-xs">
-              <span className="font-medium text-foreground/80">{roleLabel}</span>
-              <span className="text-muted">{currentDateLabel}</span>
-            </div>
-          </div>
-          <LogoutButton />
+          <button
+            type="button"
+            aria-label="Aide"
+            className="inline-flex min-h-11 items-center justify-center rounded-xl bg-surface-container-low px-4 text-on-surface shadow-[var(--shadow-soft)] transition hover:bg-surface-container-high hover:text-primary"
+          >
+            <MaterialSymbol icon="help" className="text-[20px]" />
+          </button>
+          <SessionDropdown
+            key={pathname}
+            displayName={displayName}
+            email={user.email ?? roleLabel}
+            roleLabel={roleLabel}
+            currentDateLabel={currentDateLabel}
+            initials={initials}
+          />
         </div>
       </div>
     </header>

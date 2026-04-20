@@ -16,6 +16,8 @@ type DocumentReviewFormProps = {
 };
 
 const initialState: DocumentActionState = {};
+const fieldClassName =
+  "field-shell w-full rounded-2xl px-4 py-3 outline-none transition";
 
 function ActionButtons(props: {
   canSubmit?: boolean;
@@ -33,7 +35,7 @@ function ActionButtons(props: {
           name="intent"
           value="submit"
           disabled={pending}
-          className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
+          className="action-button action-button-primary px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70"
         >
           {pending ? "Traitement..." : "Envoyer en verification"}
         </button>
@@ -45,7 +47,7 @@ function ActionButtons(props: {
             name="intent"
             value="reject"
             disabled={pending}
-            className="rounded-full border border-rose-200 bg-rose-50 px-5 py-3 text-sm font-semibold text-rose-700 disabled:cursor-not-allowed disabled:opacity-70"
+            className="action-button action-button-danger px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70"
           >
             {pending ? "Traitement..." : "Rejeter"}
           </button>
@@ -54,7 +56,7 @@ function ActionButtons(props: {
             name="intent"
             value="validate"
             disabled={pending}
-            className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70"
+            className="action-button action-button-primary px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70"
           >
             {pending ? "Traitement..." : "Valider"}
           </button>
@@ -66,7 +68,7 @@ function ActionButtons(props: {
           name="intent"
           value="prepare-signature"
           disabled={pending}
-          className="rounded-full border border-amber-200 bg-amber-50 px-5 py-3 text-sm font-semibold text-amber-700 disabled:cursor-not-allowed disabled:opacity-70"
+          className="action-button action-button-warning px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70"
         >
           {pending ? "Preparation..." : "Preparer la signature"}
         </button>
@@ -77,7 +79,7 @@ function ActionButtons(props: {
           name="intent"
           value="mark-signed"
           disabled={pending}
-          className="rounded-full border border-emerald-200 bg-emerald-50 px-5 py-3 text-sm font-semibold text-emerald-700 disabled:cursor-not-allowed disabled:opacity-70"
+          className="action-button action-button-success px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70"
         >
           {pending ? "Validation..." : "Marquer signe"}
         </button>
@@ -100,7 +102,7 @@ export function DocumentReviewForm({
   return (
     <form
       action={formAction}
-      className="space-y-5 rounded-[32px] border border-border/80 bg-card p-6 shadow-[0_18px_40px_-24px_rgba(15,23,42,0.28)] sm:p-8"
+      className="form-shell space-y-5 rounded-[32px] p-6 sm:p-8"
     >
       <input type="hidden" name="documentId" value={documentId} />
 
@@ -117,7 +119,7 @@ export function DocumentReviewForm({
           name="commentaire"
           defaultValue={defaultComment}
           rows={5}
-          className="w-full rounded-2xl border border-border bg-background px-4 py-3 outline-none transition focus:border-primary focus-visible:ring-2 focus-visible:ring-primary/20"
+          className={fieldClassName}
         />
         <p className="text-xs leading-5 text-muted">
           Ajoutez un motif clair si vous rejetez le document ou si vous preparez une signature.
