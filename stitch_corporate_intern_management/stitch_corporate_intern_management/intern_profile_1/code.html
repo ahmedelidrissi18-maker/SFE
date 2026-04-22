@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+
+<html lang="fr"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>InternFlow - Fiche Stagiaire</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "inverse-primary": "#bac3ff",
+                        "surface-bright": "#f9f9fa",
+                        "on-primary-fixed": "#00105c",
+                        "secondary-fixed": "#dee0ff",
+                        "surface-container": "#eeeeef",
+                        "primary-fixed": "#dee0ff",
+                        "on-tertiary-fixed": "#301400",
+                        "on-error": "#ffffff",
+                        "on-error-container": "#93000a",
+                        "on-primary-fixed-variant": "#293ca0",
+                        "on-surface-variant": "#454652",
+                        "secondary-fixed-dim": "#bec4f2",
+                        "secondary-container": "#c9cffd",
+                        "on-primary-container": "#cacfff",
+                        "tertiary": "#6c3400",
+                        "tertiary-fixed": "#ffdcc6",
+                        "tertiary-container": "#8f4700",
+                        "on-primary": "#ffffff",
+                        "inverse-on-surface": "#f0f1f2",
+                        "surface": "#f9f9fa",
+                        "primary-container": "#3f51b5",
+                        "surface-container-low": "#f3f3f4",
+                        "on-secondary-fixed-variant": "#3e446b",
+                        "on-secondary-fixed": "#12183d",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "surface-container-highest": "#e2e2e3",
+                        "on-tertiary-fixed-variant": "#713700",
+                        "on-surface": "#1a1c1d",
+                        "error-container": "#ffdad6",
+                        "background": "#f9f9fa",
+                        "surface-variant": "#e2e2e3",
+                        "surface-container-high": "#e8e8e9",
+                        "outline": "#757684",
+                        "tertiary-fixed-dim": "#ffb784",
+                        "on-secondary": "#ffffff",
+                        "primary-fixed-dim": "#bac3ff",
+                        "on-background": "#1a1c1d",
+                        "outline-variant": "#c5c5d4",
+                        "primary": "#24389c",
+                        "inverse-surface": "#2f3132",
+                        "surface-tint": "#4355b9",
+                        "secondary": "#565c84",
+                        "surface-dim": "#d9dadb",
+                        "on-tertiary-container": "#ffc7a2",
+                        "error": "#ba1a1a",
+                        "on-secondary-container": "#51577f"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "fontFamily": {
+                        "headline": ["Inter"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-surface text-on-surface antialiased">
+<!-- Shell: SideNavBar -->
+<aside class="fixed left-0 top-0 h-screen w-[240px] bg-slate-50 dark:bg-slate-900 flex flex-col py-6 font-inter text-sm antialiased z-50">
+<div class="px-6 mb-8">
+<h1 class="text-xl font-bold text-indigo-700 dark:text-indigo-400">InternFlow</h1>
+<p class="text-xs text-on-surface-variant opacity-70">Enterprise Management</p>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center px-6 py-3 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-3">dashboard</span> Dashboard
+            </a>
+<a class="flex items-center px-6 py-3 border-l-4 border-indigo-600 bg-white dark:bg-slate-800 text-indigo-700 dark:text-indigo-300 font-medium translate-x-1 duration-150" href="#">
+<span class="material-symbols-outlined mr-3">group</span> Stagiaires
+            </a>
+<a class="flex items-center px-6 py-3 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-3">work</span> Stages
+            </a>
+<a class="flex items-center px-6 py-3 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-3">description</span> Rapports
+            </a>
+<a class="flex items-center px-6 py-3 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-3">assessment</span> Évaluations
+            </a>
+<a class="flex items-center px-6 py-3 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-3">folder</span> Documents
+            </a>
+<a class="flex items-center px-6 py-3 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-3">analytics</span> Analytics
+            </a>
+<a class="flex items-center px-6 py-3 text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-3">notifications</span> Notifications
+            </a>
+</nav>
+<div class="px-6 mt-auto">
+<div class="flex items-center gap-3 p-2 rounded-lg bg-surface-container-low">
+<img alt="Organization Logo" class="w-8 h-8 rounded-full bg-indigo-100" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAvIjaxn06u_03rq16QkS14vf-OR89JiuyisKsR5u2gAe5WAQzLZR66tPGHRN9YiPteCaPfAK58-LxYJ0PndQXC-dVRqZy8S0x2IctqBmVV574I82MkqvfulX-LVFT59BojnmHZjsZ_B86zFLtqPFBLLW1tUBO2unoc85amLWQZHiv8lIO9M2a76RdyKmWoBkJs6zFzKh2CZOr4y_q1l4AQu--LBJu3Yh9CWC7fv6RRKKbHSce_kqR0qBWQKGjFoWGSTGRAhGnaTsRM"/>
+<div class="overflow-hidden">
+<p class="font-semibold text-xs truncate">Acme Corp</p>
+<p class="text-[10px] text-on-surface-variant">Admin Plan</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Shell: TopNavBar -->
+<header class="fixed top-0 right-0 left-[240px] h-[56px] bg-white/80 dark:bg-slate-950/80 backdrop-blur-md border-b border-slate-200/30 dark:border-slate-800/30 shadow-sm dark:shadow-none flex items-center justify-between px-6 z-40">
+<div class="flex items-center gap-4">
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">search</span>
+<input class="pl-10 pr-4 py-1.5 bg-surface-container-low border-none rounded-full text-sm w-64 focus:ring-2 focus:ring-indigo-500/20 transition-all" placeholder="Rechercher..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="w-8 h-8 flex items-center justify-center rounded-full text-slate-600 hover:bg-slate-100 transition-colors">
+<span class="material-symbols-outlined">help</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center rounded-full text-slate-600 hover:bg-slate-100 transition-colors relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-1 right-1 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<div class="h-8 w-[1px] bg-outline-variant opacity-30 mx-2"></div>
+<div class="flex items-center gap-3">
+<div class="text-right">
+<p class="text-xs font-semibold">Marc Lemoine</p>
+<p class="text-[10px] text-on-surface-variant">Responsable RH</p>
+</div>
+<img alt="User Avatar" class="w-8 h-8 rounded-full border border-outline-variant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBvxxL23qq1IhffXYx20JGc3HCNfPHAnUfoe9cg0yzTDtPfVdrKLhYDtFJvJMqsavG0iJj7Ns6549yU-9VFSFhNKQ5cUTI52MAAuGg5_Lg68kEz8kgSMSCuKwD2YFZpOtzQRpyfixsVuSJCVgBJuodD7jAmHZ6nJzU8XN8Kz_9lMuV4Q6lUAN4wGL2l_3CF-7KdJof_H4NtZsZdWL2yci3Tma8IJe7YoWHvw6BNVwgJAkxJQ6LV176L1vuHHogikwdydi4pu1Xx56be"/>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-[240px] pt-[56px] min-h-screen p-8">
+<!-- Breadcrumb & Header -->
+<div class="mb-8">
+<nav class="flex items-center gap-2 text-xs text-on-surface-variant mb-3">
+<a class="hover:text-primary transition-colors" href="#">Stagiaires</a>
+<span class="material-symbols-outlined text-[14px]">chevron_right</span>
+<span class="text-on-surface font-medium">Jean Dupont</span>
+</nav>
+<div class="flex items-end justify-between">
+<div class="flex items-center gap-4">
+<div class="w-20 h-20 rounded-2xl overflow-hidden bg-surface-container-high">
+<img class="w-full h-full object-cover" data-alt="Portrait of a young male professional student with a friendly expression and casual business attire, soft natural light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAqnlI_S2X7xF7jAcxmo_SmV7TzeVxwuvfMDbADtsNUAcDqmiJ4WGLbqd5OI1xdL-dYGujPNr39-UjaHsVMO-YsBQaCqP4xgoiWmdNyzIusXKv55QgymuC2q8uNnVFmrwQ8p0D-sTWQe9qyWJUXFmZ24p3g-9AzpPdCS-0YcPjq-DjG8qbHixNzkucUzbxMQHy0tD6geJD_tDKtOB6Ct745BSiLatkvF29yjWDnetXuOWoWuMUHPXUl-evLeqt3nbeM4QZb5QFhU30f"/>
+</div>
+<div>
+<div class="flex items-center gap-3 mb-1">
+<h1 class="text-3xl font-medium tracking-tight text-on-surface">Jean Dupont</h1>
+<span class="px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase tracking-wider bg-surface-container-highest text-primary">Actif</span>
+</div>
+<p class="text-on-surface-variant">Stagiaire Développeur Fullstack • Promotion 2024</p>
+</div>
+</div>
+<div class="flex gap-3">
+<button class="px-5 py-2.5 rounded-lg bg-surface-container-high text-on-surface font-medium text-sm flex items-center gap-2 hover:bg-surface-container-highest transition-all">
+<span class="material-symbols-outlined text-lg">share</span> Partager
+                    </button>
+<button class="px-5 py-2.5 rounded-lg bg-gradient-to-br from-primary to-primary-container text-white font-medium text-sm flex items-center gap-2 shadow-sm hover:shadow-md transition-all">
+<span class="material-symbols-outlined text-lg">edit</span> Modifier
+                    </button>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-10 gap-8">
+<!-- Left Column (65%) -->
+<div class="col-span-10 lg:col-span-6 xl:col-span-7 space-y-8">
+<!-- Tabbed Interface -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/10 overflow-hidden">
+<div class="flex border-b border-outline-variant/20 px-6">
+<button class="px-6 py-4 text-sm font-semibold text-primary border-b-2 border-primary">Informations</button>
+<button class="px-6 py-4 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors">Rapports</button>
+<button class="px-6 py-4 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors">Évaluations</button>
+<button class="px-6 py-4 text-sm font-medium text-on-surface-variant hover:text-on-surface transition-colors">Documents</button>
+</div>
+<div class="p-8">
+<div class="grid grid-cols-2 gap-x-12 gap-y-8">
+<!-- Personal Info -->
+<section class="col-span-2 md:col-span-1">
+<h3 class="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-6">Informations Personnelles</h3>
+<div class="space-y-6">
+<div class="flex flex-col">
+<span class="text-xs text-on-surface-variant mb-1">Email professionnel</span>
+<span class="text-sm font-medium">j.dupont@acmecorp.com</span>
+</div>
+<div class="flex flex-col">
+<span class="text-xs text-on-surface-variant mb-1">Téléphone</span>
+<span class="text-sm font-medium">+33 6 12 34 56 78</span>
+</div>
+<div class="flex flex-col">
+<span class="text-xs text-on-surface-variant mb-1">Établissement</span>
+<span class="text-sm font-medium">École Supérieure du Numérique (ESN)</span>
+</div>
+</div>
+</section>
+<!-- Internship Info -->
+<section class="col-span-2 md:col-span-1">
+<h3 class="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-6">Détails du Stage</h3>
+<div class="space-y-6">
+<div class="flex flex-col">
+<span class="text-xs text-on-surface-variant mb-1">Tuteur en entreprise</span>
+<span class="text-sm font-medium flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-lg">verified_user</span>
+                                            Sophie Bertrand
+                                        </span>
+</div>
+<div class="flex flex-col">
+<span class="text-xs text-on-surface-variant mb-1">Type de contrat</span>
+<span class="text-sm font-medium">Stage de fin d'études</span>
+</div>
+<div class="flex flex-col">
+<span class="text-xs text-on-surface-variant mb-1">Rémunération</span>
+<span class="text-sm font-medium">1 200,00 € / mois</span>
+</div>
+</div>
+</section>
+<section class="col-span-2 pt-4">
+<h3 class="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-4">Objectifs de Stage</h3>
+<div class="p-5 bg-surface-container-low rounded-lg">
+<p class="text-sm text-on-surface leading-relaxed">
+                                        Participation à la refonte de l'interface client de la plateforme SaaS. Développement de nouveaux composants réutilisables sous React et intégration d'API REST. Apprentissage des méthodologies agiles (Scrum) et des bonnes pratiques de code (clean code, tests unitaires).
+                                    </p>
+</div>
+</section>
+</div>
+</div>
+</div>
+<!-- Recent Activity (Asymmetric Bento Element) -->
+<div class="grid grid-cols-2 gap-6">
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-semibold text-lg">Dernier Rapport</h3>
+<span class="text-xs text-primary font-medium">Voir tout</span>
+</div>
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 rounded-lg bg-indigo-50 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">description</span>
+</div>
+<div>
+<h4 class="text-sm font-semibold mb-1">Rapport de mi-parcours</h4>
+<p class="text-xs text-on-surface-variant mb-3">Soumis le 15 Avril 2024</p>
+<span class="px-2 py-1 rounded bg-surface-container-highest text-[10px] font-bold text-on-primary-fixed-variant">VALIDE</span>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl shadow-sm border border-outline-variant/10">
+<div class="flex justify-between items-center mb-6">
+<h3 class="font-semibold text-lg">Compétences</h3>
+<span class="material-symbols-outlined text-on-surface-variant">bolt</span>
+</div>
+<div class="flex flex-wrap gap-2">
+<span class="px-3 py-1.5 rounded-full bg-indigo-50 text-indigo-700 text-[11px] font-medium">React.js</span>
+<span class="px-3 py-1.5 rounded-full bg-indigo-50 text-indigo-700 text-[11px] font-medium">Tailwind CSS</span>
+<span class="px-3 py-1.5 rounded-full bg-indigo-50 text-indigo-700 text-[11px] font-medium">Node.js</span>
+<span class="px-3 py-1.5 rounded-full bg-indigo-50 text-indigo-700 text-[11px] font-medium">Git &amp; GitHub</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column (35%) -->
+<div class="col-span-10 lg:col-span-4 xl:col-span-3 space-y-6">
+<!-- Metadata Card -->
+<div class="bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant/10 p-6">
+<h3 class="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-6">Résumé du stage</h3>
+<div class="space-y-6">
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">hub</span>
+</div>
+<div>
+<p class="text-[11px] text-on-surface-variant">Département</p>
+<p class="text-sm font-bold">IT &amp; Développement</p>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-on-surface-variant">
+<span class="material-symbols-outlined">calendar_today</span>
+</div>
+<div>
+<p class="text-[11px] text-on-surface-variant">Période</p>
+<p class="text-sm font-bold">01 Fév. - 30 Juin 2024</p>
+</div>
+</div>
+<div class="pt-4 border-t border-outline-variant/20">
+<div class="flex justify-between text-xs text-on-surface-variant mb-2">
+<span>Progression du stage</span>
+<span>65%</span>
+</div>
+<div class="w-full h-2 bg-surface-container-low rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[65%] rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Quick Actions -->
+<div class="bg-surface-container-low rounded-xl p-6">
+<h3 class="text-sm font-bold text-on-surface-variant uppercase tracking-widest mb-4">Actions Rapides</h3>
+<div class="grid grid-cols-1 gap-3">
+<button class="w-full py-3 px-4 bg-surface-container-lowest rounded-lg text-sm font-medium text-on-surface flex items-center justify-between hover:bg-white hover:shadow-sm transition-all group">
+<span class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">add_notes</span> Nouveau rapport
+                            </span>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform">chevron_right</span>
+</button>
+<button class="w-full py-3 px-4 bg-surface-container-lowest rounded-lg text-sm font-medium text-on-surface flex items-center justify-between hover:bg-white hover:shadow-sm transition-all group">
+<span class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">analytics</span> Évaluation flash
+                            </span>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform">chevron_right</span>
+</button>
+<button class="w-full py-3 px-4 bg-surface-container-lowest rounded-lg text-sm font-medium text-on-surface flex items-center justify-between hover:bg-white hover:shadow-sm transition-all group">
+<span class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary">mail</span> Contacter l'école
+                            </span>
+<span class="material-symbols-outlined text-on-surface-variant group-hover:translate-x-1 transition-transform">chevron_right</span>
+</button>
+</div>
+</div>
+<!-- Internship Location / Map Placeholder -->
+<div class="rounded-xl overflow-hidden border border-outline-variant/10">
+<div class="h-32 bg-surface-container-highest relative">
+<img class="w-full h-full object-cover opacity-60" data-alt="Stylized map showing a business district in Paris with modern architecture and clean geometric lines" data-location="Paris, France" src="https://lh3.googleusercontent.com/aida-public/AB6AXuClnE4-i_To7YIlyLMOb0kFpU9M4aCtRhQUeB8mhbwW6IeYZRVyK5iHP8ZXoxPciT4TTlBd0hfWW1b8Y6RO3i6x9_HUriwfAG3gv2CPT7nbo_bueD-oNzE6ugEvyaBxBrX-qEd87GPD6sU8Rwc_wCjJNfGg4G3P4gkbj0_tA5jBYCOBn1YTg9PPOSMH_djJz_cZaU2lqOftGc0gwRG02qo1HeiUxsaJVZkiLuEmclYpG0VyJWMSO-xpq7jiUHZRmyeqWI9JAfe0ngPx"/>
+<div class="absolute inset-0 flex items-center justify-center">
+<div class="bg-white p-2 rounded-full shadow-lg">
+<span class="material-symbols-outlined text-error" style="font-variation-settings: 'FILL' 1;">location_on</span>
+</div>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-4">
+<p class="text-xs font-bold text-on-surface">Siège Social - Paris</p>
+<p class="text-[10px] text-on-surface-variant">15 Rue de l'Innovation, 75008</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>
