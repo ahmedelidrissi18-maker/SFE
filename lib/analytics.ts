@@ -5,6 +5,7 @@ import {
   type RapportStatus,
   type StageStatus,
 } from "@prisma/client";
+import { formatDateFr } from "@/lib/date";
 import { prisma } from "@/lib/prisma";
 import { recordPerformanceSample } from "@/lib/observability";
 import { getStageStatusLabel, ACTIVE_STAGE_STATUSES } from "@/lib/stages";
@@ -32,10 +33,10 @@ export const analyticsExportModeDefinitions = {
     label: "KPI",
   },
   detailed: {
-    label: "Detail stages",
+    label: "Détail stages",
   },
   departments: {
-    label: "Detail departements",
+    label: "Détail départements",
   },
 } as const;
 
@@ -50,7 +51,7 @@ export const analyticsAttentionFilterDefinitions = {
   },
   warning: {
     label: "Attention",
-    helper: "Seulement les stages a surveiller",
+    helper: "Seulement les stages à surveiller",
   },
   stable: {
     label: "Stable",
@@ -228,14 +229,6 @@ function getAnalyticsOverviewCache() {
   return globalThis.__sfeAnalyticsOverviewCache__;
 }
 
-function formatShortDate(date: Date) {
-  return new Intl.DateTimeFormat("fr-FR", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(date);
-}
-
 function formatNumber(value: number, maximumFractionDigits = 0) {
   return new Intl.NumberFormat("fr-FR", {
     maximumFractionDigits,
@@ -249,11 +242,11 @@ function formatHours(value: number) {
 
 function formatDayDistance(value: number) {
   if (value === 0) {
-    return "Echeance aujourd hui";
+    return "Échéance aujourd’hui";
   }
 
   if (value < 0) {
-    return `${formatNumber(Math.abs(value))} j de depassement`;
+    return `${formatNumber(Math.abs(value))} j de dépassement`;
   }
 
   return `J-${formatNumber(value)}`;
@@ -283,7 +276,7 @@ function getStageAttentionLabel(score: number) {
 
 function getFullName(person?: { prenom: string; nom: string } | null) {
   if (!person) {
-    return "Non affecte";
+    return "Non affecté";
   }
 
   return `${person.prenom} ${person.nom}`.trim();
@@ -322,10 +315,10 @@ export function getAnalyticsScopeLabel(role: Role) {
   }
 
   if (role === "ENCADRANT") {
-    return "votre perimetre d encadrement";
+    return "votre périmètre d’encadrement";
   }
 
-  return "votre perimetre";
+  return "votre périmètre";
 }
 
 export function resolveAnalyticsPeriod(value?: string | null): AnalyticsPeriod {
@@ -401,7 +394,7 @@ export function getAnalyticsRange(period: AnalyticsPeriod, now = new Date()): An
   return {
     start,
     end,
-    label: `${formatShortDate(start)} au ${formatShortDate(end)}`,
+    label: `${formatDateFr(start)} au ${formatDateFr(end)}`,
   };
 }
 
@@ -544,8 +537,7 @@ export function buildDepartmentAnalytics(
         completionRate,
         completionRateLabel: formatPercentage(completionRate),
         averageProgress,
-        averageProgressLabel:
-          averageProgress === null ? "Aucune donnee" : formatPercentage(averageProgress),
+        averageProgressLabel: averageProgress === null ? "Aucune donnée" : formatPercentage(averageProgress),
         trackedReportsCount: row.trackedReportsCount,
       };
     })
@@ -599,7 +591,7 @@ export function buildAnalyticsAlerts(input: {
           ? "critical"
           : "warning",
       title: "Traitement des rapports au-dessus de la cible",
-      description: `Median observee a ${formatHours(input.reportMedianHours)} pour une cible de ${formatNumber(analyticsTargetDefinitions.reportProcessingHours)} h.`,
+      description: `Médiane observée à ${formatHours(input.reportMedianHours)} pour une cible de ${formatNumber(analyticsTargetDefinitions.reportProcessingHours)} h.`,
     });
   }
 
@@ -610,8 +602,8 @@ export function buildAnalyticsAlerts(input: {
     alerts.push({
       id: "evaluation-completion-target",
       severity: input.evaluationCompletionRate < 60 ? "critical" : "warning",
-      title: "Completion des evaluations en dessous de l objectif",
-      description: `${formatPercentage(input.evaluationCompletionRate)} realise sur une cible de ${formatPercentage(analyticsTargetDefinitions.evaluationCompletionRate)}.`,
+      title: "Complétion des évaluations en dessous de l’objectif",
+      description: `${formatPercentage(input.evaluationCompletionRate)} réalisé sur une cible de ${formatPercentage(analyticsTargetDefinitions.evaluationCompletionRate)}.`,
     });
   }
 
@@ -626,7 +618,7 @@ export function buildAnalyticsAlerts(input: {
           ? "critical"
           : "warning",
       title: "Validation documentaire trop lente",
-      description: `Median observee a ${formatHours(input.documentMedianHours)} pour une cible de ${formatNumber(analyticsTargetDefinitions.documentValidationHours)} h.`,
+      description: `Médiane observée à ${formatHours(input.documentMedianHours)} pour une cible de ${formatNumber(analyticsTargetDefinitions.documentValidationHours)} h.`,
     });
   }
 
@@ -634,7 +626,7 @@ export function buildAnalyticsAlerts(input: {
     alerts.push({
       id: "stage-activity-delay",
       severity: input.delayedStageCount >= 3 ? "critical" : "warning",
-      title: "Stages sans activite recente",
+      title: "Stages sans activité récente",
       description: `${formatNumber(input.delayedStageCount)} stage${input.delayedStageCount > 1 ? "s" : ""} actif${input.delayedStageCount > 1 ? "s" : ""} sans rapport visible depuis ${analyticsTargetDefinitions.inactivityDays} jours.`,
     });
   }
@@ -646,8 +638,8 @@ export function buildAnalyticsAlerts(input: {
     alerts.push({
       id: "workflow-backlog",
       severity: pendingBacklog >= 8 ? "warning" : "info",
-      title: "Backlog de traitement a surveiller",
-      description: `${formatNumber(input.pendingReportsCount)} rapport${input.pendingReportsCount > 1 ? "s" : ""}, ${formatNumber(input.pendingEvaluationsCount)} evaluation${input.pendingEvaluationsCount > 1 ? "s" : ""} et ${formatNumber(input.documentAttentionCount)} document${input.documentAttentionCount > 1 ? "s" : ""} en attente d action.`,
+      title: "Backlog de traitement à surveiller",
+      description: `${formatNumber(input.pendingReportsCount)} rapport${input.pendingReportsCount > 1 ? "s" : ""}, ${formatNumber(input.pendingEvaluationsCount)} évaluation${input.pendingEvaluationsCount > 1 ? "s" : ""} et ${formatNumber(input.documentAttentionCount)} document${input.documentAttentionCount > 1 ? "s" : ""} en attente d’action.`,
     });
   }
 
@@ -810,7 +802,7 @@ export function buildStageAnalyticsDetails(input: {
             ? "Aucun rapport"
             : formatPercentage(latestReport.avancement),
         latestReportAt: latestVisibleActivity,
-        latestReportAtLabel: latestVisibleActivity ? formatShortDate(latestVisibleActivity) : "Aucune",
+        latestReportAtLabel: latestVisibleActivity ? formatDateFr(latestVisibleActivity) : "Aucune",
         pendingReportsCount,
         pendingEvaluationsCount,
         documentAttentionCount,
@@ -846,15 +838,15 @@ async function buildAnalyticsOverview(input: {
 
   const [
     stagesInPeriod,
-    endingStagesInPeriod,
+    endingStagesCountInPeriod,
+    completedEndingStagesCountInPeriod,
     activeStagesNow,
     processedRapports,
     currentPendingRapportsCount,
     pendingReportsByStage,
     latestReportsInPeriod,
     latestReportsForVisibleStages,
-    latestReportsForActiveStages,
-    trackedEvaluations,
+    trackedEvaluationsByStatus,
     currentPendingEvaluationsCount,
     pendingEvaluationsByStage,
     validatedDocuments,
@@ -899,7 +891,7 @@ async function buildAnalyticsOverview(input: {
         },
       },
     }),
-    prisma.stage.findMany({
+    prisma.stage.count({
       where: {
         ...stageScope,
         statut: {
@@ -910,27 +902,14 @@ async function buildAnalyticsOverview(input: {
           lte: range.end,
         },
       },
-      select: {
-        id: true,
-        departement: true,
-        sujet: true,
-        statut: true,
-        dateFin: true,
-        stagiaire: {
-          select: {
-            user: {
-              select: {
-                nom: true,
-                prenom: true,
-              },
-            },
-          },
-        },
-        encadrant: {
-          select: {
-            nom: true,
-            prenom: true,
-          },
+    }),
+    prisma.stage.count({
+      where: {
+        ...stageScope,
+        statut: "TERMINE",
+        dateFin: {
+          gte: range.start,
+          lte: range.end,
         },
       },
     }),
@@ -1031,24 +1010,8 @@ async function buildAnalyticsOverview(input: {
       },
       orderBy: [{ stageId: "asc" }, { updatedAt: "desc" }],
     }),
-    prisma.rapport.findMany({
-      where: {
-        stage: {
-          ...stageScope,
-          statut: {
-            in: ACTIVE_STAGE_STATUSES,
-          },
-        },
-      },
-      select: {
-        stageId: true,
-        avancement: true,
-        updatedAt: true,
-        dateSoumission: true,
-      },
-      orderBy: [{ stageId: "asc" }, { updatedAt: "desc" }],
-    }),
-    prisma.evaluation.findMany({
+    prisma.evaluation.groupBy({
+      by: ["status"],
       where: {
         stage: stageScope,
         OR: [
@@ -1067,8 +1030,11 @@ async function buildAnalyticsOverview(input: {
           },
         ],
       },
-      select: {
-        status: true,
+      orderBy: {
+        status: "asc",
+      },
+      _count: {
+        _all: true,
       },
     }),
     prisma.evaluation.count({
@@ -1139,10 +1105,18 @@ async function buildAnalyticsOverview(input: {
 
   const latestReportsByStage = buildLatestReportMap(latestReportsInPeriod);
   const latestDetailedReportsByStage = buildLatestReportMap(latestReportsForVisibleStages);
-  const latestActiveReportsByStage = buildLatestReportMap(latestReportsForActiveStages);
   const pendingReportsByStageMap = buildStageCountMap(pendingReportsByStage);
   const pendingEvaluationsByStageMap = buildStageCountMap(pendingEvaluationsByStage);
   const documentAttentionByStageMap = buildStageCountMap(documentAttentionByStage);
+  const getGroupedAllCount = (row: { _count?: true | { _all?: number | null } }) =>
+    typeof row._count === "object" && row._count ? row._count._all ?? 0 : 0;
+  const trackedEvaluationsCount = trackedEvaluationsByStatus.reduce(
+    (total, row) => total + getGroupedAllCount(row),
+    0,
+  );
+  const validatedEvaluationsCount = trackedEvaluationsByStatus
+    .filter((row) => row.status === EvaluationStatus.VALIDE)
+    .reduce((total, row) => total + getGroupedAllCount(row), 0);
 
   const reportMedianHours = calculateMedianDurationHours(
     processedRapports.map((rapport) => ({
@@ -1151,8 +1125,8 @@ async function buildAnalyticsOverview(input: {
     })),
   );
   const evaluationCompletionRate = calculateCompletionRate(
-    trackedEvaluations.filter((evaluation) => evaluation.status === "VALIDE").length,
-    trackedEvaluations.length,
+    validatedEvaluationsCount,
+    trackedEvaluationsCount,
   );
   const documentMedianHours = calculateMedianDurationHours(
     validatedDocuments.map((document) => ({
@@ -1161,12 +1135,12 @@ async function buildAnalyticsOverview(input: {
     })),
   );
   const stageCompletionRate = calculateCompletionRate(
-    endingStagesInPeriod.filter((stage) => stage.statut === "TERMINE").length,
-    endingStagesInPeriod.length,
+    completedEndingStagesCountInPeriod,
+    endingStagesCountInPeriod,
   );
   const delayedStageCount = countPotentialSubmissionDelays(
     activeStagesNow,
-    latestActiveReportsByStage,
+    latestDetailedReportsByStage,
     now,
   );
   const departments = buildDepartmentAnalytics(stagesInPeriod, latestReportsByStage);
@@ -1174,7 +1148,7 @@ async function buildAnalyticsOverview(input: {
   const alerts = buildAnalyticsAlerts({
     reportMedianHours,
     evaluationCompletionRate,
-    trackedEvaluationsCount: trackedEvaluations.length,
+    trackedEvaluationsCount,
     documentMedianHours,
     delayedStageCount,
     pendingReportsCount: currentPendingRapportsCount,
@@ -1197,35 +1171,35 @@ async function buildAnalyticsOverview(input: {
     metrics: [
       {
         key: "report-processing",
-        label: "Traitement median des rapports",
+        label: "Traitement médian des rapports",
         value: formatDurationHours(reportMedianHours),
-        helper: "Median entre soumission et premiere decision sur la periode",
+        helper: "Médiane entre soumission et première décision sur la période",
       },
       {
         key: "evaluation-completion",
-        label: "Completion des evaluations",
+        label: "Complétion des évaluations",
         value: formatPercentage(evaluationCompletionRate),
-        helper: "Evaluations validees parmi celles planifiees ou creees sur la periode",
+        helper: "Évaluations validées parmi celles planifiées ou créées sur la période",
       },
       {
         key: "document-validation",
         label: "Validation documentaire",
         value: formatDurationHours(documentMedianHours),
-        helper: "Median entre depot et validation finale des documents valides",
+        helper: "Médiane entre dépôt et validation finale des documents validés",
       },
       {
         key: "stage-completion",
-        label: "Completion des stages",
+        label: "Complétion des stages",
         value: formatPercentage(stageCompletionRate),
-        helper: "Stages termines parmi les stages prevus a echeance sur la periode",
+        helper: "Stages terminés parmi les stages prévus à échéance sur la période",
       },
     ],
     focusItems: [
       {
         key: "pending-reports",
-        label: "Rapports a relire",
+        label: "Rapports à relire",
         value: formatNumber(currentPendingRapportsCount),
-        helper: "Rapports actuellement soumis et encore en attente de decision",
+        helper: "Rapports actuellement soumis et encore en attente de décision",
       },
       {
         key: "potential-delays",
@@ -1235,15 +1209,15 @@ async function buildAnalyticsOverview(input: {
       },
       {
         key: "pending-evaluations",
-        label: "Evaluations a valider",
+        label: "Évaluations à valider",
         value: formatNumber(currentPendingEvaluationsCount),
-        helper: "Evaluations soumises qui attendent un retour RH ou admin",
+        helper: "Évaluations soumises qui attendent un retour RH ou admin",
       },
       {
         key: "document-review",
         label: "Documents en revue",
         value: formatNumber(documentAttentionCount),
-        helper: "Documents en verification ou rejetes avec action attendue",
+        helper: "Documents en vérification ou rejetés avec action attendue",
       },
     ],
     departments,
@@ -1252,7 +1226,7 @@ async function buildAnalyticsOverview(input: {
     totals: {
       stageCount: stagesInPeriod.length,
       reportCount: processedRapports.length,
-      evaluationCount: trackedEvaluations.length,
+      evaluationCount: trackedEvaluationsCount,
       documentCount: validatedDocuments.length,
     },
   } satisfies AnalyticsOverview;

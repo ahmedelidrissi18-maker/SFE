@@ -4,24 +4,24 @@ import { formatDate, getAccountStatusLabel, getLatestStageInfo, getStageStatusLa
 describe("stagiaires helpers", () => {
   it("returns the correct stage status label", () => {
     expect(getStageStatusLabel("EN_COURS")).toBe("En cours");
-    expect(getStageStatusLabel("PLANIFIE")).toBe("Planifie");
+    expect(getStageStatusLabel("PLANIFIE")).toBe("Planifié");
   });
 
   it("returns fallback data when no stage exists", () => {
     expect(getLatestStageInfo(null)).toEqual({
-      departement: "Non affecte",
+      departement: "Non affecté",
       statut: "Aucun stage",
-      encadrant: "Non affecte",
+      encadrant: "Non affecté",
     });
   });
 
   it("returns account label based on active state", () => {
     expect(getAccountStatusLabel(true)).toBe("Actif");
-    expect(getAccountStatusLabel(false)).toBe("Archive");
+    expect(getAccountStatusLabel(false)).toBe("Archivé");
   });
 
   it("formats dates for display", () => {
-    expect(formatDate(new Date("2026-04-06T00:00:00.000Z"))).toBe("06/04/2026");
-    expect(formatDate(undefined)).toBe("Non renseignee");
+    expect(formatDate(new Date("2026-04-06T00:00:00.000Z"))).toBe("6 avril 2026");
+    expect(formatDate(undefined)).toBe("Non renseignée");
   });
 });

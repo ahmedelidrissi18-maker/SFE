@@ -131,6 +131,8 @@ model User {
   documents                Document[]                @relation("DocumentAuthor")
   githubLinksCreated       GithubConnection[]        @relation("GithubLinkedBy")
   githubSyncsTriggered     GithubSyncLog[]           @relation("GithubSyncTriggeredBy")
+
+  @@index([role, isActive])
 }
 
 model Stagiaire {
@@ -175,6 +177,7 @@ model Stage {
   @@index([stagiaireId])
   @@index([encadrantId])
   @@index([statut])
+  @@index([statut, dateFin])
   @@index([statut, dateDebut, dateFin])
   @@index([encadrantId, statut, dateFin])
 }
@@ -320,6 +323,9 @@ model Notification {
   destinataire   User     @relation(fields: [destinataireId], references: [id], onDelete: Cascade)
 
   @@index([destinataireId, isRead])
+  @@index([destinataireId, createdAt])
+  @@index([destinataireId, isRead, createdAt])
+  @@index([destinataireId, type, lien])
 }
 
 model NotificationPreference {
@@ -355,6 +361,7 @@ model NotificationDispatchJob {
   triggeredBy       User?                      @relation("NotificationJobTriggeredBy", fields: [triggeredByUserId], references: [id], onDelete: SetNull)
 
   @@index([status, availableAt])
+  @@index([status, availableAt, createdAt])
   @@index([triggeredByUserId])
 }
 

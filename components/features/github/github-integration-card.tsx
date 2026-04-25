@@ -109,7 +109,7 @@ export function GithubIntegrationCard({
         <div className="space-y-2">
           <div className="flex items-center gap-3 text-primary">
             <MaterialSymbol icon="code" className="text-[20px]" />
-            <p className="text-sm font-medium">Sprint 1 - Integration GitHub</p>
+            <p className="text-sm font-medium">Intégration GitHub</p>
           </div>
           <h2 className="text-2xl font-semibold tracking-tight">Suivi technique du stagiaire</h2>
           <p className="max-w-3xl text-sm leading-6 text-muted">

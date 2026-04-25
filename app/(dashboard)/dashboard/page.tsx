@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { Role } from "@prisma/client";
 import { auth } from "@/auth";
-import { LiveNotificationsListener } from "@/components/features/notifications/live-notifications-listener";
+import { LiveNotificationCount } from "@/components/features/notifications/live-notification-count";
 import { TwoFactorInlineAlert } from "@/components/features/security/two-factor-inline-alert";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -10,19 +10,13 @@ import { MaterialSymbol } from "@/components/ui/material-symbol";
 import { MetricCard } from "@/components/ui/metric-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { formatDateFr } from "@/lib/date";
 import { prisma } from "@/lib/prisma";
 import { getRapportStatusLabel } from "@/lib/rapports";
 import { isSensitiveTwoFactorRole } from "@/lib/security/two-factor";
 import { formatDate } from "@/lib/stagiaires";
 import { ACTIVE_STAGE_STATUSES, getStageStatusLabel } from "@/lib/stages";
 import type { UserRole } from "@/types";
-
-function formatShortDate(date: Date) {
-  return new Intl.DateTimeFormat("fr-FR", {
-    day: "2-digit",
-    month: "short",
-  }).format(date);
-}
 
 type QuickAction = {
   href: string;
@@ -45,36 +39,36 @@ function getRoleIntro(role: UserRole) {
     case "ADMIN":
       return {
         eyebrow: "Vue administration",
-        title: "Tableau de bord operationnel",
+        title: "Tableau de bord opérationnel",
         description:
-          "Supervisez les stagiaires actifs, les rapports soumis, les echeances proches et les signaux de vigilance sans quitter votre perimetre de pilotage.",
+          "Supervisez les stagiaires actifs, les rapports soumis, les échéances proches et les signaux de vigilance sans quitter votre périmètre de pilotage.",
       };
     case "RH":
       return {
         eyebrow: "Vue RH",
         title: "Pilotage des validations et des suivis",
         description:
-          "Reperez en quelques secondes les rapports a relire, les documents visibles et les stages qui demandent une attention RH.",
+          "Repérez en quelques secondes les rapports à relire, les documents visibles et les stages qui demandent une attention RH.",
       };
     case "ENCADRANT":
       return {
         eyebrow: "Vue encadrant",
         title: "Suivi de mes stagiaires",
         description:
-          "Accedez rapidement aux rapports a relire, aux stages de votre perimetre et aux echeances a anticiper avec vos stagiaires.",
+          "Accédez rapidement aux rapports à relire, aux stages de votre périmètre et aux échéances à anticiper avec vos stagiaires.",
       };
     case "STAGIAIRE":
       return {
         eyebrow: "Vue stagiaire",
         title: "Mon espace de stage",
         description:
-          "Retrouvez votre stage actif, vos rapports soumis, vos documents disponibles et vos prochaines echeances depuis une seule page.",
+          "Retrouvez votre stage actif, vos rapports soumis, vos documents disponibles et vos prochaines échéances depuis une seule page.",
       };
     default:
       return {
         eyebrow: "Vue application",
         title: "Tableau de bord",
-        description: "Consultez les indicateurs essentiels de votre perimetre.",
+        description: "Consultez les indicateurs essentiels de votre périmètre.",
       };
   }
 }
@@ -84,7 +78,7 @@ function getQuickActions(role: UserRole): QuickAction[] {
     case "ADMIN":
       return [
         { href: "/rapports", label: "Suivre les rapports", variant: "primary" },
-        { href: "/analytics", label: "Voir les analytics", variant: "secondary" },
+        { href: "/analytics", label: "Voir l’analytique", variant: "secondary" },
       ];
     case "RH":
       return [
@@ -108,8 +102,8 @@ function getQuickActions(role: UserRole): QuickAction[] {
 
 function getQuickActionClassName(variant: QuickAction["variant"]) {
   return variant === "primary"
-    ? "inline-flex min-h-11 items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-on-primary shadow-[var(--shadow-ambient)] transition hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
-    : "inline-flex min-h-11 items-center justify-center rounded-xl bg-surface-container-low px-5 py-3 text-sm font-semibold text-on-surface shadow-[var(--shadow-soft)] transition hover:bg-surface-container-high hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2 focus-visible:ring-offset-card";
+    ? "inline-flex min-h-11 shrink-0 whitespace-nowrap items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-on-primary shadow-[var(--shadow-ambient)] transition hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+    : "inline-flex min-h-11 shrink-0 whitespace-nowrap items-center justify-center rounded-xl bg-surface-container-low px-5 py-3 text-sm font-semibold text-on-surface shadow-[var(--shadow-soft)] transition hover:bg-surface-container-high hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2 focus-visible:ring-offset-card";
 }
 
 function getEndingSoonStageHref(role: UserRole, stagiaireId: string) {
@@ -303,7 +297,7 @@ export default async function DashboardPage() {
           {
             label: "Rapports soumis",
             value: String(pendingRapportsCount),
-            helper: "Rapports deja transmis et encore en attente de retour",
+            helper: "Rapports déjà transmis et encore en attente de retour",
             accent: <MaterialSymbol icon="pending_actions" className={dashboardIconClass} />,
           },
           {
@@ -313,9 +307,9 @@ export default async function DashboardPage() {
             accent: <MaterialSymbol icon="description" className={dashboardIconClass} />,
           },
           {
-            label: "Fin previsionnelle",
+            label: "Fin prévisionnelle",
             value: myActiveStage ? formatDate(myActiveStage.dateFin) : "-",
-            helper: "Date cible de cloture du stage",
+            helper: "Date cible de clôture du stage",
             accent: <MaterialSymbol icon="event_upcoming" className={dashboardIconClass} />,
           },
         ]
@@ -324,11 +318,11 @@ export default async function DashboardPage() {
             {
               label: "Mes stages actifs",
               value: String(activeStagesCount),
-              helper: "Stages en cours, planifies ou suspendus dans votre perimetre",
+              helper: "Stages en cours, planifiés ou suspendus dans votre périmètre",
               accent: <MaterialSymbol icon="work_history" className={dashboardIconClass} filled />,
             },
             {
-              label: "Rapports a relire",
+              label: "Rapports à relire",
               value: String(pendingRapportsCount),
               helper: "Rapports soumis qui attendent votre retour",
               accent: <MaterialSymbol icon="fact_check" className={dashboardIconClass} />,
@@ -341,8 +335,8 @@ export default async function DashboardPage() {
             },
             {
               label: "Notifications",
-              value: String(unreadNotificationsCount),
-              helper: "Notifications non lues a traiter depuis votre espace",
+              value: <LiveNotificationCount />,
+              helper: "Notifications non lues à traiter depuis votre espace",
               accent: <MaterialSymbol icon="notifications" className={dashboardIconClass} />,
             },
           ]
@@ -351,25 +345,25 @@ export default async function DashboardPage() {
               {
                 label: "Stagiaires actifs",
                 value: String(activeStagiairesCount),
-                helper: "Comptes stagiaires actifs prets pour le suivi",
+                helper: "Comptes stagiaires actifs prêts pour le suivi",
                 accent: <MaterialSymbol icon="groups" className={dashboardIconClass} filled />,
               },
               {
                 label: "Stages actifs",
                 value: String(activeStagesCount),
-                helper: "Planifies, en cours ou suspendus selon les donnees reelles",
+                helper: "Planifiés, en cours ou suspendus selon les données réelles",
                 accent: <MaterialSymbol icon="work" className={dashboardIconClass} filled />,
               },
               {
-                label: "Rapports a relire",
+                label: "Rapports à relire",
                 value: String(pendingRapportsCount),
-                helper: "Rapports soumis en attente de validation ou retour",
+                helper: "Rapports soumis en attente de validation ou de retour",
                 accent: <MaterialSymbol icon="description" className={dashboardIconClass} />,
               },
               {
                 label: "Documents visibles",
                 value: String(documentsCount),
-                helper: "Documents non supprimes relies aux stages actuellement visibles",
+                helper: "Documents non supprimés rattachés aux stages visibles",
                 accent: <MaterialSymbol icon="folder" className={dashboardIconClass} />,
               },
             ]
@@ -377,25 +371,25 @@ export default async function DashboardPage() {
               {
                 label: "Stagiaires actifs",
                 value: String(activeStagiairesCount),
-                helper: "Comptes stagiaires actifs prets pour le suivi",
+                helper: "Comptes stagiaires actifs prêts pour le suivi",
                 accent: <MaterialSymbol icon="group" className={dashboardIconClass} filled />,
               },
               {
                 label: "Stages actifs",
                 value: String(activeStagesCount),
-                helper: "Planifies, en cours ou suspendus selon les donnees reelles",
+                helper: "Planifiés, en cours ou suspendus selon les données réelles",
                 accent: <MaterialSymbol icon="work" className={dashboardIconClass} filled />,
               },
               {
-                label: "Rapports a relire",
+                label: "Rapports à relire",
                 value: String(pendingRapportsCount),
-                helper: "Rapports soumis en attente de validation ou retour",
+                helper: "Rapports soumis en attente de validation ou de retour",
                 accent: <MaterialSymbol icon="description" className={dashboardIconClass} />,
               },
               {
                 label: "Encadrants actifs",
                 value: String(encadrantsCount),
-                helper: "Encadrants actifs actuellement mobilises sur les stages suivis",
+                helper: "Encadrants actifs mobilisés sur les stages suivis",
                 accent: <MaterialSymbol icon="verified_user" className={dashboardIconClass} />,
               },
             ];
@@ -405,9 +399,10 @@ export default async function DashboardPage() {
       ? [
           {
             title: myActiveStage ? "Stage actif" : "Aucun stage actif",
-            description: myActiveStage
-              ? `${myActiveStage.departement} · fin prevue le ${formatDate(myActiveStage.dateFin)}`
-              : "Aucun stage visible n est actuellement rattache a votre compte.",
+            description:
+              myActiveStage
+                ? `${myActiveStage.departement} · fin prévue le ${formatDate(myActiveStage.dateFin)}`
+                : "Aucun stage visible n’est actuellement rattaché à votre compte.",
             value: myActiveStage ? (
               <StatusBadge status={getStageStatusLabel(myActiveStage.statut)} />
             ) : (
@@ -421,7 +416,7 @@ export default async function DashboardPage() {
             description:
               pendingRapportsCount > 0
                 ? `${pendingRapportsCount} rapport${pendingRapportsCount > 1 ? "s" : ""} attend${pendingRapportsCount > 1 ? "ent" : ""} un retour.`
-                : "Aucun rapport soumis n attend de retour pour le moment.",
+                : "Aucun rapport soumis n’attend de retour pour le moment.",
             value: <span className="text-2xl font-semibold tracking-tight">{pendingRapportsCount}</span>,
             href: "/rapports",
             cta: "Ouvrir mes rapports",
@@ -431,7 +426,7 @@ export default async function DashboardPage() {
             description:
               activeStageDocumentsCount > 0
                 ? `${activeStageDocumentsCount} document${activeStageDocumentsCount > 1 ? "s" : ""} accessible${activeStageDocumentsCount > 1 ? "s" : ""} pour votre stage actif.`
-                : "Les documents partages pour votre stage apparaitront ici des qu ils seront disponibles.",
+                : "Les documents partagés pour votre stage apparaîtront ici dès qu’ils seront disponibles.",
             value: (
               <span className="text-2xl font-semibold tracking-tight">
                 {activeStageDocumentsCount}
@@ -444,21 +439,21 @@ export default async function DashboardPage() {
       : role === "ENCADRANT"
         ? [
             {
-              title: "Rapports a relire",
+              title: "Rapports à relire",
               description:
                 pendingRapportsCount > 0
                   ? `${pendingRapportsCount} rapport${pendingRapportsCount > 1 ? "s" : ""} soumis attend${pendingRapportsCount > 1 ? "ent" : ""} votre retour.`
-                  : "Aucun rapport soumis n attend votre relecture pour l instant.",
+                  : "Aucun rapport soumis n’attend votre relecture pour l’instant.",
               value: <span className="text-2xl font-semibold tracking-tight">{pendingRapportsCount}</span>,
               href: "/rapports",
               cta: "Traiter les rapports",
             },
             {
-              title: "Echeances proches",
+              title: "Échéances proches",
               description:
                 endingSoonStages.length > 0
                   ? `${endingSoonStages.length} stage${endingSoonStages.length > 1 ? "s" : ""} se termine${endingSoonStages.length > 1 ? "nt" : ""} dans les 15 prochains jours.`
-                  : "Aucune fin de stage proche n est visible dans votre perimetre.",
+                  : "Aucune fin de stage proche n’est visible dans votre périmètre.",
               value: <span className="text-2xl font-semibold tracking-tight">{endingSoonStages.length}</span>,
               href: "/stages",
               cta: "Voir mes stages",
@@ -468,9 +463,11 @@ export default async function DashboardPage() {
               description:
                 unreadNotificationsCount > 0
                   ? "Des alertes attendent votre attention dans le centre de notifications."
-                  : "Aucune notification urgente non lue a traiter.",
+                  : "Aucune notification urgente non lue à traiter.",
               value: (
-                <span className="text-2xl font-semibold tracking-tight">{unreadNotificationsCount}</span>
+                <span className="text-2xl font-semibold tracking-tight">
+                  <LiveNotificationCount />
+                </span>
               ),
               href: "/notifications",
               cta: "Ouvrir les notifications",
@@ -478,21 +475,21 @@ export default async function DashboardPage() {
           ]
         : [
             {
-              title: "Rapports a relire",
+              title: "Rapports à relire",
               description:
                 pendingRapportsCount > 0
                   ? `${pendingRapportsCount} rapport${pendingRapportsCount > 1 ? "s" : ""} soumis attend${pendingRapportsCount > 1 ? "ent" : ""} une action.`
-                  : "Aucun rapport soumis n attend d action immediate.",
+                  : "Aucun rapport soumis n’attend d’action immédiate.",
               value: <span className="text-2xl font-semibold tracking-tight">{pendingRapportsCount}</span>,
               href: "/rapports",
               cta: "Voir les rapports",
             },
             {
-              title: "Echeances proches",
+              title: "Échéances proches",
               description:
                 endingSoonStages.length > 0
                   ? `${endingSoonStages.length} stage${endingSoonStages.length > 1 ? "s" : ""} se termine${endingSoonStages.length > 1 ? "nt" : ""} dans les 15 prochains jours.`
-                  : "Aucune fin de stage proche n est actuellement visible.",
+                  : "Aucune fin de stage proche n’est actuellement visible.",
               value: <span className="text-2xl font-semibold tracking-tight">{endingSoonStages.length}</span>,
               href: "/stages",
               cta: "Voir les stages",
@@ -502,8 +499,8 @@ export default async function DashboardPage() {
                   title: "Documents visibles",
                   description:
                     documentsCount > 0
-                      ? `${documentsCount} document${documentsCount > 1 ? "s" : ""} non supprime${documentsCount > 1 ? "s" : ""} sont disponibles dans le perimetre actuel.`
-                      : "Aucun document visible n est actuellement disponible.",
+                      ? `${documentsCount} document${documentsCount > 1 ? "s" : ""} non supprimé${documentsCount > 1 ? "s" : ""} est disponible dans le périmètre actuel.`
+                      : "Aucun document visible n’est actuellement disponible.",
                   value: <span className="text-2xl font-semibold tracking-tight">{documentsCount}</span>,
                   href: "/documents",
                   cta: "Voir les documents",
@@ -513,7 +510,7 @@ export default async function DashboardPage() {
                   description:
                     encadrantsCount > 0
                       ? `${encadrantsCount} encadrant${encadrantsCount > 1 ? "s" : ""} actif${encadrantsCount > 1 ? "s" : ""} contribue${encadrantsCount > 1 ? "nt" : ""} au dispositif.`
-                      : "Aucun encadrant actif n a ete trouve dans le perimetre actuel.",
+                      : "Aucun encadrant actif n’a été trouvé dans le périmètre actuel.",
                   value: <span className="text-2xl font-semibold tracking-tight">{encadrantsCount}</span>,
                   href: "/stages",
                   cta: "Voir les stages",
@@ -524,21 +521,19 @@ export default async function DashboardPage() {
     role === "STAGIAIRE"
       ? "Mes derniers rapports"
       : role === "ENCADRANT"
-        ? "Derniers rapports de mon perimetre"
-        : "Derniers rapports a surveiller";
+        ? "Derniers rapports de mon périmètre"
+        : "Derniers rapports à surveiller";
 
-  const endingSoonTitle =
-    role === "STAGIAIRE" ? "Ma fin de stage a venir" : "Stages bientot termines";
+  const endingSoonTitle = role === "STAGIAIRE" ? "Ma fin de stage à venir" : "Stages bientôt terminés";
   const endingSoonDescription =
     role === "STAGIAIRE"
-      ? "Verifiez la prochaine echeance visible pour votre stage actuel."
-      : "Reperez rapidement les stages qui demandent une attention rapprochee.";
+      ? "Vérifiez la prochaine échéance visible pour votre stage actuel."
+      : "Repérez rapidement les stages qui demandent une attention rapprochée.";
   const endingSoonActionLabel = role === "STAGIAIRE" ? "Voir mes rapports" : "Voir les stages";
   const endingSoonActionHref = role === "STAGIAIRE" ? "/rapports" : "/stages";
 
   return (
     <div className="space-y-8">
-      <LiveNotificationsListener />
       <PageHeader
         eyebrow={roleIntro.eyebrow}
         title={roleIntro.title}
@@ -567,8 +562,6 @@ export default async function DashboardPage() {
             helper={metric.helper}
             accent={metric.accent}
             className="h-full min-h-[176px]"
-            contentClassName="overflow-hidden"
-            helperClassName="overflow-hidden whitespace-nowrap text-ellipsis"
           />
         ))}
       </section>
@@ -576,13 +569,13 @@ export default async function DashboardPage() {
       <section className="grid gap-4 xl:grid-cols-[0.88fr_1.12fr]">
         <Card className="space-y-5">
           <div>
-            <p className="text-sm font-medium text-primary">Priorites</p>
+            <p className="text-sm font-medium text-primary">Priorités</p>
             <h2 className="mt-1 text-2xl font-semibold tracking-tight">
               {role === "STAGIAIRE" ? "Ce que je dois suivre" : "Ce qui demande une action"}
             </h2>
             <p className="mt-2 text-sm leading-6 text-muted">
-              Les cartes ci-dessous mettent en avant les points les plus utiles pour votre role a
-              partir des donnees visibles dans votre perimetre.
+              Les cartes ci-dessous mettent en avant les points les plus utiles pour votre rôle à
+              partir des données visibles dans votre périmètre.
             </p>
           </div>
 
@@ -611,7 +604,7 @@ export default async function DashboardPage() {
 
         <Card className="space-y-5">
           <div>
-            <p className="text-sm font-medium text-primary">Rapports recents</p>
+            <p className="text-sm font-medium text-primary">Rapports récents</p>
             <div className="mt-1 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
               <h2 className="text-2xl font-semibold tracking-tight">{recentRapportsTitle}</h2>
               <p className="text-[13px] text-on-surface-variant">
@@ -619,7 +612,7 @@ export default async function DashboardPage() {
               </p>
             </div>
             <p className="mt-2 text-sm leading-6 text-muted">
-              Les rapports les plus recents apparaissent ici pour vous aider a reprendre vite le
+              Les rapports les plus récents apparaissent ici pour vous aider à reprendre vite le
               contexte.
             </p>
           </div>
@@ -649,19 +642,19 @@ export default async function DashboardPage() {
                     </div>
                     <div className="text-sm text-muted sm:text-right">
                       <p className="font-medium text-foreground">{rapport.avancement}%</p>
-                      <p>Mis a jour le {formatShortDate(rapport.updatedAt)}</p>
+                      <p>Mis à jour le {formatDateFr(rapport.updatedAt)}</p>
                     </div>
                   </div>
                 </Link>
               ))}
             </div>
-          ) : (
-            <EmptyState
-              title="Aucun rapport recent"
-              description="Les nouveaux rapports apparaitront ici des qu une activite sera visible dans votre perimetre."
-              actionHref="/rapports"
-              actionLabel="Voir tous les rapports"
-            />
+        ) : (
+          <EmptyState
+            title="Aucun rapport récent"
+            description="Les nouveaux rapports apparaîtront ici dès qu’une activité sera visible dans votre périmètre."
+            actionHref="/rapports"
+            actionLabel="Voir tous les rapports"
+          />
           )}
         </Card>
       </section>
@@ -669,7 +662,7 @@ export default async function DashboardPage() {
       <Card className="space-y-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-sm font-medium text-primary">Echeances</p>
+            <p className="text-sm font-medium text-primary">Échéances</p>
             <h2 className="mt-1 text-2xl font-semibold tracking-tight">{endingSoonTitle}</h2>
             <p className="mt-2 text-sm leading-6 text-muted">{endingSoonDescription}</p>
           </div>
@@ -702,7 +695,7 @@ export default async function DashboardPage() {
         ) : (
           <EmptyState
             title="Aucune fin proche"
-            description="Aucun stage visible dans votre perimetre ne se termine dans les 15 prochains jours."
+            description="Aucun stage visible dans votre périmètre ne se termine dans les 15 prochains jours."
             actionHref={endingSoonActionHref}
             actionLabel={endingSoonActionLabel}
           />

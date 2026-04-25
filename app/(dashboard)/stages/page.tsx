@@ -1,12 +1,15 @@
 import Link from "next/link";
+import { Prisma } from "@prisma/client";
 import { auth } from "@/auth";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FeedbackBanner } from "@/components/ui/feedback-banner";
 import { MaterialSymbol } from "@/components/ui/material-symbol";
 import { MetricCard } from "@/components/ui/metric-card";
+import { PaginationControls } from "@/components/ui/pagination-controls";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { getPaginationMeta, parsePageParam } from "@/lib/pagination";
 import { prisma } from "@/lib/prisma";
 import { getStageStatusLabel } from "@/lib/stages";
 import { formatDate } from "@/lib/stagiaires";
@@ -22,17 +25,63 @@ function getStringParam(value?: string | string[]) {
 export default async function StagesPage({ searchParams }: StagesPageProps) {
   const session = await auth();
   const now = new Date();
+  const soonDate = new Date(now);
+  soonDate.setDate(soonDate.getDate() + 15);
   const params = (await searchParams) ?? {};
   const success = getStringParam(params.success)?.trim() ?? "";
   const statut = getStringParam(params.statut)?.trim() ?? "";
   const departement = getStringParam(params.departement)?.trim() ?? "";
+  const requestedPage = parsePageParam(params.page);
+  const pageSize = 10;
 
+  const stageWhere: Prisma.StageWhereInput = {
+    ...(departement
+      ? {
+          departement: {
+            contains: departement,
+            mode: "insensitive",
+          },
+        }
+      : {}),
+    ...(statut ? { statut: statut as never } : {}),
+    ...(session?.user.role === "ENCADRANT" ? { encadrantId: session.user.id } : {}),
+  };
+  const [totalStagesCount, activeCount, endingSoonCount, coveredStagiaires] = await Promise.all([
+    prisma.stage.count({
+      where: stageWhere,
+    }),
+    prisma.stage.count({
+      where: {
+        ...stageWhere,
+        statut: {
+          in: ["PLANIFIE", "EN_COURS", "SUSPENDU"],
+        },
+      },
+    }),
+    prisma.stage.count({
+      where: {
+        ...stageWhere,
+        dateFin: {
+          gte: now,
+          lte: soonDate,
+        },
+      },
+    }),
+    prisma.stage.groupBy({
+      by: ["stagiaireId"],
+      where: stageWhere,
+      orderBy: {
+        stagiaireId: "asc",
+      },
+    }),
+  ]);
+  const pagination = getPaginationMeta({
+    requestedPage,
+    totalItems: totalStagesCount,
+    pageSize,
+  });
   const stages = await prisma.stage.findMany({
-    where: {
-      ...(departement ? { departement: { contains: departement, mode: "insensitive" } } : {}),
-      ...(statut ? { statut: statut as never } : {}),
-      ...(session?.user.role === "ENCADRANT" ? { encadrantId: session.user.id } : {}),
-    },
+    where: stageWhere,
     include: {
       stagiaire: {
         include: {
@@ -42,15 +91,9 @@ export default async function StagesPage({ searchParams }: StagesPageProps) {
       encadrant: true,
     },
     orderBy: [{ dateDebut: "desc" }],
+    skip: pagination.skip,
+    take: pagination.take,
   });
-
-  const activeCount = stages.filter((stage) =>
-    ["PLANIFIE", "EN_COURS", "SUSPENDU"].includes(stage.statut),
-  ).length;
-  const endingSoonCount = stages.filter((stage) => {
-    const diff = stage.dateFin.getTime() - now.getTime();
-    return diff >= 0 && diff <= 15 * 24 * 60 * 60 * 1000;
-  }).length;
   const hasActiveFilters = Boolean(statut || departement);
 
   return (
@@ -89,7 +132,7 @@ export default async function StagesPage({ searchParams }: StagesPageProps) {
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           label="Stages visibles"
-          value={stages.length}
+          value={totalStagesCount}
           helper="Nombre de stages affiches selon vos filtres et votre role"
           accent={<MaterialSymbol icon="work_history" className="text-[20px]" filled />}
         />
@@ -107,7 +150,7 @@ export default async function StagesPage({ searchParams }: StagesPageProps) {
         />
         <MetricCard
           label="Stagiaires couverts"
-          value={new Set(stages.map((stage) => stage.stagiaireId)).size}
+          value={coveredStagiaires.length}
           helper="Nombre de stagiaires concernes par les stages affiches"
           accent={<MaterialSymbol icon="group" className="text-[20px]" filled />}
         />
@@ -166,67 +209,81 @@ export default async function StagesPage({ searchParams }: StagesPageProps) {
       </Card>
 
       {stages.length > 0 ? (
-        <div className="grid gap-4 xl:grid-cols-2">
-          {stages.map((stage) => (
-            <Card key={stage.id} className="space-y-5">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="space-y-2">
-                  <div className="flex flex-wrap gap-2">
-                    <StatusBadge status={getStageStatusLabel(stage.statut)} />
+        <div className="space-y-4">
+          <div className="grid gap-4 xl:grid-cols-2">
+            {stages.map((stage) => (
+              <Card key={stage.id} className="space-y-5">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap gap-2">
+                      <StatusBadge status={getStageStatusLabel(stage.statut)} />
+                    </div>
+                    <h2 className="text-2xl font-semibold tracking-tight">{stage.sujet}</h2>
+                    <p className="text-sm leading-6 text-muted">{stage.departement}</p>
                   </div>
-                  <h2 className="text-2xl font-semibold tracking-tight">{stage.sujet}</h2>
-                  <p className="text-sm leading-6 text-muted">{stage.departement}</p>
-                </div>
-                <div className="flex flex-wrap gap-3">
-                  <Link
-                    href={`/stagiaires/${stage.stagiaireId}`}
-                    className="action-button action-button-primary px-4 py-2.5 text-sm"
-                  >
-                    Voir stagiaire
-                  </Link>
-                  {session?.user.role !== "ENCADRANT" ? (
+                  <div className="flex flex-wrap gap-3">
                     <Link
-                      href={`/stages/${stage.id}/modifier`}
-                      className="action-button action-button-secondary px-4 py-2.5 text-sm"
+                      href={`/stagiaires/${stage.stagiaireId}`}
+                      className="action-button action-button-primary px-4 py-2.5 text-sm"
                     >
-                      Modifier
+                      Voir stagiaire
                     </Link>
-                  ) : null}
+                    {session?.user.role !== "ENCADRANT" ? (
+                      <Link
+                        href={`/stages/${stage.id}/modifier`}
+                        className="action-button action-button-secondary px-4 py-2.5 text-sm"
+                      >
+                        Modifier
+                      </Link>
+                    ) : null}
+                  </div>
                 </div>
-              </div>
 
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                <div className="tonal-card rounded-[22px] p-4">
-                  <p className="text-sm text-muted">Stagiaire</p>
-                  <p className="mt-2 text-sm font-medium">
-                    {`${stage.stagiaire.user.prenom} ${stage.stagiaire.user.nom}`.trim()}
-                  </p>
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  <div className="tonal-card rounded-[22px] p-4">
+                    <p className="text-sm text-muted">Stagiaire</p>
+                    <p className="mt-2 text-sm font-medium">
+                      {`${stage.stagiaire.user.prenom} ${stage.stagiaire.user.nom}`.trim()}
+                    </p>
+                  </div>
+                  <div className="tonal-card rounded-[22px] p-4">
+                    <p className="text-sm text-muted">Encadrant</p>
+                    <p className="mt-2 text-sm font-medium">
+                      {stage.encadrant
+                        ? `${stage.encadrant.prenom} ${stage.encadrant.nom}`.trim()
+                        : "Non affecte"}
+                    </p>
+                  </div>
+                  <div className="tonal-card rounded-[22px] p-4">
+                    <p className="text-sm text-muted">Debut</p>
+                    <p className="mt-2 text-sm font-medium">{formatDate(stage.dateDebut)}</p>
+                  </div>
+                  <div className="tonal-card rounded-[22px] p-4">
+                    <p className="text-sm text-muted">Fin</p>
+                    <p className="mt-2 text-sm font-medium">{formatDate(stage.dateFin)}</p>
+                  </div>
+                  <div className="tonal-card rounded-[22px] p-4 sm:col-span-2 xl:col-span-2">
+                    <p className="text-sm text-muted">Depot GitHub</p>
+                    <p className="mt-2 truncate text-sm font-medium">
+                      {stage.githubRepo ?? "Non renseigne"}
+                    </p>
+                  </div>
                 </div>
-                <div className="tonal-card rounded-[22px] p-4">
-                  <p className="text-sm text-muted">Encadrant</p>
-                  <p className="mt-2 text-sm font-medium">
-                    {stage.encadrant
-                      ? `${stage.encadrant.prenom} ${stage.encadrant.nom}`.trim()
-                      : "Non affecte"}
-                  </p>
-                </div>
-                <div className="tonal-card rounded-[22px] p-4">
-                  <p className="text-sm text-muted">Debut</p>
-                  <p className="mt-2 text-sm font-medium">{formatDate(stage.dateDebut)}</p>
-                </div>
-                <div className="tonal-card rounded-[22px] p-4">
-                  <p className="text-sm text-muted">Fin</p>
-                  <p className="mt-2 text-sm font-medium">{formatDate(stage.dateFin)}</p>
-                </div>
-                <div className="tonal-card rounded-[22px] p-4 sm:col-span-2 xl:col-span-2">
-                  <p className="text-sm text-muted">Depot GitHub</p>
-                  <p className="mt-2 truncate text-sm font-medium">
-                    {stage.githubRepo ?? "Non renseigne"}
-                  </p>
-                </div>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            ))}
+          </div>
+
+          <PaginationControls
+            pathname="/stages"
+            searchParams={params}
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.totalItems}
+            pageSize={pagination.pageSize}
+            startItem={pagination.startItem}
+            endItem={pagination.endItem}
+            itemLabel="stages"
+          />
         </div>
       ) : (
         <EmptyState

@@ -3,14 +3,28 @@ import { clearAllRateLimits } from "@/lib/security/rate-limit";
 
 const authMock = vi.fn();
 const processPendingJobsMock = vi.fn();
+const ensureEndingSoonNotificationsMock = vi.fn();
+const afterMock = vi.fn(async (callback: () => Promise<unknown> | unknown) => {
+  await callback();
+});
 
 vi.mock("@/auth", () => ({
   auth: authMock,
 }));
 
 vi.mock("@/lib/notifications", () => ({
+  ensureEndingSoonNotifications: ensureEndingSoonNotificationsMock,
   processPendingNotificationDispatchJobs: processPendingJobsMock,
 }));
+
+vi.mock("next/server", async () => {
+  const actual = await vi.importActual<typeof import("next/server")>("next/server");
+
+  return {
+    ...actual,
+    after: afterMock,
+  };
+});
 
 describe("notifications process route", () => {
   beforeEach(() => {
@@ -32,14 +46,19 @@ describe("notifications process route", () => {
     }));
 
     expect(response.status).toBe(401);
+    expect(afterMock).not.toHaveBeenCalled();
   });
 
-  it("autorise un admin a traiter la file", async () => {
+  it("accepte un admin et planifie le traitement hors du temps de reponse", async () => {
     authMock.mockResolvedValue({
       user: {
         id: "user-admin-1",
         role: "ADMIN",
       },
+    });
+    ensureEndingSoonNotificationsMock.mockResolvedValue({
+      scannedStages: 3,
+      created: 1,
     });
     processPendingJobsMock.mockResolvedValue({
       processed: 2,
@@ -53,12 +72,13 @@ describe("notifications process route", () => {
 
     const payload = await response.json();
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(202);
     expect(payload).toEqual({
-      status: "ok",
-      processed: 2,
-      pending: 1,
+      status: "accepted",
     });
+    expect(afterMock).toHaveBeenCalledTimes(1);
+    expect(ensureEndingSoonNotificationsMock).toHaveBeenCalledTimes(1);
+    expect(processPendingJobsMock).toHaveBeenCalledWith(20);
   });
 
   it("retourne 429 quand la route est appelee trop souvent", async () => {
@@ -67,6 +87,10 @@ describe("notifications process route", () => {
         id: "user-admin-1",
         role: "ADMIN",
       },
+    });
+    ensureEndingSoonNotificationsMock.mockResolvedValue({
+      scannedStages: 0,
+      created: 0,
     });
     processPendingJobsMock.mockResolvedValue({
       processed: 1,
@@ -82,7 +106,7 @@ describe("notifications process route", () => {
         }),
       );
 
-      expect(response.status).toBe(200);
+      expect(response.status).toBe(202);
     }
 
     const blockedResponse = await POST(

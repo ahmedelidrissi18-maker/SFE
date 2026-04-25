@@ -22,7 +22,7 @@ describe("stages helpers", () => {
   });
 
   it("returns display labels", () => {
-    expect(getStageStatusLabel("PLANIFIE")).toBe("Planifie");
-    expect(getStageStatusLabel("ANNULE")).toBe("Annule");
+    expect(getStageStatusLabel("PLANIFIE")).toBe("Planifié");
+    expect(getStageStatusLabel("ANNULE")).toBe("Annulé");
   });
 });

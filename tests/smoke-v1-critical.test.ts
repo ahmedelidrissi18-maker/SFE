@@ -4,7 +4,7 @@ import { canAccessPath, isAuthRoute, isPublicRoute } from "@/lib/rbac";
 
 describe("V1 smoke critical paths", () => {
   it("keeps critical route files present", () => {
-    expect(existsSync("app/(auth)/login/page.tsx")).toBe(true);
+    expect(existsSync("app/login/page.tsx")).toBe(true);
     expect(existsSync("app/(dashboard)/layout.tsx")).toBe(true);
     expect(existsSync("app/(dashboard)/dashboard/page.tsx")).toBe(true);
     expect(existsSync("app/(dashboard)/stagiaires/page.tsx")).toBe(true);

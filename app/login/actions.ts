@@ -3,6 +3,7 @@
 import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
 import { auth, signIn, signOut } from "@/auth";
+import { type OAuthProviderId, getConfiguredLoginProviders } from "@/lib/auth-providers";
 import { logAuditEvent } from "@/lib/audit";
 import { loginFormSchema } from "@/lib/validations/auth";
 
@@ -11,6 +12,11 @@ export type LoginActionState = {
   email?: string;
   requiresTwoFactor?: boolean;
 };
+
+function isOAuthProviderAvailable(provider: OAuthProviderId) {
+  const configuredProviders = getConfiguredLoginProviders();
+  return configuredProviders[provider];
+}
 
 function getCredentialsErrorCode(error: AuthError) {
   if (error.type !== "CredentialsSignin") {
@@ -73,6 +79,24 @@ export async function loginAction(
   }
 
   redirect("/dashboard");
+}
+
+async function loginWithOAuthProvider(provider: OAuthProviderId) {
+  if (!isOAuthProviderAvailable(provider)) {
+    redirect("/login?error=oauth_provider_not_configured");
+  }
+
+  await signIn(provider, {
+    redirectTo: "/dashboard",
+  });
+}
+
+export async function loginWithGoogleAction() {
+  await loginWithOAuthProvider("google");
+}
+
+export async function loginWithGithubAction() {
+  await loginWithOAuthProvider("github");
 }
 
 export async function logoutAction() {

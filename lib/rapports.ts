@@ -6,8 +6,8 @@ export function getRapportStatusLabel(status: RapportStatus) {
   const labels: Record<RapportStatus, string> = {
     BROUILLON: "Brouillon",
     SOUMIS: "Soumis",
-    VALIDE: "Valide",
-    RETOURNE: "Retourne",
+    VALIDE: "Validé",
+    RETOURNE: "Retourné",
   };
 
   return labels[status];

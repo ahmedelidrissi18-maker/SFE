@@ -56,7 +56,12 @@ Configuration GitHub optionnelle pour le debut du Sprint 1 :
 
 - `GITHUB_TOKEN` : augmente le quota API GitHub pour les synchronisations
 - `GITHUB_API_BASE_URL` : utile si vous ciblez un GitHub Enterprise
-- `GITHUB_CLIENT_ID` et `GITHUB_CLIENT_SECRET` : reserves au branchement OAuth complet
+- `GITHUB_CLIENT_ID` et `GITHUB_CLIENT_SECRET` : reserves a la liaison GitHub metier des stagiaires (`/api/github/callback`)
+
+Configuration OAuth de connexion optionnelle :
+
+- `AUTH_GOOGLE_CLIENT_ID` et `AUTH_GOOGLE_CLIENT_SECRET` : connexion Google via `/api/auth/callback/google`
+- `AUTH_GITHUB_CLIENT_ID` et `AUTH_GITHUB_CLIENT_SECRET` : connexion GitHub via `/api/auth/callback/github`
 
 Configuration securite Sprint 6 :
 

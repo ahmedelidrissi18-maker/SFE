@@ -38,7 +38,7 @@ export async function markAllNotificationsReadAction() {
     return;
   }
 
-  await prisma.notification.updateMany({
+  const updateResult = await prisma.notification.updateMany({
     where: {
       destinataireId: session.user.id,
       isRead: false,
@@ -48,17 +48,10 @@ export async function markAllNotificationsReadAction() {
     },
   });
 
-  const unreadCount = await prisma.notification.count({
-    where: {
-      destinataireId: session.user.id,
-      isRead: false,
-    },
-  });
-
   publishNotificationRealtimeEvent({
     kind: "notification_read",
     userId: session.user.id,
-    unreadCount,
+    unreadCountDelta: updateResult.count > 0 ? -updateResult.count : 0,
   });
 
   revalidatePath("/notifications");

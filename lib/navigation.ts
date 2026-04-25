@@ -7,7 +7,7 @@ export const navigationItems = [
     roles: ["ADMIN", "RH", "ENCADRANT", "STAGIAIRE"] as const,
   },
   {
-    label: "Analytics",
+    label: "Analytique",
     href: "/analytics",
     icon: "analytics" as const,
     section: "accueil" as const,
@@ -35,7 +35,7 @@ export const navigationItems = [
     roles: ["ADMIN", "RH", "ENCADRANT", "STAGIAIRE"] as const,
   },
   {
-    label: "Evaluations",
+    label: "Évaluations",
     href: "/evaluations",
     icon: "evaluations" as const,
     section: "suivi" as const,
@@ -56,10 +56,13 @@ export const navigationItems = [
     roles: ["ADMIN", "RH", "ENCADRANT", "STAGIAIRE"] as const,
   },
   {
-    label: "Securite",
+    label: "Sécurité",
     href: "/securite",
     icon: "security" as const,
     section: "compte" as const,
     roles: ["ADMIN", "RH"] as const,
   },
 ];
+
+export type NavigationItem = (typeof navigationItems)[number];
+export type NavigationSection = NavigationItem["section"];

@@ -27,11 +27,11 @@ export function PageHeader({
         className,
       )}
     >
-      <div className="pointer-events-none absolute right-[-4rem] top-[-3rem] h-36 w-36 rounded-full bg-primary-fixed/80 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-[-4rem] left-[-3rem] h-32 w-32 rounded-full bg-tertiary-fixed/70 blur-3xl" />
+      <div className="pointer-events-none absolute right-[-5rem] top-[-4rem] h-28 w-28 rounded-full bg-primary-fixed/35 blur-[72px]" />
+      <div className="pointer-events-none absolute bottom-[-5rem] left-[-4rem] h-24 w-24 rounded-full bg-tertiary-fixed/30 blur-[72px]" />
 
       <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-        <div className={cn("space-y-3", contentClassName)}>
+        <div className={cn("min-w-0 flex-1 space-y-3", contentClassName)}>
           <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">
             {eyebrow}
           </p>
@@ -45,8 +45,9 @@ export function PageHeader({
         {actions ? (
           <div
             className={cn(
-              "flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-start lg:justify-end",
+              "flex w-full shrink-0 flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap sm:justify-start lg:justify-end",
               "[&_a]:sm:min-w-[11rem] [&_button]:sm:min-w-[11rem]",
+              "[&_a]:shrink-0 [&_a]:whitespace-nowrap [&_button]:shrink-0 [&_button]:whitespace-nowrap",
               actionsClassName,
             )}
           >

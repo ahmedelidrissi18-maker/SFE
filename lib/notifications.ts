@@ -68,45 +68,125 @@ type DispatchJobInput = {
   payload?: Prisma.InputJsonValue;
 };
 
-async function getPreference(userId: string, eventType: string) {
-  return prisma.notificationPreference.findUnique({
+const NOTIFICATION_BATCH_CONCURRENCY = 8;
+
+type NotificationPreferenceFlags = {
+  inAppEnabled: boolean;
+  liveEnabled: boolean;
+};
+
+const defaultNotificationPreference: NotificationPreferenceFlags = {
+  inAppEnabled: true,
+  liveEnabled: true,
+};
+
+function getNotificationPreferenceKey(userId: string, eventType: string) {
+  return `${userId}::${eventType}`;
+}
+
+function chunkArray<T>(items: T[], chunkSize: number) {
+  if (chunkSize <= 0 || items.length <= chunkSize) {
+    return [items];
+  }
+
+  const chunks: T[][] = [];
+  for (let index = 0; index < items.length; index += chunkSize) {
+    chunks.push(items.slice(index, index + chunkSize));
+  }
+  return chunks;
+}
+
+async function getPreference(userId: string, eventType: string): Promise<NotificationPreferenceFlags> {
+  const preference = await prisma.notificationPreference.findUnique({
     where: {
       userId_eventType: {
         userId,
         eventType,
       },
     },
-  });
-}
-
-async function shouldCreateInAppNotification(userId: string, eventType: string) {
-  const preference = await getPreference(userId, eventType);
-  return preference?.inAppEnabled ?? true;
-}
-
-async function shouldPublishLiveNotification(userId: string, eventType: string) {
-  const preference = await getPreference(userId, eventType);
-  return preference?.liveEnabled ?? true;
-}
-
-async function publishUnreadCountEvent(userId: string, event: {
-  kind: "notification_created" | "notification_read";
-  notificationId?: string;
-  notificationType?: string;
-}) {
-  const unreadCount = await prisma.notification.count({
-    where: {
-      destinataireId: userId,
-      isRead: false,
+    select: {
+      inAppEnabled: true,
+      liveEnabled: true,
     },
   });
 
+  return preference ?? defaultNotificationPreference;
+}
+
+async function getPreferencesForNotificationBatch(
+  notifications: NotificationInput[],
+): Promise<Map<string, NotificationPreferenceFlags>> {
+  const uniqueRecipientIds = [...new Set(notifications.map((notification) => notification.destinataireId))];
+  const uniqueEventTypes = [...new Set(notifications.map((notification) => notification.type))];
+
+  if (uniqueRecipientIds.length === 0 || uniqueEventTypes.length === 0) {
+    return new Map();
+  }
+
+  const preferences = await prisma.notificationPreference.findMany({
+    where: {
+      userId: {
+        in: uniqueRecipientIds,
+      },
+      eventType: {
+        in: uniqueEventTypes,
+      },
+    },
+    select: {
+      userId: true,
+      eventType: true,
+      inAppEnabled: true,
+      liveEnabled: true,
+    },
+  });
+
+  const preferencesByUserAndEvent = new Map<string, NotificationPreferenceFlags>();
+
+  for (const preference of preferences) {
+    preferencesByUserAndEvent.set(
+      getNotificationPreferenceKey(preference.userId, preference.eventType),
+      {
+        inAppEnabled: preference.inAppEnabled,
+        liveEnabled: preference.liveEnabled,
+      },
+    );
+  }
+
+  return preferencesByUserAndEvent;
+}
+
+function publishUnreadCountEvent(userId: string, event: {
+  kind: "notification_created" | "notification_read";
+  notificationId?: string;
+  notificationType?: string;
+  unreadCountDelta?: number;
+  notification?: {
+    id: string;
+    type: string;
+    titre: string;
+    message: string;
+    lien: string | null;
+    isRead: boolean;
+    createdAt: string;
+  };
+}) {
+  if (event.kind === "notification_created" && event.notification) {
+    publishNotificationRealtimeEvent({
+      kind: "notification_created",
+      userId,
+      unreadCountDelta: event.unreadCountDelta,
+      notificationId: event.notificationId ?? "",
+      notificationType: event.notificationType ?? "Notification",
+      notification: event.notification,
+    });
+    return;
+  }
+
   publishNotificationRealtimeEvent({
-    kind: event.kind,
+    kind: "notification_read",
     userId,
-    unreadCount,
-    notificationId: event.notificationId ?? "",
-    notificationType: event.notificationType ?? "Notification",
+    unreadCountDelta: event.unreadCountDelta,
+    notificationId: event.notificationId,
   });
 }
 
@@ -114,8 +194,15 @@ function getRetryDelayMs(nextAttempt: number) {
   return Math.min(30_000 * nextAttempt, 5 * 60_000);
 }
 
-export async function createNotification(input: NotificationInput) {
-  const inAppEnabled = await shouldCreateInAppNotification(input.destinataireId, input.type);
+export async function createNotification(
+  input: NotificationInput,
+  options?: {
+    emitRealtime?: boolean;
+  },
+) {
+  const emitRealtime = options?.emitRealtime ?? true;
+  const preference = await getPreference(input.destinataireId, input.type);
+  const inAppEnabled = preference.inAppEnabled;
 
   if (!inAppEnabled) {
     return null;
@@ -125,17 +212,72 @@ export async function createNotification(input: NotificationInput) {
     data: input,
   });
 
-  const liveEnabled = await shouldPublishLiveNotification(input.destinataireId, input.type);
+  const liveEnabled = preference.liveEnabled;
 
-  if (liveEnabled) {
-    await publishUnreadCountEvent(input.destinataireId, {
+  if (emitRealtime && liveEnabled) {
+    publishUnreadCountEvent(input.destinataireId, {
       kind: "notification_created",
       notificationId: createdNotification.id,
       notificationType: createdNotification.type,
+      unreadCountDelta: 1,
+      notification: {
+        id: createdNotification.id,
+        type: createdNotification.type,
+        titre: createdNotification.titre,
+        message: createdNotification.message,
+        lien: createdNotification.lien,
+        isRead: createdNotification.isRead,
+        createdAt: createdNotification.createdAt.toISOString(),
+      },
     });
   }
 
   return createdNotification;
+}
+
+async function createNotificationBatch(notificationsToCreate: NotificationInput[]) {
+  if (notificationsToCreate.length === 0) {
+    return 0;
+  }
+
+  const preferencesByUserAndEvent = await getPreferencesForNotificationBatch(notificationsToCreate);
+  const notificationsWithInApp = notificationsToCreate.filter((notification) => {
+    const preference =
+      preferencesByUserAndEvent.get(
+        getNotificationPreferenceKey(notification.destinataireId, notification.type),
+      ) ?? defaultNotificationPreference;
+
+    return preference.inAppEnabled;
+  });
+
+  if (notificationsWithInApp.length === 0) {
+    return 0;
+  }
+
+  for (const notificationChunk of chunkArray(notificationsWithInApp, NOTIFICATION_BATCH_CONCURRENCY)) {
+    await prisma.notification.createMany({
+      data: notificationChunk,
+    });
+  }
+
+  return notificationsWithInApp.length;
+}
+
+async function createNotificationsWithSharedPreferences(input: {
+  recipientIds: string[];
+  notification: Omit<NotificationInput, "destinataireId">;
+}) {
+  const uniqueRecipientIds = [...new Set(input.recipientIds)];
+  if (uniqueRecipientIds.length === 0) {
+    return 0;
+  }
+
+  return createNotificationBatch(
+    uniqueRecipientIds.map((destinataireId) => ({
+      ...input.notification,
+      destinataireId,
+    })),
+  );
 }
 
 export async function enqueueNotificationDispatchJob(input: DispatchJobInput) {
@@ -189,15 +331,15 @@ export async function processPendingNotificationDispatchJobs(limit = 10) {
         ? job.recipientIds.filter((value): value is string => typeof value === "string")
         : [];
 
-      for (const recipientId of recipientIds) {
-        await createNotification({
-          destinataireId: recipientId,
+      await createNotificationsWithSharedPreferences({
+        recipientIds,
+        notification: {
           type: job.eventType,
           titre: job.title,
           message: job.message,
           lien: job.link ?? undefined,
-        });
-      }
+        },
+      });
 
       await prisma.notificationDispatchJob.update({
         where: { id: job.id },
@@ -267,17 +409,13 @@ export async function createNotificationsForRoles(
       link: input.lien,
       recipientIds: recipients.map((recipient) => recipient.id),
     });
-
-    await processPendingNotificationDispatchJobs(5);
     return;
   }
 
-  for (const recipient of recipients) {
-    await createNotification({
-      ...input,
-      destinataireId: recipient.id,
-    });
-  }
+  await createNotificationsWithSharedPreferences({
+    recipientIds: recipients.map((recipient) => recipient.id),
+    notification: input,
+  });
 }
 
 export async function ensureEndingSoonNotifications(referenceDate = new Date()) {
@@ -302,6 +440,24 @@ export async function ensureEndingSoonNotifications(referenceDate = new Date()) 
       },
     },
   });
+  const adminsAndRh = await prisma.user.findMany({
+    where: {
+      role: {
+        in: ["ADMIN", "RH"],
+      },
+      isActive: true,
+    },
+    select: {
+      id: true,
+    },
+  });
+  const stageCandidates: Array<{
+    link: string;
+    title: string;
+    message: string;
+    recipientIds: string[];
+  }> = [];
+  const dedupeKeys = new Set<string>();
 
   for (const stage of stages) {
     const targetLink = `/stagiaires/${stage.stagiaireId}`;
@@ -314,45 +470,84 @@ export async function ensureEndingSoonNotifications(referenceDate = new Date()) 
       recipientIds.add(stage.encadrantId);
     }
 
-    const adminsAndRh = await prisma.user.findMany({
-      where: {
-        role: {
-          in: ["ADMIN", "RH"],
-        },
-        isActive: true,
-      },
-      select: {
-        id: true,
-      },
-    });
-
     for (const user of adminsAndRh) {
       recipientIds.add(user.id);
     }
 
-    for (const destinataireId of recipientIds) {
-      const existingNotification = await prisma.notification.findFirst({
-        where: {
-          destinataireId,
-          type: "STAGE_ENDING_SOON",
-          lien: targetLink,
-        },
-        select: {
-          id: true,
-        },
-      });
+    const resolvedRecipientIds = [...recipientIds];
+    stageCandidates.push({
+      link: targetLink,
+      title,
+      message,
+      recipientIds: resolvedRecipientIds,
+    });
 
-      if (!existingNotification) {
-        await createNotification({
-          destinataireId,
-          type: "STAGE_ENDING_SOON",
-          titre: title,
-          message,
-          lien: targetLink,
-        });
-      }
+    for (const destinataireId of resolvedRecipientIds) {
+      dedupeKeys.add(`${destinataireId}::${targetLink}`);
     }
   }
+
+  if (stageCandidates.length === 0 || dedupeKeys.size === 0) {
+    return {
+      scannedStages: stages.length,
+      created: 0,
+    };
+  }
+
+  const candidateRecipientIds = [...new Set([...dedupeKeys].map((key) => key.split("::")[0] ?? ""))]
+    .filter((value) => value.length > 0);
+  const candidateLinks = [...new Set([...dedupeKeys].map((key) => key.split("::")[1] ?? ""))]
+    .filter((value) => value.length > 0);
+
+  const existingNotifications = await prisma.notification.findMany({
+    where: {
+      destinataireId: {
+        in: candidateRecipientIds,
+      },
+      type: "STAGE_ENDING_SOON",
+      lien: {
+        in: candidateLinks,
+      },
+    },
+    select: {
+      destinataireId: true,
+      lien: true,
+    },
+  });
+
+  const existingKeySet = new Set(
+    existingNotifications
+      .filter((notification) => notification.lien)
+      .map((notification) => `${notification.destinataireId}::${notification.lien}`),
+  );
+
+  const notificationsToCreate: NotificationInput[] = [];
+
+  for (const candidate of stageCandidates) {
+    for (const recipientId of candidate.recipientIds) {
+      const dedupeKey = `${recipientId}::${candidate.link}`;
+
+      if (existingKeySet.has(dedupeKey)) {
+        continue;
+      }
+
+      existingKeySet.add(dedupeKey);
+      notificationsToCreate.push({
+        destinataireId: recipientId,
+        type: "STAGE_ENDING_SOON",
+        titre: candidate.title,
+        message: candidate.message,
+        lien: candidate.link,
+      });
+    }
+  }
+
+  const created = await createNotificationBatch(notificationsToCreate);
+
+  return {
+    scannedStages: stages.length,
+    created,
+  };
 }
 
 export async function queueEvaluationScheduledNotification(input: {

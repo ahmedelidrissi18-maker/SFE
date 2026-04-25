@@ -8,11 +8,11 @@ export function isActiveStageStatus(status: StageStatus) {
 
 export function getStageStatusLabel(status: StageStatus) {
   const labels: Record<StageStatus, string> = {
-    PLANIFIE: "Planifie",
+    PLANIFIE: "Planifié",
     EN_COURS: "En cours",
     SUSPENDU: "Suspendu",
-    TERMINE: "Termine",
-    ANNULE: "Annule",
+    TERMINE: "Terminé",
+    ANNULE: "Annulé",
   };
 
   return labels[status];

@@ -53,7 +53,7 @@ export function MetricCard({
           </p>
           <p
             className={cn(
-              "mt-3 max-w-[28ch] text-sm leading-6 text-on-surface-variant",
+              "mt-3 max-w-[40ch] text-sm leading-snug text-on-surface-variant",
               helperClassName,
             )}
             title={helper}

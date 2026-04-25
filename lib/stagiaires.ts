@@ -1,4 +1,5 @@
 import type { StageStatus } from "@prisma/client";
+import { formatDateFr } from "@/lib/date";
 
 type StageLike = {
   statut: StageStatus;
@@ -11,26 +12,26 @@ type StageLike = {
 
 export function getStageStatusLabel(status?: StageStatus | null) {
   const labels: Record<StageStatus, string> = {
-    PLANIFIE: "Planifie",
+    PLANIFIE: "Planifié",
     EN_COURS: "En cours",
     SUSPENDU: "Suspendu",
-    TERMINE: "Termine",
-    ANNULE: "Annule",
+    TERMINE: "Terminé",
+    ANNULE: "Annulé",
   };
 
   return status ? labels[status] : "Aucun stage";
 }
 
 export function getAccountStatusLabel(isActive: boolean) {
-  return isActive ? "Actif" : "Archive";
+  return isActive ? "Actif" : "Archivé";
 }
 
 export function getLatestStageInfo(stage: StageLike) {
   if (!stage) {
     return {
-      departement: "Non affecte",
+      departement: "Non affecté",
       statut: "Aucun stage",
-      encadrant: "Non affecte",
+      encadrant: "Non affecté",
     };
   }
 
@@ -39,18 +40,14 @@ export function getLatestStageInfo(stage: StageLike) {
     statut: getStageStatusLabel(stage.statut),
     encadrant: stage.encadrant
       ? `${stage.encadrant.prenom} ${stage.encadrant.nom}`.trim()
-      : "Non affecte",
+      : "Non affecté",
   };
 }
 
 export function formatDate(date?: Date | null) {
   if (!date) {
-    return "Non renseignee";
+    return "Non renseignée";
   }
 
-  return new Intl.DateTimeFormat("fr-FR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(date);
+  return formatDateFr(date);
 }

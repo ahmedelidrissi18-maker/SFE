@@ -112,9 +112,9 @@ export default async function GithubSummaryPage({ params }: GithubSummaryPagePro
   return (
     <div className="space-y-8">
       <PageHeader
-        eyebrow="Sprint 1"
-        title={`Synthese GitHub - ${`${stagiaire.user.prenom} ${stagiaire.user.nom}`.trim()}`}
-        description="Vue dediee au suivi technique GitHub du stagiaire : compte lie, depot de reference, activites recentes et historique des synchronisations."
+        eyebrow="GitHub"
+        title={`Synthèse GitHub - ${`${stagiaire.user.prenom} ${stagiaire.user.nom}`.trim()}`}
+        description="Vue dédiée au suivi technique GitHub du stagiaire : compte lié, dépôt de référence, activités récentes et historique des synchronisations."
         actions={
           <>
             <Link

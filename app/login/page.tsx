@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { LoginForm } from "@/components/auth/login-form";
-import { MaterialSymbol } from "@/components/ui/material-symbol";
 import { FeedbackBanner } from "@/components/ui/feedback-banner";
+import { MaterialSymbol } from "@/components/ui/material-symbol";
+import { getConfiguredLoginProviders } from "@/lib/auth-providers";
 
 const trustHighlights = [
   {
@@ -22,12 +23,48 @@ const trustHighlights = [
   },
 ];
 
-export default async function LoginPage() {
+type LoginPageProps = {
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
+
+function getStringParam(value?: string | string[]) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+function getOAuthErrorMessage(errorCode?: string) {
+  switch (errorCode) {
+    case "oauth_email_missing":
+      return "Le fournisseur externe n a pas renvoye d adresse e-mail exploitable pour retrouver votre compte.";
+    case "oauth_email_not_verified":
+      return "Le compte Google utilise n expose pas une adresse e-mail verifiee. Merci d utiliser votre compte professionnel verifie.";
+    case "oauth_account_not_allowed":
+      return "Aucun compte actif correspondant n a ete trouve dans la plateforme pour cette adresse e-mail.";
+    case "oauth_sensitive_role_blocked":
+      return "Les roles sensibles doivent continuer a se connecter avec leur mot de passe interne et, si requis, le 2FA.";
+    case "oauth_provider_not_configured":
+    case "Configuration":
+      return "La connexion externe selectionnee n est pas configuree dans l environnement courant.";
+    case "AccessDenied":
+      return "La connexion externe a ete refusee par les regles de securite de la plateforme.";
+    case "OAuthSignin":
+    case "OAuthCallback":
+    case "Callback":
+      return "La connexion via le fournisseur externe a echoue. Merci de reessayer.";
+    default:
+      return undefined;
+  }
+}
+
+export default async function LoginPage({ searchParams }: LoginPageProps) {
   const session = await auth();
 
   if (session?.user) {
     redirect("/dashboard");
   }
+
+  const params = (await searchParams) ?? {};
+  const oauthErrorMessage = getOAuthErrorMessage(getStringParam(params.error)?.trim());
+  const oauthProviders = getConfiguredLoginProviders();
 
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden px-4 py-8 sm:px-6 lg:px-8">
@@ -70,7 +107,10 @@ export default async function LoginPage() {
             ))}
           </div>
 
-          <LoginForm />
+          <LoginForm
+            oauthProviders={oauthProviders}
+            oauthErrorMessage={oauthErrorMessage}
+          />
 
           <div className="mt-8 pt-8">
             <FeedbackBanner

@@ -35,7 +35,7 @@ describe("analytics helpers", () => {
   it("calculates ranges, completion rates and median durations", () => {
     const range = getAnalyticsRange("weekly", new Date("2026-04-15T12:00:00.000Z"));
 
-    expect(range.label).toContain("15 avr.");
+    expect(range.label).toBe("9 avril 2026 au 15 avril 2026");
     expect(calculateCompletionRate(3, 4)).toBe(75);
     expect(calculateCompletionRate(1, 0)).toBe(0);
     expect(

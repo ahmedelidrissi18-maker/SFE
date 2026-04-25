@@ -1,22 +1,89 @@
 import Link from "next/link";
-import { Role } from "@prisma/client";
-import { prisma } from "@/lib/prisma";
+import { Prisma, Role } from "@prisma/client";
 import { toggleStagiaireArchiveAction } from "@/app/(dashboard)/stagiaires/actions";
-import { FeedbackBanner } from "@/components/ui/feedback-banner";
-import { formatDate, getAccountStatusLabel, getLatestStageInfo } from "@/lib/stagiaires";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
+import { FeedbackBanner } from "@/components/ui/feedback-banner";
 import { MaterialSymbol } from "@/components/ui/material-symbol";
 import { MetricCard } from "@/components/ui/metric-card";
+import { PaginationControls } from "@/components/ui/pagination-controls";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
+import {
+  buildPaginationHref,
+  getPaginationMeta,
+  parsePageParam,
+} from "@/lib/pagination";
+import { prisma } from "@/lib/prisma";
+import {
+  formatDate,
+  getAccountStatusLabel,
+  getLatestStageInfo,
+} from "@/lib/stagiaires";
 
 type StagiairesPageProps = {
   searchParams?: Promise<Record<string, string | string[] | undefined>>;
 };
 
+type StagiaireFilterInput = {
+  query: string;
+  etablissement: string;
+  departement: string;
+  statut: string;
+  encadrantId: string;
+};
+
 function getStringParam(value?: string | string[]) {
   return Array.isArray(value) ? value[0] : value;
+}
+
+function getDisplayName(user: { prenom?: string | null; nom?: string | null }) {
+  const fullName = `${user.prenom ?? ""} ${user.nom ?? ""}`.trim();
+  return fullName || "Nom a completer";
+}
+
+function buildStagiaireWhere(filters: StagiaireFilterInput): Prisma.StagiaireWhereInput {
+  return {
+    user: {
+      role: Role.STAGIAIRE,
+      ...(filters.query
+        ? {
+            OR: [
+              { nom: { contains: filters.query, mode: "insensitive" } },
+              { prenom: { contains: filters.query, mode: "insensitive" } },
+              { email: { contains: filters.query, mode: "insensitive" } },
+            ],
+          }
+        : {}),
+      ...(filters.statut === "actif" ? { isActive: true } : {}),
+      ...(filters.statut === "archive" ? { isActive: false } : {}),
+    },
+    ...(filters.etablissement
+      ? {
+          etablissement: {
+            contains: filters.etablissement,
+            mode: "insensitive",
+          },
+        }
+      : {}),
+    ...(filters.departement || filters.encadrantId
+      ? {
+          stages: {
+            some: {
+              ...(filters.departement
+                ? {
+                    departement: {
+                      contains: filters.departement,
+                      mode: "insensitive",
+                    },
+                  }
+                : {}),
+              ...(filters.encadrantId ? { encadrantId: filters.encadrantId } : {}),
+            },
+          },
+        }
+      : {}),
+  };
 }
 
 export default async function StagiairesPage({ searchParams }: StagiairesPageProps) {
@@ -27,50 +94,74 @@ export default async function StagiairesPage({ searchParams }: StagiairesPagePro
   const statut = getStringParam(params.statut)?.trim() ?? "";
   const encadrantId = getStringParam(params.encadrantId)?.trim() ?? "";
   const success = getStringParam(params.success)?.trim() ?? "";
+  const requestedPage = parsePageParam(params.page);
+  const pageSize = 10;
 
-  const encadrants = await prisma.user.findMany({
-    where: {
-      role: Role.ENCADRANT,
-      isActive: true,
-    },
-    orderBy: [{ prenom: "asc" }, { nom: "asc" }],
-    select: {
-      id: true,
-      nom: true,
-      prenom: true,
-    },
+  const filters: StagiaireFilterInput = {
+    query,
+    etablissement,
+    departement,
+    statut,
+    encadrantId,
+  };
+
+  const stagiaireWhere = buildStagiaireWhere(filters);
+  const withAssignedStageWhere: Prisma.StagiaireWhereInput =
+    departement || encadrantId
+      ? stagiaireWhere
+      : {
+          ...stagiaireWhere,
+          stages: {
+            some: {},
+          },
+        };
+
+  const [encadrants, totalStagiairesCount, activeCount, archivedCount, withAssignedStageCount] =
+    await Promise.all([
+      prisma.user.findMany({
+        where: {
+          role: Role.ENCADRANT,
+          isActive: true,
+        },
+        orderBy: [{ prenom: "asc" }, { nom: "asc" }],
+        select: {
+          id: true,
+          nom: true,
+          prenom: true,
+        },
+      }),
+      prisma.stagiaire.count({
+        where: stagiaireWhere,
+      }),
+      statut === "archive"
+        ? Promise.resolve(0)
+        : prisma.stagiaire.count({
+            where: buildStagiaireWhere({
+              ...filters,
+              statut: "actif",
+            }),
+          }),
+      statut === "actif"
+        ? Promise.resolve(0)
+        : prisma.stagiaire.count({
+            where: buildStagiaireWhere({
+              ...filters,
+              statut: "archive",
+            }),
+          }),
+      prisma.stagiaire.count({
+        where: withAssignedStageWhere,
+      }),
+    ]);
+
+  const pagination = getPaginationMeta({
+    requestedPage,
+    totalItems: totalStagiairesCount,
+    pageSize,
   });
 
   const stagiaires = await prisma.stagiaire.findMany({
-    where: {
-      user: {
-        role: Role.STAGIAIRE,
-        ...(query
-          ? {
-              OR: [
-                { nom: { contains: query, mode: "insensitive" } },
-                { prenom: { contains: query, mode: "insensitive" } },
-                { email: { contains: query, mode: "insensitive" } },
-              ],
-            }
-          : {}),
-        ...(statut === "actif" ? { isActive: true } : {}),
-        ...(statut === "archive" ? { isActive: false } : {}),
-      },
-      ...(etablissement ? { etablissement: { contains: etablissement, mode: "insensitive" } } : {}),
-      ...(departement || encadrantId
-        ? {
-            stages: {
-              some: {
-                ...(departement
-                  ? { departement: { contains: departement, mode: "insensitive" } }
-                  : {}),
-                ...(encadrantId ? { encadrantId } : {}),
-              },
-            },
-          }
-        : {}),
-    },
+    where: stagiaireWhere,
     orderBy: [{ user: { prenom: "asc" } }, { user: { nom: "asc" } }],
     include: {
       user: true,
@@ -87,12 +178,12 @@ export default async function StagiairesPage({ searchParams }: StagiairesPagePro
         },
       },
     },
+    skip: pagination.skip,
+    take: pagination.take,
   });
 
-  const activeCount = stagiaires.filter((stagiaire) => stagiaire.user.isActive).length;
-  const archivedCount = stagiaires.length - activeCount;
-  const withAssignedStageCount = stagiaires.filter((stagiaire) => stagiaire.stages[0]).length;
   const hasActiveFilters = Boolean(query || etablissement || departement || statut || encadrantId);
+  const returnTo = buildPaginationHref("/stagiaires", params, pagination.currentPage);
 
   return (
     <div className="space-y-8">
@@ -135,7 +226,7 @@ export default async function StagiairesPage({ searchParams }: StagiairesPagePro
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           label="Stagiaires filtres"
-          value={stagiaires.length}
+          value={totalStagiairesCount}
           helper="Resultats correspondant aux criteres actuels"
           accent={<MaterialSymbol icon="groups" className="text-[20px]" filled />}
         />
@@ -245,90 +336,111 @@ export default async function StagiairesPage({ searchParams }: StagiairesPagePro
       </Card>
 
       {stagiaires.length > 0 ? (
-        <div className="grid gap-4 xl:grid-cols-2">
-          {stagiaires.map((stagiaire) => {
-            const latestStage = stagiaire.stages[0] ?? null;
-            const latestStageInfo = getLatestStageInfo(latestStage);
+        <div className="space-y-4">
+          <div className="grid gap-4 xl:grid-cols-2">
+            {stagiaires.map((stagiaire) => {
+              const latestStage = stagiaire.stages[0] ?? null;
+              const latestStageInfo = getLatestStageInfo(latestStage);
+              const displayName = getDisplayName(stagiaire.user);
 
-            return (
-              <Card key={stagiaire.id} className="space-y-5">
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="space-y-2">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <StatusBadge status={getAccountStatusLabel(stagiaire.user.isActive)} />
-                      <StatusBadge status={latestStageInfo.statut} />
+              return (
+                <Card key={stagiaire.id} className="space-y-5">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                    <div className="space-y-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <StatusBadge status={getAccountStatusLabel(stagiaire.user.isActive)} />
+                        <StatusBadge status={latestStageInfo.statut} />
+                      </div>
+                      <h2 className="text-2xl font-semibold tracking-tight">{displayName}</h2>
+                      <p className="text-sm font-medium text-foreground">
+                        {stagiaire.specialite ?? "Specialite non renseignee"}
+                      </p>
+                      <p className="text-sm leading-6 text-muted">{stagiaire.user.email}</p>
+                      <p className="text-sm leading-6 text-muted">
+                        {latestStage?.sujet ?? "Aucun stage rattache pour le moment."}
+                      </p>
                     </div>
-                    <h2 className="text-2xl font-semibold tracking-tight">
-                      {`${stagiaire.user.prenom} ${stagiaire.user.nom}`.trim()}
-                    </h2>
-                    <p className="text-sm font-medium text-foreground">
-                      {stagiaire.specialite ?? "Specialite non renseignee"}
-                    </p>
-                    <p className="text-sm leading-6 text-muted">{stagiaire.user.email}</p>
-                    <p className="text-sm leading-6 text-muted">
-                      {latestStage?.sujet ?? "Aucun stage rattache pour le moment."}
-                    </p>
-                  </div>
 
-                  <div className="flex flex-wrap gap-3">
-                    <Link
-                      href={`/stagiaires/${stagiaire.id}`}
-                      className="rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary shadow-[var(--shadow-soft)] transition hover:opacity-90"
-                    >
-                      Voir la fiche
-                    </Link>
-                    <form action={toggleStagiaireArchiveAction}>
-                      <input type="hidden" name="stagiaireId" value={stagiaire.id} />
-                      <input type="hidden" name="userId" value={stagiaire.user.id} />
-                      <input
-                        type="hidden"
-                        name="nextActiveValue"
-                        value={String(!stagiaire.user.isActive)}
-                      />
-                      <input type="hidden" name="returnTo" value="/stagiaires" />
-                      <button
-                        type="submit"
-                        className="rounded-full bg-surface-container-low px-4 py-2.5 text-sm font-semibold text-on-surface shadow-[var(--shadow-soft)] transition hover:bg-surface-container-high hover:text-primary"
+                    <div className="flex flex-wrap gap-3">
+                      <Link
+                        href={`/stagiaires/${stagiaire.id}`}
+                        className="rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary shadow-[var(--shadow-soft)] transition hover:opacity-90"
                       >
-                        {stagiaire.user.isActive ? "Archiver" : "Reactiver"}
-                      </button>
-                    </form>
+                        Voir la fiche
+                      </Link>
+                      <form action={toggleStagiaireArchiveAction}>
+                        <input type="hidden" name="stagiaireId" value={stagiaire.id} />
+                        <input type="hidden" name="userId" value={stagiaire.user.id} />
+                        <input
+                          type="hidden"
+                          name="nextActiveValue"
+                          value={String(!stagiaire.user.isActive)}
+                        />
+                        <input type="hidden" name="returnTo" value={returnTo} />
+                        <button
+                          type="submit"
+                          className="rounded-full bg-surface-container-low px-4 py-2.5 text-sm font-semibold text-on-surface shadow-[var(--shadow-soft)] transition hover:bg-surface-container-high hover:text-primary"
+                        >
+                          {stagiaire.user.isActive ? "Archiver" : "Reactiver"}
+                        </button>
+                      </form>
+                    </div>
                   </div>
-                </div>
 
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  <div className="rounded-[22px] border border-border bg-background p-4">
-                    <p className="text-sm text-muted">Etablissement</p>
-                    <p className="mt-2 text-sm font-medium">{stagiaire.etablissement ?? "Non renseigne"}</p>
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    <div className="rounded-[22px] border border-border bg-background p-4">
+                      <p className="text-sm text-muted">Etablissement</p>
+                      <p className="mt-2 text-sm font-medium">
+                        {stagiaire.etablissement ?? "Non renseigne"}
+                      </p>
+                    </div>
+                    <div className="rounded-[22px] border border-border bg-background p-4">
+                      <p className="text-sm text-muted">Sujet du stage</p>
+                      <p className="mt-2 text-sm font-medium">
+                        {latestStage?.sujet ?? "Aucun stage rattache"}
+                      </p>
+                    </div>
+                    <div className="rounded-[22px] border border-border bg-background p-4">
+                      <p className="text-sm text-muted">Departement</p>
+                      <p className="mt-2 text-sm font-medium">{latestStageInfo.departement}</p>
+                    </div>
+                    <div className="rounded-[22px] border border-border bg-background p-4">
+                      <p className="text-sm text-muted">Encadrant</p>
+                      <p className="mt-2 text-sm font-medium">{latestStageInfo.encadrant}</p>
+                    </div>
+                    <div className="rounded-[22px] border border-border bg-background p-4">
+                      <p className="text-sm text-muted">Telephone</p>
+                      <p className="mt-2 text-sm font-medium">
+                        {stagiaire.telephone ?? "Non renseigne"}
+                      </p>
+                    </div>
+                    <div className="rounded-[22px] border border-border bg-background p-4">
+                      <p className="text-sm text-muted">Specialite</p>
+                      <p className="mt-2 text-sm font-medium">
+                        {stagiaire.specialite ?? "Non renseignee"}
+                      </p>
+                    </div>
+                    <div className="rounded-[22px] border border-border bg-background p-4">
+                      <p className="text-sm text-muted">Derniere mise a jour</p>
+                      <p className="mt-2 text-sm font-medium">{formatDate(stagiaire.updatedAt)}</p>
+                    </div>
                   </div>
-                  <div className="rounded-[22px] border border-border bg-background p-4">
-                    <p className="text-sm text-muted">Sujet du stage</p>
-                    <p className="mt-2 text-sm font-medium">{latestStage?.sujet ?? "Aucun stage rattache"}</p>
-                  </div>
-                  <div className="rounded-[22px] border border-border bg-background p-4">
-                    <p className="text-sm text-muted">Departement</p>
-                    <p className="mt-2 text-sm font-medium">{latestStageInfo.departement}</p>
-                  </div>
-                  <div className="rounded-[22px] border border-border bg-background p-4">
-                    <p className="text-sm text-muted">Encadrant</p>
-                    <p className="mt-2 text-sm font-medium">{latestStageInfo.encadrant}</p>
-                  </div>
-                  <div className="rounded-[22px] border border-border bg-background p-4">
-                    <p className="text-sm text-muted">Telephone</p>
-                    <p className="mt-2 text-sm font-medium">{stagiaire.telephone ?? "Non renseigne"}</p>
-                  </div>
-                  <div className="rounded-[22px] border border-border bg-background p-4">
-                    <p className="text-sm text-muted">Specialite</p>
-                    <p className="mt-2 text-sm font-medium">{stagiaire.specialite ?? "Non renseignee"}</p>
-                  </div>
-                  <div className="rounded-[22px] border border-border bg-background p-4">
-                    <p className="text-sm text-muted">Derniere maj</p>
-                    <p className="mt-2 text-sm font-medium">{formatDate(stagiaire.updatedAt)}</p>
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
+                </Card>
+              );
+            })}
+          </div>
+
+          <PaginationControls
+            pathname="/stagiaires"
+            searchParams={params}
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.totalItems}
+            pageSize={pagination.pageSize}
+            startItem={pagination.startItem}
+            endItem={pagination.endItem}
+            itemLabel="stagiaires"
+          />
         </div>
       ) : (
         <EmptyState

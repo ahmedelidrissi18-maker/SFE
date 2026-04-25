@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { MaterialSymbol } from "@/components/ui/material-symbol";
 
@@ -38,21 +39,31 @@ export function TwoFactorInlineAlert({ userId }: TwoFactorInlineAlertProps) {
 
   return (
     <div
-      className="flex h-11 max-h-11 items-center gap-3 overflow-hidden rounded-r-[18px] bg-[#FFF3E0] px-3 text-[#E65100] shadow-[var(--shadow-soft)]"
-      style={{ borderLeft: "3px solid #FF9800" }}
+      className="flex max-w-full items-center justify-between gap-3 rounded-[20px] border border-tertiary-fixed-dim/50 bg-tertiary-fixed px-4 py-3 text-on-tertiary-fixed-variant shadow-[var(--shadow-soft)]"
+      role="alert"
     >
-      <MaterialSymbol icon="warning" className="shrink-0 text-[18px]" filled />
-      <p className="min-w-0 truncate text-sm font-medium">
-        Activez le 2FA pour securiser votre compte
-      </p>
-      <button
-        type="button"
-        aria-label="Fermer l alerte 2FA"
-        onClick={handleDismiss}
-        className="ml-auto inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[#E65100] transition hover:bg-[#FFE0B2]"
-      >
-        <span className="text-lg leading-none">&times;</span>
-      </button>
+      <div className="flex min-w-0 items-center gap-3">
+        <MaterialSymbol icon="warning" className="shrink-0 text-[18px]" filled />
+        <p className="min-w-0 text-sm font-medium">
+          Activez le 2FA pour sécuriser votre compte.
+        </p>
+      </div>
+      <div className="ml-auto flex shrink-0 items-center gap-2">
+        <Link
+          href="/securite"
+          className="inline-flex h-9 items-center justify-center rounded-full bg-background px-3 py-2 text-sm font-semibold text-foreground shadow-[var(--shadow-soft)] transition hover:bg-surface-container-high"
+        >
+          Activer maintenant
+        </Link>
+        <button
+          type="button"
+          aria-label="Fermer l’alerte 2FA"
+          onClick={handleDismiss}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full text-on-tertiary-fixed-variant transition hover:bg-white/15"
+        >
+          <span className="text-lg leading-none">&times;</span>
+        </button>
+      </div>
     </div>
   );
 }

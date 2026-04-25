@@ -6,8 +6,10 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { FeedbackBanner } from "@/components/ui/feedback-banner";
 import { MaterialSymbol } from "@/components/ui/material-symbol";
 import { MetricCard } from "@/components/ui/metric-card";
+import { PaginationControls } from "@/components/ui/pagination-controls";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { getPaginationMeta, parsePageParam } from "@/lib/pagination";
 import { prisma } from "@/lib/prisma";
 import { getRapportStatusLabel } from "@/lib/rapports";
 import { formatDate } from "@/lib/stagiaires";
@@ -45,29 +47,76 @@ export default async function RapportsPage({ searchParams }: RapportsPageProps) 
   const params = (await searchParams) ?? {};
   const success = getStringParam(params.success)?.trim() ?? "";
   const statut = getStringParam(params.statut)?.trim() ?? "";
-
+  const requestedPage = parsePageParam(params.page);
+  const pageSize = 10;
   const userRole = session.user.role;
 
-  const rapports = await prisma.rapport.findMany({
-    where: {
-      ...(statut ? { statut: statut as never } : {}),
-      ...(userRole === "STAGIAIRE"
-        ? {
-            stage: {
+  const rapportWhere = {
+    ...(statut ? { statut: statut as never } : {}),
+    ...(userRole === "STAGIAIRE"
+      ? {
+          stage: {
+            stagiaire: {
+              userId: session.user.id,
+            },
+          },
+        }
+      : {}),
+    ...(userRole === "ENCADRANT"
+      ? {
+          stage: {
+            encadrantId: session.user.id,
+          },
+        }
+      : {}),
+  };
+
+  const [totalRapportsCount, brouillonsCount, soumisCount, validesCount, activeStage] =
+    await Promise.all([
+      prisma.rapport.count({
+        where: rapportWhere,
+      }),
+      prisma.rapport.count({
+        where: {
+          ...rapportWhere,
+          statut: "BROUILLON",
+        },
+      }),
+      prisma.rapport.count({
+        where: {
+          ...rapportWhere,
+          statut: "SOUMIS",
+        },
+      }),
+      prisma.rapport.count({
+        where: {
+          ...rapportWhere,
+          statut: "VALIDE",
+        },
+      }),
+      userRole === "STAGIAIRE"
+        ? prisma.stage.findFirst({
+            where: {
               stagiaire: {
                 userId: session.user.id,
               },
+              statut: {
+                in: ["PLANIFIE", "EN_COURS", "SUSPENDU"],
+              },
             },
-          }
-        : {}),
-      ...(userRole === "ENCADRANT"
-        ? {
-            stage: {
-              encadrantId: session.user.id,
-            },
-          }
-        : {}),
-    },
+            orderBy: [{ dateDebut: "desc" }],
+          })
+        : Promise.resolve(null),
+    ]);
+
+  const pagination = getPaginationMeta({
+    requestedPage,
+    totalItems: totalRapportsCount,
+    pageSize,
+  });
+
+  const rapports = await prisma.rapport.findMany({
+    where: rapportWhere,
     include: {
       stage: {
         include: {
@@ -81,28 +130,15 @@ export default async function RapportsPage({ searchParams }: RapportsPageProps) 
       },
     },
     orderBy: [{ updatedAt: "desc" }],
+    skip: pagination.skip,
+    take: pagination.take,
   });
 
-  const activeStage =
-    userRole === "STAGIAIRE"
-      ? await prisma.stage.findFirst({
-          where: {
-            stagiaire: {
-              userId: session.user.id,
-            },
-            statut: {
-              in: ["PLANIFIE", "EN_COURS", "SUSPENDU"],
-            },
-          },
-          orderBy: [{ dateDebut: "desc" }],
-        })
-      : null;
-
   const metrics = {
-    total: rapports.length,
-    brouillons: rapports.filter((rapport) => rapport.statut === "BROUILLON").length,
-    soumis: rapports.filter((rapport) => rapport.statut === "SOUMIS").length,
-    valides: rapports.filter((rapport) => rapport.statut === "VALIDE").length,
+    total: totalRapportsCount,
+    brouillons: brouillonsCount,
+    soumis: soumisCount,
+    valides: validesCount,
   };
 
   const pageTitle =
@@ -232,66 +268,80 @@ export default async function RapportsPage({ searchParams }: RapportsPageProps) 
       </Card>
 
       {rapports.length > 0 ? (
-        <div className="grid gap-4">
-          {rapports.map((rapport) => (
-            <Link key={rapport.id} href={`/rapports/${rapport.id}`}>
-              <Card className="overflow-hidden p-0 transition hover:-translate-y-0.5 hover:shadow-[0px_18px_36px_rgba(26,28,29,0.08)]">
-                <div className="grid gap-0 lg:grid-cols-[150px_1fr]">
-                  <div className="bg-linear-to-b from-primary/10 to-primary/5 px-5 py-6">
-                    <p className="text-xs uppercase tracking-[0.2em] text-primary/80">Semaine</p>
-                    <p className="mt-2 text-4xl font-semibold tracking-tight">{rapport.semaine}</p>
-                    <p className="mt-3 text-sm text-muted">{rapport.avancement}% d avancement</p>
-                  </div>
+        <div className="space-y-4">
+          <div className="grid gap-4">
+            {rapports.map((rapport) => (
+              <Link key={rapport.id} href={`/rapports/${rapport.id}`}>
+                <Card className="overflow-hidden p-0 transition hover:-translate-y-0.5 hover:shadow-[0px_18px_36px_rgba(26,28,29,0.08)]">
+                  <div className="grid gap-0 lg:grid-cols-[150px_1fr]">
+                    <div className="bg-linear-to-b from-primary/10 to-primary/5 px-5 py-6">
+                      <p className="text-xs uppercase tracking-[0.2em] text-primary/80">Semaine</p>
+                      <p className="mt-2 text-4xl font-semibold tracking-tight">{rapport.semaine}</p>
+                      <p className="mt-3 text-sm text-muted">{rapport.avancement}% d avancement</p>
+                    </div>
 
-                  <div className="space-y-5 px-5 py-6">
-                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                      <div className="space-y-2">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <StatusBadge status={getRapportStatusLabel(rapport.statut)} />
-                          <span className="text-xs uppercase tracking-[0.18em] text-muted">
-                            {formatDate(rapport.updatedAt)}
-                          </span>
+                    <div className="space-y-5 px-5 py-6">
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <StatusBadge status={getRapportStatusLabel(rapport.statut)} />
+                            <span className="text-xs uppercase tracking-[0.18em] text-muted">
+                              {formatDate(rapport.updatedAt)}
+                            </span>
+                          </div>
+                          <h2 className="text-xl font-semibold tracking-tight">
+                            {rapport.stage.stagiaire.user.prenom} {rapport.stage.stagiaire.user.nom}
+                          </h2>
+                          <p className="text-sm leading-6 text-muted">
+                            {rapport.stage.departement} · {rapport.stage.sujet}
+                          </p>
                         </div>
-                        <h2 className="text-xl font-semibold tracking-tight">
-                          {rapport.stage.stagiaire.user.prenom} {rapport.stage.stagiaire.user.nom}
-                        </h2>
-                        <p className="text-sm leading-6 text-muted">
-                          {rapport.stage.departement} · {rapport.stage.sujet}
-                        </p>
+
+                        <span className="text-sm font-semibold text-primary">Ouvrir le rapport</span>
                       </div>
 
-                      <span className="text-sm font-semibold text-primary">Ouvrir le rapport</span>
-                    </div>
-
-                    <div className="grid gap-4 md:grid-cols-3">
-                      <div className="tonal-card rounded-[22px] p-4">
-                        <p className="text-sm text-muted">
-                          {rapport.commentaireEncadrant ? "Retour encadrant" : "Action attendue"}
-                        </p>
-                        <p className="mt-2 line-clamp-2 text-sm font-medium">
-                          {rapport.commentaireEncadrant ?? getRapportNextActionLabel(rapport.statut)}
-                        </p>
-                      </div>
-                      <div className="tonal-card rounded-[22px] p-4">
-                        <p className="text-sm text-muted">Soumis le</p>
-                        <p className="mt-2 text-sm font-medium">
-                          {rapport.dateSoumission ? formatDate(rapport.dateSoumission) : "Non soumis"}
-                        </p>
-                      </div>
-                      <div className="tonal-card rounded-[22px] p-4">
-                        <p className="text-sm text-muted">Encadrant</p>
-                        <p className="mt-2 text-sm font-medium">
-                          {rapport.stage.encadrant
-                            ? `${rapport.stage.encadrant.prenom} ${rapport.stage.encadrant.nom}`.trim()
-                            : "Non affecte"}
-                        </p>
+                      <div className="grid gap-4 md:grid-cols-3">
+                        <div className="tonal-card rounded-[22px] p-4">
+                          <p className="text-sm text-muted">
+                            {rapport.commentaireEncadrant ? "Retour encadrant" : "Action attendue"}
+                          </p>
+                          <p className="mt-2 line-clamp-2 text-sm font-medium">
+                            {rapport.commentaireEncadrant ?? getRapportNextActionLabel(rapport.statut)}
+                          </p>
+                        </div>
+                        <div className="tonal-card rounded-[22px] p-4">
+                          <p className="text-sm text-muted">Soumis le</p>
+                          <p className="mt-2 text-sm font-medium">
+                            {rapport.dateSoumission ? formatDate(rapport.dateSoumission) : "Non soumis"}
+                          </p>
+                        </div>
+                        <div className="tonal-card rounded-[22px] p-4">
+                          <p className="text-sm text-muted">Encadrant</p>
+                          <p className="mt-2 text-sm font-medium">
+                            {rapport.stage.encadrant
+                              ? `${rapport.stage.encadrant.prenom} ${rapport.stage.encadrant.nom}`.trim()
+                              : "Non affecte"}
+                          </p>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              </Card>
-            </Link>
-          ))}
+                </Card>
+              </Link>
+            ))}
+          </div>
+
+          <PaginationControls
+            pathname="/rapports"
+            searchParams={params}
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.totalItems}
+            pageSize={pagination.pageSize}
+            startItem={pagination.startItem}
+            endItem={pagination.endItem}
+            itemLabel="rapports"
+          />
         </div>
       ) : (
         <EmptyState

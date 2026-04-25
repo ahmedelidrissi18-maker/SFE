@@ -1,7 +1,14 @@
 import bcrypt from "bcryptjs";
 import NextAuth, { CredentialsSignin } from "next-auth";
+import type { Session } from "next-auth";
+import type { AppProviders } from "next-auth/providers";
 import Credentials from "next-auth/providers/credentials";
+import GitHub from "next-auth/providers/github";
+import Google from "next-auth/providers/google";
+import type { Role } from "@prisma/client";
+import type { JWT } from "next-auth/jwt";
 import authConfig from "@/auth.config";
+import { getConfiguredLoginProviders } from "@/lib/auth-providers";
 import { logAuditEvent } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 import { extractRequestIp, extractUserAgent } from "@/lib/security/request";
@@ -31,6 +38,136 @@ class TwoFactorInvalidError extends CredentialsSignin {
 
 class RateLimitedSignInError extends CredentialsSignin {
   code = "rate_limited";
+}
+
+type AuthUserRecord = {
+  id: string;
+  email: string;
+  role: Role;
+  nom: string;
+  prenom: string;
+  isActive: boolean;
+};
+
+const configuredOAuthProviders = getConfiguredLoginProviders();
+const oauthProviders: AppProviders = [];
+
+if (configuredOAuthProviders.google) {
+  oauthProviders.push(
+    Google({
+      clientId: process.env.AUTH_GOOGLE_CLIENT_ID!.trim(),
+      clientSecret: process.env.AUTH_GOOGLE_CLIENT_SECRET!.trim(),
+    }),
+  );
+}
+
+if (configuredOAuthProviders.github) {
+  oauthProviders.push(
+    GitHub({
+      clientId: process.env.AUTH_GITHUB_CLIENT_ID!.trim(),
+      clientSecret: process.env.AUTH_GITHUB_CLIENT_SECRET!.trim(),
+    }),
+  );
+}
+
+function buildOAuthErrorRedirect(code: string) {
+  return `/login?error=${encodeURIComponent(code)}`;
+}
+
+function hydrateTokenFromUser(
+  token: JWT,
+  user?: {
+    id?: string;
+    role?: Role;
+    nom?: string;
+    prenom?: string;
+    name?: string | null;
+    email?: string | null;
+  } | null,
+) {
+  if (user?.id) {
+    token.id = user.id;
+  }
+
+  if (user?.role) {
+    token.role = user.role;
+  }
+
+  if (user?.nom) {
+    token.nom = user.nom;
+  }
+
+  if (user?.prenom) {
+    token.prenom = user.prenom;
+  }
+
+  if (user?.name) {
+    token.name = user.name;
+  }
+
+  if (user?.email) {
+    token.email = user.email;
+  }
+
+  return token;
+}
+
+function hydrateSessionFromToken(session: {
+  user?: Session["user"];
+} & Session, token: JWT) {
+  if (session.user) {
+    session.user.id = token.id as string;
+    session.user.role = token.role as "ADMIN" | "RH" | "ENCADRANT" | "STAGIAIRE";
+    session.user.nom = token.nom as string;
+    session.user.prenom = token.prenom as string;
+    session.user.name =
+      (token.name as string) || [token.prenom, token.nom].filter(Boolean).join(" ");
+  }
+
+  return session;
+}
+
+async function findOAuthUserByEmail(email: string) {
+  const normalizedEmail = email.trim();
+
+  if (!normalizedEmail) {
+    return null;
+  }
+
+  return prisma.user.findFirst({
+    where: {
+      email: {
+        equals: normalizedEmail,
+        mode: "insensitive",
+      },
+    },
+    select: {
+      id: true,
+      email: true,
+      role: true,
+      nom: true,
+      prenom: true,
+      isActive: true,
+    },
+  }) as Promise<AuthUserRecord | null>;
+}
+
+function applyOAuthUserRecord(user: {
+  id?: string;
+  email?: string | null;
+  role?: Role;
+  nom?: string;
+  prenom?: string;
+  name?: string | null;
+}, existingUser: AuthUserRecord) {
+  user.id = existingUser.id;
+  user.email = existingUser.email;
+  user.role = existingUser.role;
+  user.nom = existingUser.nom;
+  user.prenom = existingUser.prenom;
+  user.name = `${existingUser.prenom} ${existingUser.nom}`.trim();
+
+  return user;
 }
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -212,5 +349,117 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         };
       },
     }),
+    ...oauthProviders,
   ],
+  callbacks: {
+    async signIn({ user, account, profile }) {
+      if (!account || account.provider === "credentials") {
+        return true;
+      }
+
+      const email = user.email?.trim();
+
+      if (!email) {
+        return buildOAuthErrorRedirect("oauth_email_missing");
+      }
+
+      if (
+        account.provider === "google" &&
+        (profile as { email_verified?: boolean } | undefined)?.email_verified === false
+      ) {
+        return buildOAuthErrorRedirect("oauth_email_not_verified");
+      }
+
+      const existingUser = await findOAuthUserByEmail(email);
+
+      if (!existingUser) {
+        return buildOAuthErrorRedirect("oauth_account_not_allowed");
+      }
+
+      if (!existingUser.isActive) {
+        await logAuditEvent({
+          userId: existingUser.id,
+          action: "AUTH_LOGIN_FAILED",
+          entite: "AUTH",
+          entiteId: existingUser.id,
+          nouvelleValeur: {
+            email: existingUser.email,
+            provider: account.provider,
+            reason: "inactive_user",
+            oauth: true,
+          },
+        });
+
+        return buildOAuthErrorRedirect("oauth_account_not_allowed");
+      }
+
+      if (isSensitiveTwoFactorRole(existingUser.role)) {
+        await logAuditEvent({
+          userId: existingUser.id,
+          action: "AUTH_LOGIN_BLOCKED",
+          entite: "AUTH",
+          entiteId: existingUser.id,
+          nouvelleValeur: {
+            email: existingUser.email,
+            role: existingUser.role,
+            provider: account.provider,
+            reason: "sensitive_role_requires_credentials",
+            oauth: true,
+          },
+        });
+
+        return buildOAuthErrorRedirect("oauth_sensitive_role_blocked");
+      }
+
+      applyOAuthUserRecord(user, existingUser);
+
+      await logAuditEvent({
+        userId: existingUser.id,
+        action: "AUTH_LOGIN_SUCCESS",
+        entite: "AUTH",
+        entiteId: existingUser.id,
+        nouvelleValeur: {
+          email: existingUser.email,
+          role: existingUser.role,
+          provider: account.provider,
+          oauth: true,
+          twoFactorVerified: false,
+        },
+      });
+
+      return true;
+    },
+    async jwt({ token, user, account }) {
+      hydrateTokenFromUser(token, user);
+
+      if (
+        account &&
+        account.provider !== "credentials" &&
+        (!token.id || !token.role)
+      ) {
+        const oauthEmail =
+          user?.email ?? (typeof token.email === "string" ? token.email : null);
+
+        if (oauthEmail) {
+          const existingUser = await findOAuthUserByEmail(oauthEmail);
+
+          if (existingUser && existingUser.isActive && !isSensitiveTwoFactorRole(existingUser.role)) {
+            hydrateTokenFromUser(token, {
+              id: existingUser.id,
+              email: existingUser.email,
+              role: existingUser.role,
+              nom: existingUser.nom,
+              prenom: existingUser.prenom,
+              name: `${existingUser.prenom} ${existingUser.nom}`.trim(),
+            });
+          }
+        }
+      }
+
+      return token;
+    },
+    async session({ session, token }) {
+      return hydrateSessionFromToken(session, token);
+    },
+  },
 });

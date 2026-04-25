@@ -97,7 +97,7 @@ export function SessionDropdown({
 
         <LogoutButton
           formClassName="w-full"
-          className="w-full justify-center rounded-[18px] bg-surface-container-lowest px-4 py-3 shadow-[var(--shadow-soft)] hover:bg-white"
+          className="w-full justify-center rounded-[18px] bg-surface-container-lowest px-4 py-3 shadow-[var(--shadow-soft)] hover:bg-surface-container-high"
         />
       </div>
     </div>

@@ -7,6 +7,7 @@ import { MaterialSymbol } from "@/components/ui/material-symbol";
 import { MetricCard } from "@/components/ui/metric-card";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { formatDateTimeFr } from "@/lib/date";
 import {
   analyticsPeriodDefinitions,
   buildStageAttentionSummary,
@@ -34,13 +35,6 @@ type AnalyticsPageProps = {
 
 function getStringParam(value?: string | string[]) {
   return Array.isArray(value) ? value[0] : value;
-}
-
-function formatDateTime(value: string) {
-  return new Intl.DateTimeFormat("fr-FR", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(new Date(value));
 }
 
 function getMonitoringTone(status: MonitoringStatus) {
@@ -81,6 +75,25 @@ function getAttentionTone(key: "critical" | "warning" | "stable") {
 
 const metricIcons = ["schedule", "assignment", "pending_actions", "work_history"];
 const focusIcons = ["assignment", "schedule", "analytics", "description"];
+const analyticsFilterLabels = {
+  period: "Période",
+  department: "Département",
+  attention: "Vigilance",
+  limit: "Détail",
+} as const;
+const defaultAnalyticsDetailLimit = 8;
+
+function getAnalyticsMetricValueClassName(value: string) {
+  const normalizedValue = value.trim().toLowerCase();
+  const isEmptyLikeValue =
+    normalizedValue.startsWith("aucun") ||
+    normalizedValue.startsWith("aucune") ||
+    /^0([.,]0+)?\s*(%|h|j)?$/.test(normalizedValue);
+
+  return isEmptyLikeValue
+    ? "inline-flex w-fit items-center rounded-full bg-surface-container-high px-3 py-1 text-xl sm:text-2xl"
+    : undefined;
+}
 
 export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps) {
   const session = await auth();
@@ -112,6 +125,14 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
   const departmentOptions = getAnalyticsDepartmentOptions(overview.departments);
   const attentionFilterLabel =
     attentionOptions.find((option) => option.value === attentionFilter)?.label ?? "Toutes";
+  const activeFilterChips = [
+    period !== "monthly"
+      ? `${analyticsFilterLabels.period} : ${analyticsPeriodDefinitions[period].shortLabel}`
+      : null,
+    departmentFilter ? `${analyticsFilterLabels.department} : ${departmentFilter}` : null,
+    attentionFilter !== "all" ? `${analyticsFilterLabels.attention} : ${attentionFilterLabel}` : null,
+    detailLimit !== defaultAnalyticsDetailLimit ? `${analyticsFilterLabels.limit} : ${detailLimit} lignes` : null,
+  ].filter((chip): chip is string => Boolean(chip));
   const scopedStageDetails = filterStageAnalyticsDetails(overview.stageDetails, {
     department: departmentFilter,
   });
@@ -148,9 +169,9 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
   return (
     <div className="space-y-8">
       <PageHeader
-        eyebrow="Analytics"
-        title="Dashboard decisionnel Sprint 5"
-        description={`Suivez les KPI V2, les points de charge et la progression par departement sur ${analyticsPeriodDefinitions[period].label.toLowerCase()} pour ${overview.scopeLabel}.`}
+        eyebrow="Pilotage"
+        title="Tableau de bord analytique"
+        description="Suivez les KPIs, les points de charge et la progression par département sur les 30 derniers jours."
         actions={
           <>
             <Link
@@ -165,20 +186,20 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
               className="action-button action-button-secondary px-5 py-3 text-sm"
             >
               <MaterialSymbol icon="radar" className="text-[18px]" />
-              Export detail
+              Export détail
             </Link>
             <Link
               href={`/api/analytics/export?${departmentExportParams.toString()}`}
               className="action-button action-button-secondary px-5 py-3 text-sm"
             >
               <MaterialSymbol icon="bar_chart" className="text-[18px]" />
-              Export departements
+              Export départements
             </Link>
             <Link
               href="/dashboard"
               className="action-button action-button-secondary px-5 py-3 text-sm"
             >
-              Retour dashboard
+              Retour au dashboard
             </Link>
           </>
         }
@@ -188,16 +209,16 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-sm font-medium text-primary">Pilotage</p>
-            <h2 className="mt-1 text-2xl font-semibold tracking-tight">Fenetre d analyse</h2>
+            <h2 className="mt-1 text-2xl font-semibold tracking-tight">Fenêtre d&apos;analyse</h2>
             <p className="mt-2 text-sm leading-6 text-muted">
-              Les calculs sont centres sur la periode selectionnee et sur votre perimetre d acces.
-              Fenetre actuelle : {overview.range.label}.
+              Les calculs sont centrés sur la période sélectionnée et sur votre périmètre d’accès.
+              Fenêtre actuelle : {overview.range.label}.
             </p>
           </div>
 
           <div className="flex flex-col items-start gap-2 text-sm text-muted lg:items-end">
             <p>
-              Genere le <span className="font-medium text-foreground">{formatDateTime(meta.generatedAt)}</span>
+              Généré le <span className="font-medium text-foreground">{formatDateTimeFr(meta.generatedAt)}</span>
             </p>
             <span
               className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${meta.cached ? "bg-secondary-fixed text-on-secondary-fixed" : "bg-surface-container-high text-on-surface-variant"}`}
@@ -209,7 +230,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
 
         <form className="flex flex-wrap items-end gap-3">
           <label className="space-y-2 text-sm">
-            <span className="font-medium">Periode</span>
+            <span className="font-medium">Période</span>
             <select
               name="period"
               defaultValue={period}
@@ -224,13 +245,13 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
           </label>
 
           <label className="space-y-2 text-sm">
-            <span className="font-medium">Departement</span>
+            <span className="font-medium">Département</span>
             <select
               name="department"
               defaultValue={departmentFilter ?? ""}
               className="field-shell min-w-[220px] rounded-2xl px-4 py-3 outline-none transition"
             >
-              <option value="">Tous les departements</option>
+              <option value="">Tous les départements</option>
               {departmentOptions.map((department) => (
                 <option key={department} value={department}>
                   {department}
@@ -255,7 +276,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
           </label>
 
           <label className="space-y-2 text-sm">
-            <span className="font-medium">Volume detail</span>
+            <span className="font-medium">Volume détaillé</span>
             <select
               name="limit"
               defaultValue={detailLimit}
@@ -277,20 +298,18 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
           </button>
         </form>
 
-        <div className="flex flex-wrap gap-2 text-xs text-muted">
-          <span className="rounded-full bg-surface-container-high px-3 py-1">
-            Periode : {analyticsPeriodDefinitions[period].shortLabel}
-          </span>
-          <span className="rounded-full bg-surface-container-high px-3 py-1">
-            Departement : {departmentFilter ?? "Tous"}
-          </span>
-          <span className="rounded-full bg-surface-container-high px-3 py-1">
-            Vigilance : {attentionFilterLabel}
-          </span>
-          <span className="rounded-full bg-surface-container-high px-3 py-1">
-            Detail : {detailLimit} lignes
-          </span>
-        </div>
+        {activeFilterChips.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-2 text-xs text-muted">
+            <span className="font-semibold uppercase tracking-[0.14em] text-on-surface-variant">
+              Filtres actifs
+            </span>
+            {activeFilterChips.map((chip) => (
+              <span key={chip} className="rounded-full bg-surface-container-high px-3 py-1">
+                {chip}
+              </span>
+            ))}
+          </div>
+        ) : null}
       </Card>
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -303,6 +322,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
               label={metric.label}
               value={metric.value}
               helper={metric.helper}
+              valueClassName={getAnalyticsMetricValueClassName(metric.value)}
               accent={<MaterialSymbol icon={icon} className="text-[20px]" />}
             />
           );
@@ -319,6 +339,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
               label={item.label}
               value={item.value}
               helper={item.helper}
+              valueClassName={getAnalyticsMetricValueClassName(item.value)}
               accent={<MaterialSymbol icon={icon} className="text-[20px]" />}
             />
           );
@@ -329,11 +350,11 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
         <Card className="space-y-5">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-sm font-medium text-primary">Departements</p>
+              <p className="text-sm font-medium text-primary">Départements</p>
               <h2 className="mt-1 text-2xl font-semibold tracking-tight">Progression moyenne</h2>
             </div>
             <p className="text-sm text-muted">
-              {filteredDepartments.length} departement
+              {filteredDepartments.length} département
               {filteredDepartments.length > 1 ? "s" : ""} visible
               {filteredDepartments.length > 1 ? "s" : ""}
             </p>
@@ -351,7 +372,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
                       <h3 className="text-lg font-semibold">{department.departement}</h3>
                       <p className="text-sm leading-6 text-muted">
                         {department.stageCount} stage{department.stageCount > 1 ? "s" : ""} sur la
-                        periode, {department.activeStageCount} actif
+                        période, {department.activeStageCount} actif
                         {department.activeStageCount > 1 ? "s" : ""},{" "}
                         {department.trackedReportsCount} rapport
                         {department.trackedReportsCount > 1 ? "s" : ""} exploitable
@@ -375,15 +396,15 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
             </div>
           ) : (
             <EmptyState
-              eyebrow="Analytics"
-              title="Aucun departement exploitable"
+              eyebrow="Analytique"
+              title="Aucun département exploitable"
               description={
                 departmentFilter
-                  ? `Le departement ${departmentFilter} ne remonte aucune activite exploitable sur la periode choisie.`
-                  : "Aucune activite visible ne permet encore de calculer une progression moyenne sur la periode choisie."
+                  ? `Le département ${departmentFilter} ne remonte aucune activité exploitable sur la période choisie.`
+                  : "Aucune activité visible ne permet encore de calculer une progression moyenne sur la période choisie."
               }
               actionHref="/analytics"
-              actionLabel="Revenir a la vue complete"
+              actionLabel="Revenir à la vue complète"
             />
           )}
         </Card>
@@ -391,9 +412,9 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
         <Card className="space-y-5">
           <div>
             <p className="text-sm font-medium text-primary">Couverture</p>
-            <h2 className="mt-1 text-2xl font-semibold tracking-tight">Volume exploite</h2>
+            <h2 className="mt-1 text-2xl font-semibold tracking-tight">Volume exploité</h2>
             <p className="mt-2 text-sm leading-6 text-muted">
-              Cette vue centralise les lots reels pris en compte dans les calculs de la periode.
+              Cette vue centralise les lots réels pris en compte dans les calculs de la période.
             </p>
           </div>
 
@@ -403,15 +424,15 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
               <p className="mt-2 text-2xl font-semibold">{overview.totals.stageCount}</p>
             </div>
             <div className="tonal-card rounded-[22px] p-4">
-              <p className="text-sm text-muted">Rapports traites</p>
+              <p className="text-sm text-muted">Rapports traités</p>
               <p className="mt-2 text-2xl font-semibold">{overview.totals.reportCount}</p>
             </div>
             <div className="tonal-card rounded-[22px] p-4">
-              <p className="text-sm text-muted">Evaluations suivies</p>
+              <p className="text-sm text-muted">Évaluations suivies</p>
               <p className="mt-2 text-2xl font-semibold">{overview.totals.evaluationCount}</p>
             </div>
             <div className="tonal-card rounded-[22px] p-4">
-              <p className="text-sm text-muted">Documents valides</p>
+              <p className="text-sm text-muted">Documents validés</p>
               <p className="mt-2 text-2xl font-semibold">{overview.totals.documentCount}</p>
             </div>
           </div>
@@ -422,7 +443,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
         <Card className="space-y-5">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-medium text-primary">Surveillance metier</p>
+              <p className="text-sm font-medium text-primary">Surveillance métier</p>
               <h2 className="mt-1 text-2xl font-semibold tracking-tight">Alertes actives</h2>
             </div>
             <MaterialSymbol icon="warning" className="text-[20px] text-primary" />
@@ -449,8 +470,8 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
             </div>
           ) : (
             <EmptyState
-              title="Aucune alerte metier"
-              description="Les KPI critiques sont dans la cible sur la fenetre et le backlog reste contenu."
+              title="Aucune alerte métier"
+              description="Les KPI critiques sont dans la cible sur la fenêtre et le backlog reste contenu."
             />
           )}
         </Card>
@@ -458,10 +479,10 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
         <Card className="space-y-5">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-medium text-primary">Sante technique</p>
-              <h2 className="mt-1 text-2xl font-semibold tracking-tight">Observabilite analytics</h2>
+              <p className="text-sm font-medium text-primary">Santé technique</p>
+              <h2 className="mt-1 text-2xl font-semibold tracking-tight">Observabilité analytics</h2>
               <p className="mt-2 text-sm leading-6 text-muted">
-                Fenetre glissante de {monitoring.windowMinutes} minutes sur les chargements et exports.
+                Fenêtre glissante de {monitoring.windowMinutes} minutes sur les chargements et exports.
               </p>
             </div>
             <StatusBadge
@@ -498,7 +519,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
                       <span className="font-semibold text-foreground">{scope.averageMs ?? "-"} ms</span>
                     </p>
                     <p>
-                      requetes{" "}
+                      requêtes{" "}
                       <span className="font-semibold text-foreground">{scope.requestCount}</span>
                     </p>
                     <p>
@@ -527,7 +548,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
             </div>
           ) : (
             <div className="rounded-[20px] bg-secondary-fixed p-4 text-sm text-on-secondary-fixed">
-              Aucun depassement technique detecte sur la fenetre recente.
+              Aucun dépassement technique détecté sur la fenêtre récente.
             </div>
           )}
         </Card>
@@ -536,17 +557,17 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
       <Card className="space-y-5">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <p className="text-sm font-medium text-primary">Vues detaillees</p>
-            <h2 className="mt-1 text-2xl font-semibold tracking-tight">Stages a surveiller</h2>
+            <p className="text-sm font-medium text-primary">Vues détaillées</p>
+            <h2 className="mt-1 text-2xl font-semibold tracking-tight">Stages à surveiller</h2>
             <p className="mt-2 text-sm leading-6 text-muted">
-              Priorisation des dossiers les plus sensibles sur la fenetre selectionnee, avec filtres
-              par departement et niveau de vigilance.
+              Priorisation des dossiers les plus sensibles sur la fenêtre sélectionnée, avec filtres
+              par département et niveau de vigilance.
             </p>
           </div>
           <div className="flex items-center gap-2 text-sm text-muted">
             <MaterialSymbol icon="speed" className="text-[18px]" />
             {filteredStageDetails.length} stage
-            {filteredStageDetails.length > 1 ? "s" : ""} affiche
+            {filteredStageDetails.length > 1 ? "s" : ""} affiché
             {filteredStageDetails.length > 1 ? "s" : ""} sur {scopedStageDetails.length}
           </div>
         </div>
@@ -559,7 +580,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
             >
               <p className="text-xs uppercase tracking-[0.16em]">Vigilance</p>
               <p className="mt-2 text-lg font-semibold">{summary.label}</p>
-              <p className="mt-1 text-sm">{summary.count} stage(s) sur le perimetre filtre</p>
+              <p className="mt-1 text-sm">{summary.count} stage(s) sur le périmètre filtré</p>
             </div>
           ))}
         </div>
@@ -598,7 +619,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
                       <p className="mt-2 text-sm font-semibold">{stage.latestReportAtLabel}</p>
                     </div>
                     <div className="rounded-[18px] bg-surface-container-lowest p-3 shadow-[var(--shadow-soft)]">
-                      <p className="text-xs uppercase tracking-[0.16em] text-muted">Echeance</p>
+                      <p className="text-xs uppercase tracking-[0.16em] text-muted">Échéance</p>
                       <p className="mt-2 text-sm font-semibold">{stage.daysUntilEndLabel}</p>
                     </div>
                     <div className="rounded-[18px] bg-surface-container-lowest p-3 shadow-[var(--shadow-soft)]">
@@ -606,9 +627,9 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
                       <p className="mt-2 text-sm font-semibold">{stage.pendingReportsCount} en attente</p>
                     </div>
                     <div className="rounded-[18px] bg-surface-container-lowest p-3 shadow-[var(--shadow-soft)]">
-                      <p className="text-xs uppercase tracking-[0.16em] text-muted">Evaluations</p>
+                      <p className="text-xs uppercase tracking-[0.16em] text-muted">Évaluations</p>
                       <p className="mt-2 text-sm font-semibold">
-                        {stage.pendingEvaluationsCount} a valider
+                        {stage.pendingEvaluationsCount} à valider
                       </p>
                     </div>
                     <div className="rounded-[18px] bg-surface-container-lowest p-3 shadow-[var(--shadow-soft)]">
@@ -624,11 +645,11 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
           </div>
         ) : (
           <EmptyState
-            eyebrow="Analytics"
-            title="Aucun stage detaille"
-            description="Aucun stage ne correspond aux filtres actifs sur la fenetre courante."
+            eyebrow="Analytique"
+            title="Aucun stage détaillé"
+            description="Aucun stage ne correspond aux filtres actifs sur la fenêtre courante."
             actionHref="/analytics"
-            actionLabel="Revenir a la vue complete"
+            actionLabel="Revenir à la vue complète"
           />
         )}
       </Card>

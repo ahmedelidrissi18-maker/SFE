@@ -1,6 +1,9 @@
-import { NextResponse } from "next/server";
+import { after, NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { processPendingNotificationDispatchJobs } from "@/lib/notifications";
+import {
+  ensureEndingSoonNotifications,
+  processPendingNotificationDispatchJobs,
+} from "@/lib/notifications";
 import { hasRole } from "@/lib/rbac";
 import { buildActorRateLimitKey, buildRateLimitedResponse, extractRequestIp } from "@/lib/security/request";
 import { consumeRateLimit, securityRateLimits } from "@/lib/security/rate-limit";
@@ -41,10 +44,21 @@ export async function POST(request: Request) {
     });
   }
 
-  const result = await processPendingNotificationDispatchJobs(20);
-
-  return NextResponse.json({
-    status: "ok",
-    ...result,
+  after(async () => {
+    try {
+      await Promise.all([
+        ensureEndingSoonNotifications(),
+        processPendingNotificationDispatchJobs(20),
+      ]);
+    } catch (error) {
+      console.error("notification_dispatch_after_failed", error);
+    }
   });
+
+  return NextResponse.json(
+    {
+      status: "accepted",
+    },
+    { status: 202 },
+  );
 }

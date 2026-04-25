@@ -7,6 +7,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { FeedbackBanner } from "@/components/ui/feedback-banner";
 import { MaterialSymbol } from "@/components/ui/material-symbol";
 import { MetricCard } from "@/components/ui/metric-card";
+import { PaginationControls } from "@/components/ui/pagination-controls";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
 import {
@@ -14,9 +15,10 @@ import {
   getDocumentSourceLabel,
   getDocumentStatusLabel,
   getDocumentTypeLabel,
-  getSignatureStatusLabel,
   getDocumentVisibilityFilter,
+  getSignatureStatusLabel,
 } from "@/lib/documents";
+import { getPaginationMeta, parsePageParam } from "@/lib/pagination";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/stagiaires";
 
@@ -26,6 +28,11 @@ type DocumentsPageProps = {
 
 function getStringParam(value?: string | string[]) {
   return Array.isArray(value) ? value[0] : value;
+}
+
+function getDocumentOwnerLabel(user: { prenom?: string | null; nom?: string | null; email?: string | null }) {
+  const fullName = `${user.prenom ?? ""} ${user.nom ?? ""}`.trim();
+  return fullName || user.email || "Stagiaire";
 }
 
 function getDocumentNextActionLabel(status: string, signatureStatus: string) {
@@ -67,51 +74,92 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
   const statut = getStringParam(params.statut)?.trim() ?? "";
   const type = getStringParam(params.type)?.trim() ?? "";
   const success = getStringParam(params.success)?.trim() ?? "";
-
+  const requestedPage = parsePageParam(params.page);
+  const pageSize = 10;
   const visibilityFilter = getDocumentVisibilityFilter(session.user.role, session.user.id);
+  const documentWhere = {
+    isDeleted: false,
+    ...visibilityFilter,
+    ...(statut ? { statut: statut as never } : {}),
+    ...(type ? { type: type as never } : {}),
+  };
 
-  const [documents, stages] = await Promise.all([
-    prisma.document.findMany({
-      where: {
-        isDeleted: false,
-        ...visibilityFilter,
-        ...(statut ? { statut: statut as never } : {}),
-        ...(type ? { type: type as never } : {}),
-      },
-      include: {
-        stage: {
-          include: {
-            stagiaire: {
-              include: {
-                user: true,
-              },
-            },
-            encadrant: true,
-          },
+  const [totalDocumentsCount, pendingCount, validatedCount, rejectedCount, stages] =
+    await Promise.all([
+      prisma.document.count({
+        where: documentWhere,
+      }),
+      prisma.document.count({
+        where: {
+          ...documentWhere,
+          statut: "EN_VERIFICATION",
         },
-        auteur: true,
-      },
-      orderBy: [{ updatedAt: "desc" }],
-    }),
-    session.user.role === "STAGIAIRE"
-      ? Promise.resolve([])
-      : prisma.stage.findMany({
-          where:
-            session.user.role === "ENCADRANT" ? { encadrantId: session.user.id } : undefined,
-          include: {
-            stagiaire: {
-              include: {
-                user: true,
+      }),
+      prisma.document.count({
+        where: {
+          ...documentWhere,
+          statut: "VALIDE",
+        },
+      }),
+      prisma.document.count({
+        where: {
+          ...documentWhere,
+          statut: "REJETE",
+        },
+      }),
+      session.user.role === "STAGIAIRE"
+        ? Promise.resolve([])
+        : prisma.stage.findMany({
+            where:
+              session.user.role === "ENCADRANT"
+                ? { encadrantId: session.user.id }
+                : undefined,
+            select: {
+              id: true,
+              departement: true,
+              sujet: true,
+              stagiaire: {
+                select: {
+                  user: {
+                    select: {
+                      prenom: true,
+                      nom: true,
+                      email: true,
+                    },
+                  },
+                },
               },
             },
-          },
-          orderBy: [{ dateDebut: "desc" }],
-        }),
-  ]);
+            orderBy: [{ dateDebut: "desc" }],
+          }),
+    ]);
 
-  const pendingCount = documents.filter((document) => document.statut === "EN_VERIFICATION").length;
-  const validatedCount = documents.filter((document) => document.statut === "VALIDE").length;
-  const rejectedCount = documents.filter((document) => document.statut === "REJETE").length;
+  const pagination = getPaginationMeta({
+    requestedPage,
+    totalItems: totalDocumentsCount,
+    pageSize,
+  });
+
+  const documents = await prisma.document.findMany({
+    where: documentWhere,
+    include: {
+      stage: {
+        include: {
+          stagiaire: {
+            include: {
+              user: true,
+            },
+          },
+          encadrant: true,
+        },
+      },
+      auteur: true,
+    },
+    orderBy: [{ updatedAt: "desc" }],
+    skip: pagination.skip,
+    take: pagination.take,
+  });
+
   const hasActiveFilters = Boolean(statut || type);
 
   return (
@@ -133,7 +181,7 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           label="Documents visibles"
-          value={documents.length}
+          value={totalDocumentsCount}
           helper="Documents accessibles selon votre role et votre perimetre"
           accent={<MaterialSymbol icon="folder" className="text-[20px]" />}
         />
@@ -213,67 +261,85 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
         <PdfGenerationForm
           stages={stages.map((stage) => ({
             id: stage.id,
-            label: `${stage.stagiaire.user.prenom} ${stage.stagiaire.user.nom} · ${stage.departement} · ${stage.sujet}`,
+            label: `${getDocumentOwnerLabel(stage.stagiaire.user)} · ${stage.departement} · ${stage.sujet}`,
           }))}
           action={requestPdfGenerationAction}
         />
       ) : null}
 
       {documents.length > 0 ? (
-        <div className="grid gap-4 xl:grid-cols-2">
-          {documents.map((document) => (
-            <Card key={document.id} className="space-y-5">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="space-y-2">
-                  <div className="flex flex-wrap gap-2">
-                    <StatusBadge status={getDocumentStatusLabel(document.statut)} />
-                    <StatusBadge status={getDocumentSourceLabel(document.source)} />
-                    <StatusBadge status={getSignatureStatusLabel(document.signatureStatus)} />
+        <div className="space-y-4">
+          <div className="grid gap-4 xl:grid-cols-2">
+            {documents.map((document) => (
+              <Card key={document.id} className="space-y-5">
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="min-w-0 flex-1 space-y-1.5">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <StatusBadge status={getDocumentStatusLabel(document.statut)} />
+                      <StatusBadge status={getDocumentSourceLabel(document.source)} />
+                      <StatusBadge status={getSignatureStatusLabel(document.signatureStatus)} />
+                    </div>
+                    <h2
+                      className="line-clamp-2 break-words text-xl font-semibold tracking-tight sm:text-2xl"
+                      title={document.nom}
+                    >
+                      {document.nom}
+                    </h2>
+                    <p className="line-clamp-1 text-sm leading-6 text-muted">
+                      {getDocumentOwnerLabel(document.stage.stagiaire.user)} · {document.stage.departement}
+                    </p>
                   </div>
-                  <h2 className="text-2xl font-semibold tracking-tight">{document.nom}</h2>
-                  <p className="text-sm leading-6 text-muted">
-                    {`${document.stage.stagiaire.user.prenom} ${document.stage.stagiaire.user.nom}`.trim()} ·{" "}
-                    {document.stage.departement}
-                  </p>
+
+                  <Link
+                    href={`/documents/${document.id}`}
+                    className="action-button action-button-primary shrink-0 whitespace-nowrap px-4 py-2.5 text-sm"
+                  >
+                    Ouvrir
+                  </Link>
                 </div>
 
-                <Link
-                  href={`/documents/${document.id}`}
-                  className="action-button action-button-primary px-4 py-2.5 text-sm"
-                >
-                  Ouvrir
-                </Link>
-              </div>
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  <div className="tonal-card rounded-[22px] p-4">
+                    <p className="text-sm text-muted">Type</p>
+                    <p className="mt-2 text-sm font-medium">{getDocumentTypeLabel(document.type)}</p>
+                  </div>
+                  <div className="tonal-card rounded-[22px] p-4">
+                    <p className="text-sm text-muted">Taille</p>
+                    <p className="mt-2 text-sm font-medium">{formatDocumentSize(document.tailleOctets)}</p>
+                  </div>
+                  <div className="tonal-card rounded-[22px] p-4">
+                    <p className="text-sm text-muted">Version</p>
+                    <p className="mt-2 text-sm font-medium">v{document.version}</p>
+                  </div>
+                  <div className="tonal-card rounded-[22px] p-4 sm:col-span-2">
+                    <p className="text-sm text-muted">Auteur</p>
+                    <p className="mt-2 text-sm font-medium">
+                      {`${document.auteur.prenom} ${document.auteur.nom}`.trim()}
+                    </p>
+                    <p className="mt-1 text-xs text-muted">Maj {formatDate(document.updatedAt)}</p>
+                  </div>
+                  <div className="tonal-card rounded-[22px] p-4">
+                    <p className="text-sm text-muted">Action attendue</p>
+                    <p className="mt-2 text-sm font-medium">
+                      {getDocumentNextActionLabel(document.statut, document.signatureStatus)}
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
 
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                <div className="tonal-card rounded-[22px] p-4">
-                  <p className="text-sm text-muted">Type</p>
-                  <p className="mt-2 text-sm font-medium">{getDocumentTypeLabel(document.type)}</p>
-                </div>
-                <div className="tonal-card rounded-[22px] p-4">
-                  <p className="text-sm text-muted">Taille</p>
-                  <p className="mt-2 text-sm font-medium">{formatDocumentSize(document.tailleOctets)}</p>
-                </div>
-                <div className="tonal-card rounded-[22px] p-4">
-                  <p className="text-sm text-muted">Version</p>
-                  <p className="mt-2 text-sm font-medium">v{document.version}</p>
-                </div>
-                <div className="tonal-card rounded-[22px] p-4 sm:col-span-2">
-                  <p className="text-sm text-muted">Auteur</p>
-                  <p className="mt-2 text-sm font-medium">
-                    {`${document.auteur.prenom} ${document.auteur.nom}`.trim()}
-                  </p>
-                  <p className="mt-1 text-xs text-muted">Maj {formatDate(document.updatedAt)}</p>
-                </div>
-                <div className="tonal-card rounded-[22px] p-4">
-                  <p className="text-sm text-muted">Action attendue</p>
-                  <p className="mt-2 text-sm font-medium">
-                    {getDocumentNextActionLabel(document.statut, document.signatureStatus)}
-                  </p>
-                </div>
-              </div>
-            </Card>
-          ))}
+          <PaginationControls
+            pathname="/documents"
+            searchParams={params}
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.totalItems}
+            pageSize={pagination.pageSize}
+            startItem={pagination.startItem}
+            endItem={pagination.endItem}
+            itemLabel="documents"
+          />
         </div>
       ) : (
         <EmptyState

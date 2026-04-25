@@ -1,42 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { MaterialSymbol } from "@/components/ui/material-symbol";
+import { useNotificationRealtimeSelector } from "@/components/features/notifications/notification-realtime-store";
 
-type LiveNotificationLinkProps = {
-  initialUnreadCount: number;
-};
-
-type RealtimePayload = {
-  kind?: string;
-  unreadCount?: number;
-};
-
-export function LiveNotificationLink({
-  initialUnreadCount,
-}: LiveNotificationLinkProps) {
-  const [unreadCount, setUnreadCount] = useState(initialUnreadCount);
-
-  useEffect(() => {
-    const eventSource = new EventSource("/api/notifications/stream");
-
-    eventSource.onmessage = (event) => {
-      try {
-        const payload = JSON.parse(event.data) as RealtimePayload;
-
-        if (typeof payload.unreadCount === "number") {
-          setUnreadCount(payload.unreadCount);
-        }
-      } catch {
-        return;
-      }
-    };
-
-    return () => {
-      eventSource.close();
-    };
-  }, []);
+export function LiveNotificationLink() {
+  const unreadCount = useNotificationRealtimeSelector((state) => state.unreadCount);
 
   return (
     <Link

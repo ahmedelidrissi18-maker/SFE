@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { MaterialSymbol } from "@/components/ui/material-symbol";
 import { MetricCard } from "@/components/ui/metric-card";
+import { PaginationControls } from "@/components/ui/pagination-controls";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
 import {
@@ -12,6 +13,7 @@ import {
   getEvaluationTypeLabel,
   getEvaluationVisibilityFilter,
 } from "@/lib/evaluations";
+import { getPaginationMeta, parsePageParam } from "@/lib/pagination";
 import { prisma } from "@/lib/prisma";
 import { formatDate } from "@/lib/stagiaires";
 
@@ -49,16 +51,65 @@ export default async function EvaluationsPage({ searchParams }: EvaluationsPageP
   const statut = getStringParam(params.statut)?.trim() ?? "";
   const type = getStringParam(params.type)?.trim() ?? "";
   const highlight = getStringParam(params.highlight)?.trim() ?? "";
+  const requestedPage = parsePageParam(params.page);
+  const pageSize = 10;
   const now = new Date();
   const soonDate = new Date(now);
   soonDate.setDate(soonDate.getDate() + 15);
 
+  const evaluationWhere = {
+    ...getEvaluationVisibilityFilter(session.user.role, session.user.id),
+    ...(statut ? { status: statut as EvaluationStatus } : {}),
+    ...(type ? { type: type as EvaluationType } : {}),
+  };
+
+  const [
+    totalEvaluationsCount,
+    submittedCount,
+    returnedCount,
+    validatedCount,
+    upcomingCount,
+  ] = await Promise.all([
+    prisma.evaluation.count({
+      where: evaluationWhere,
+    }),
+    prisma.evaluation.count({
+      where: {
+        ...evaluationWhere,
+        status: EvaluationStatus.SOUMIS,
+      },
+    }),
+    prisma.evaluation.count({
+      where: {
+        ...evaluationWhere,
+        status: EvaluationStatus.RETOURNE,
+      },
+    }),
+    prisma.evaluation.count({
+      where: {
+        ...evaluationWhere,
+        status: EvaluationStatus.VALIDE,
+      },
+    }),
+    prisma.evaluation.count({
+      where: {
+        ...evaluationWhere,
+        scheduledFor: {
+          gte: now,
+          lte: soonDate,
+        },
+      },
+    }),
+  ]);
+
+  const pagination = getPaginationMeta({
+    requestedPage,
+    totalItems: totalEvaluationsCount,
+    pageSize,
+  });
+
   const evaluations = await prisma.evaluation.findMany({
-    where: {
-      ...getEvaluationVisibilityFilter(session.user.role, session.user.id),
-      ...(statut ? { status: statut as EvaluationStatus } : {}),
-      ...(type ? { type: type as EvaluationType } : {}),
-    },
+    where: evaluationWhere,
     include: {
       stage: {
         include: {
@@ -72,24 +123,10 @@ export default async function EvaluationsPage({ searchParams }: EvaluationsPageP
       },
     },
     orderBy: [{ scheduledFor: "asc" }, { updatedAt: "desc" }],
+    skip: pagination.skip,
+    take: pagination.take,
   });
 
-  const submittedCount = evaluations.filter(
-    (evaluation) => evaluation.status === EvaluationStatus.SOUMIS,
-  ).length;
-  const returnedCount = evaluations.filter(
-    (evaluation) => evaluation.status === EvaluationStatus.RETOURNE,
-  ).length;
-  const validatedCount = evaluations.filter(
-    (evaluation) => evaluation.status === EvaluationStatus.VALIDE,
-  ).length;
-  const upcomingCount = evaluations.filter((evaluation) => {
-    if (!evaluation.scheduledFor) {
-      return false;
-    }
-
-    return evaluation.scheduledFor >= now && evaluation.scheduledFor <= soonDate;
-  }).length;
   const hasActiveFilters = Boolean(statut || type);
 
   return (
@@ -113,7 +150,7 @@ export default async function EvaluationsPage({ searchParams }: EvaluationsPageP
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           label="Evaluations visibles"
-          value={evaluations.length}
+          value={totalEvaluationsCount}
           helper="Toutes les evaluations accessibles selon votre role"
           accent={<MaterialSymbol icon="grading" className="text-[20px]" />}
         />
@@ -193,70 +230,84 @@ export default async function EvaluationsPage({ searchParams }: EvaluationsPageP
       </Card>
 
       {evaluations.length > 0 ? (
-        <div className="grid gap-4 xl:grid-cols-2">
-          {evaluations.map((evaluation) => (
-            <Card
-              key={evaluation.id}
-              className={
-                highlight === evaluation.id
-                  ? "space-y-5 bg-linear-to-br from-card via-card to-accent/35 shadow-[0px_18px_35px_rgba(26,28,29,0.08)]"
-                  : "space-y-5"
-              }
-            >
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                <div className="space-y-2">
-                  <div className="flex flex-wrap gap-2">
-                    <StatusBadge status={getEvaluationStatusLabel(evaluation.status)} />
+        <div className="space-y-4">
+          <div className="grid gap-4 xl:grid-cols-2">
+            {evaluations.map((evaluation) => (
+              <Card
+                key={evaluation.id}
+                className={
+                  highlight === evaluation.id
+                    ? "space-y-5 bg-linear-to-br from-card via-card to-accent/35 shadow-[0px_18px_35px_rgba(26,28,29,0.08)]"
+                    : "space-y-5"
+                }
+              >
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap gap-2">
+                      <StatusBadge status={getEvaluationStatusLabel(evaluation.status)} />
+                    </div>
+                    <h2 className="text-2xl font-semibold tracking-tight">
+                      {getEvaluationTypeLabel(evaluation.type)}
+                    </h2>
+                    <p className="text-sm leading-6 text-muted">
+                      {`${evaluation.stage.stagiaire.user.prenom} ${evaluation.stage.stagiaire.user.nom}`.trim()} -{" "}
+                      {evaluation.stage.departement}
+                    </p>
                   </div>
-                  <h2 className="text-2xl font-semibold tracking-tight">
-                    {getEvaluationTypeLabel(evaluation.type)}
-                  </h2>
-                  <p className="text-sm leading-6 text-muted">
-                    {`${evaluation.stage.stagiaire.user.prenom} ${evaluation.stage.stagiaire.user.nom}`.trim()} ·{" "}
-                    {evaluation.stage.departement}
-                  </p>
+
+                  <Link
+                    href={`/evaluations/${evaluation.id}`}
+                    className="action-button action-button-primary px-4 py-2.5 text-sm"
+                  >
+                    Ouvrir
+                  </Link>
                 </div>
 
-                <Link
-                  href={`/evaluations/${evaluation.id}`}
-                  className="action-button action-button-primary px-4 py-2.5 text-sm"
-                >
-                  Ouvrir
-                </Link>
-              </div>
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  <div className="tonal-card rounded-[22px] p-4">
+                    <p className="text-sm text-muted">Score</p>
+                    <p className="mt-2 text-sm font-medium">
+                      {evaluation.totalScore}/{evaluation.maxScore}
+                    </p>
+                  </div>
+                  <div className="tonal-card rounded-[22px] p-4">
+                    <p className="text-sm text-muted">Planifiee le</p>
+                    <p className="mt-2 text-sm font-medium">{formatDate(evaluation.scheduledFor)}</p>
+                  </div>
+                  <div className="tonal-card rounded-[22px] p-4">
+                    <p className="text-sm text-muted">Encadrant</p>
+                    <p className="mt-2 text-sm font-medium">
+                      {evaluation.stage.encadrant
+                        ? `${evaluation.stage.encadrant.prenom} ${evaluation.stage.encadrant.nom}`.trim()
+                        : "Non affecte"}
+                    </p>
+                  </div>
+                  <div className="tonal-card rounded-[22px] p-4 sm:col-span-2 xl:col-span-3">
+                    <p className="text-sm text-muted">Sujet</p>
+                    <p className="mt-2 text-sm font-medium">{evaluation.stage.sujet}</p>
+                  </div>
+                  <div className="tonal-card rounded-[22px] p-4 sm:col-span-2 xl:col-span-3">
+                    <p className="text-sm text-muted">Action attendue</p>
+                    <p className="mt-2 text-sm font-medium">
+                      {getEvaluationNextActionLabel(evaluation.status)}
+                    </p>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
 
-              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                <div className="tonal-card rounded-[22px] p-4">
-                  <p className="text-sm text-muted">Score</p>
-                  <p className="mt-2 text-sm font-medium">
-                    {evaluation.totalScore}/{evaluation.maxScore}
-                  </p>
-                </div>
-                <div className="tonal-card rounded-[22px] p-4">
-                  <p className="text-sm text-muted">Planifiee le</p>
-                  <p className="mt-2 text-sm font-medium">{formatDate(evaluation.scheduledFor)}</p>
-                </div>
-                <div className="tonal-card rounded-[22px] p-4">
-                  <p className="text-sm text-muted">Encadrant</p>
-                  <p className="mt-2 text-sm font-medium">
-                    {evaluation.stage.encadrant
-                      ? `${evaluation.stage.encadrant.prenom} ${evaluation.stage.encadrant.nom}`.trim()
-                      : "Non affecte"}
-                  </p>
-                </div>
-                <div className="tonal-card rounded-[22px] p-4 sm:col-span-2 xl:col-span-3">
-                  <p className="text-sm text-muted">Sujet</p>
-                  <p className="mt-2 text-sm font-medium">{evaluation.stage.sujet}</p>
-                </div>
-                <div className="tonal-card rounded-[22px] p-4 sm:col-span-2 xl:col-span-3">
-                  <p className="text-sm text-muted">Action attendue</p>
-                  <p className="mt-2 text-sm font-medium">
-                    {getEvaluationNextActionLabel(evaluation.status)}
-                  </p>
-                </div>
-              </div>
-            </Card>
-          ))}
+          <PaginationControls
+            pathname="/evaluations"
+            searchParams={params}
+            currentPage={pagination.currentPage}
+            totalPages={pagination.totalPages}
+            totalItems={pagination.totalItems}
+            pageSize={pagination.pageSize}
+            startItem={pagination.startItem}
+            endItem={pagination.endItem}
+            itemLabel="evaluations"
+          />
         </div>
       ) : (
         <EmptyState

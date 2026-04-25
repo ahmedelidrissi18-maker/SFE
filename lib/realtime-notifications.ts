@@ -1,21 +1,4 @@
-type NotificationRealtimeEvent =
-  | {
-      kind: "notification_created";
-      userId: string;
-      unreadCount: number;
-      notificationId: string;
-      notificationType: string;
-    }
-  | {
-      kind: "notification_read";
-      userId: string;
-      unreadCount: number;
-      notificationId?: string;
-    }
-  | {
-      kind: "preferences_updated";
-      userId: string;
-    };
+import type { NotificationRealtimeEvent } from "@/lib/notification-realtime-events";
 
 type NotificationSubscriber = {
   id: string;

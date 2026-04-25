@@ -92,9 +92,9 @@ export default async function SecurityPage({ searchParams }: SecurityPageProps) 
       ) : null}
 
       <PageHeader
-        eyebrow="Sprint 6"
-        title="Securite du compte"
-        description="Le module de securite V2 permet d activer une authentification a deux facteurs pour les roles sensibles, avec audit des changements et protection renforcee de la session."
+        eyebrow="Sécurité"
+        title="Sécurité du compte"
+        description="Le module de sécurité V2 permet d’activer une authentification à deux facteurs pour les rôles sensibles, avec audit des changements et protection renforcée de la session."
       />
 
       <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
@@ -244,7 +244,7 @@ export default async function SecurityPage({ searchParams }: SecurityPageProps) 
               <MaterialSymbol icon="verified_user" className="text-[20px]" />
             </div>
             <div className="space-y-2">
-              <p className="text-sm font-medium text-primary">Hardening Sprint 6</p>
+              <p className="text-sm font-medium text-primary">Durcissement de la sécurité</p>
               <h2 className="text-2xl font-semibold tracking-tight">Protections actives</h2>
             </div>
           </div>
@@ -259,8 +259,8 @@ export default async function SecurityPage({ searchParams }: SecurityPageProps) 
               serveur pour freiner les tentatives de brute-force et les abus repetes.
             </p>
             <p>
-              Les activations, annulations et desactivations du 2FA sont journalisees dans
-              `AuditLog` pour renforcer la tracabilite du Sprint 6.
+              Les activations, annulations et désactivations du 2FA sont journalisées dans
+              `AuditLog` pour renforcer la traçabilité du compte.
             </p>
           </div>
         </Card>
