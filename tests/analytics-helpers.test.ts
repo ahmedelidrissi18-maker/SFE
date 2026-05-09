@@ -285,4 +285,76 @@ describe("analytics helpers", () => {
     expect(departmentsCsv).toContain("Finance");
     expect(departmentsCsv).toContain("55 %");
   });
+
+  it("protects CSV exports against spreadsheet formula injection", () => {
+    const overview: AnalyticsOverview = {
+      period: "monthly",
+      range: {
+        start: new Date("2026-04-01T00:00:00.000Z"),
+        end: new Date("2026-04-30T00:00:00.000Z"),
+        label: "01 avr. 2026 au 30 avr. 2026",
+      },
+      scopeLabel: "pilotage global",
+      metrics: [
+        {
+          key: "formula-metric",
+          label: "=HYPERLINK(\"http://malicious\")",
+          value: "+42",
+          helper: "test",
+        },
+      ],
+      focusItems: [],
+      departments: [
+        {
+          departement: "@Finance",
+          stageCount: 1,
+          activeStageCount: 1,
+          completionRate: 100,
+          completionRateLabel: "100 %",
+          averageProgress: 100,
+          averageProgressLabel: "-100 %",
+          trackedReportsCount: 1,
+        },
+      ],
+      alerts: [],
+      stageDetails: [
+        {
+          stageId: "stage-danger",
+          stagiaire: "Alice Doe",
+          encadrant: "Nadia Chef",
+          departement: "Finance",
+          sujet: "=CMD()",
+          stageStatus: "EN_COURS",
+          stageStatusLabel: "En cours",
+          latestProgress: 100,
+          latestProgressLabel: "100 %",
+          latestReportAt: new Date("2026-04-01T00:00:00.000Z"),
+          latestReportAtLabel: "01 avr. 2026",
+          pendingReportsCount: 0,
+          pendingEvaluationsCount: 0,
+          documentAttentionCount: 0,
+          daysUntilEnd: 5,
+          daysUntilEndLabel: "J-5",
+          attentionScore: 0,
+          attentionLabel: "Stable",
+        },
+      ],
+      totals: {
+        stageCount: 1,
+        reportCount: 1,
+        evaluationCount: 0,
+        documentCount: 0,
+      },
+    };
+
+    const overviewCsv = buildAnalyticsCsv(overview);
+    const detailedCsv = buildDetailedAnalyticsCsv(overview);
+    const departmentsCsv = buildDepartmentAnalyticsCsv(overview);
+
+    expect(overviewCsv).toContain(`'=HYPERLINK(""http://malicious"")`);
+    expect(overviewCsv).toContain("'+42");
+    expect(departmentsCsv).toContain("'@Finance");
+    expect(departmentsCsv).toContain("'-100 %");
+    expect(detailedCsv).toContain("'=CMD()");
+  });
 });

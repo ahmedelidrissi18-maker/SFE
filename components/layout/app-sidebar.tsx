@@ -2,6 +2,7 @@ import { SidebarNavigationLinks } from "@/components/layout/sidebar-navigation-l
 import { MaterialSymbol } from "@/components/ui/material-symbol";
 import { navigationItems, type NavigationSection } from "@/lib/navigation";
 import { hasRole } from "@/lib/rbac";
+import { cn } from "@/lib/utils";
 import type { UserRole } from "@/types";
 
 const sectionLabels = {
@@ -43,9 +44,9 @@ export function AppSidebar({ role }: AppSidebarProps) {
 
   return (
     <aside className="min-w-0 text-foreground lg:h-full">
-      <div className="flex h-full flex-col overflow-hidden rounded-[28px] border border-outline-variant/50 bg-background/95 p-4 shadow-[var(--shadow-card)] backdrop-blur-sm">
+      <div className="flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card/95 p-4 shadow-[var(--shadow-card)] backdrop-blur-sm">
         <div className="flex items-center gap-3 px-2 py-2">
-          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-[16px] bg-primary text-on-primary">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md bg-primary text-on-primary">
             <MaterialSymbol icon="work" className="text-[20px]" filled />
           </div>
           <div className="min-w-0">
@@ -56,11 +57,14 @@ export function AppSidebar({ role }: AppSidebarProps) {
           </div>
         </div>
 
-        <nav className="mt-5 flex-1 space-y-8 overflow-y-auto pb-2 pr-1" aria-label="Navigation principale">
-          {Object.entries(groupedNavigation).map(([section, items]) => (
-            <section key={section} className="space-y-3">
-              <div className="space-y-1 px-1">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-on-surface-variant">
+        <nav className="mt-5 flex-1 space-y-7 overflow-y-auto pb-2 pr-1" aria-label="Navigation principale">
+          {Object.entries(groupedNavigation).map(([section, items], index) => (
+            <section
+              key={section}
+              className={cn("space-y-3", index > 0 && "my-4 border-t border-border pt-4")}
+            >
+              <div className="px-1">
+                <p className="mb-1 px-3 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
                   {sectionLabels[section as keyof typeof sectionLabels]}
                 </p>
                 <p className="text-xs leading-5 text-on-surface-variant">

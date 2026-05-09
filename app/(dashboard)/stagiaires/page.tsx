@@ -223,7 +223,7 @@ export default async function StagiairesPage({ searchParams }: StagiairesPagePro
         }
       />
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 min-[390px]:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           label="Stagiaires filtres"
           value={totalStagiairesCount}
@@ -253,7 +253,7 @@ export default async function StagiairesPage({ searchParams }: StagiairesPagePro
       <Card className="space-y-5">
         <div>
           <p className="text-sm font-medium text-primary">Filtres</p>
-          <h2 className="mt-1 text-2xl font-semibold tracking-tight">Affiner la liste</h2>
+          <h2 className="mt-1 text-lg font-semibold tracking-tight sm:text-2xl">Affiner la liste</h2>
           <p className="mt-2 text-sm leading-6 text-muted">
             Combinez les criteres ci-dessous pour retrouver rapidement un stagiaire ou revenir a un perimetre plus large.
           </p>
@@ -318,16 +318,16 @@ export default async function StagiairesPage({ searchParams }: StagiairesPagePro
             </select>
           </label>
 
-          <div className="flex flex-wrap items-center gap-3 md:col-span-2 xl:col-span-5">
+          <div className="flex flex-col gap-3 md:col-span-2 sm:flex-row sm:flex-wrap sm:items-center xl:col-span-5">
             <button
               type="submit"
-              className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-on-primary shadow-[var(--shadow-soft)] transition hover:opacity-90"
+              className="rounded-full bg-primary px-5 py-3 text-sm font-semibold text-on-primary shadow-[var(--shadow-soft)] transition hover:opacity-90 sm:w-auto"
             >
               Appliquer les filtres
             </button>
             <Link
               href="/stagiaires"
-              className="rounded-full bg-surface-container-low px-5 py-3 text-sm font-semibold text-on-surface shadow-[var(--shadow-soft)] transition hover:bg-surface-container-high hover:text-primary"
+              className="rounded-full bg-surface-container-low px-5 py-3 text-sm font-semibold text-on-surface shadow-[var(--shadow-soft)] transition hover:bg-surface-container-high hover:text-primary sm:w-auto"
             >
               Revenir a la liste complete
             </Link>
@@ -351,7 +351,7 @@ export default async function StagiairesPage({ searchParams }: StagiairesPagePro
                         <StatusBadge status={getAccountStatusLabel(stagiaire.user.isActive)} />
                         <StatusBadge status={latestStageInfo.statut} />
                       </div>
-                      <h2 className="text-2xl font-semibold tracking-tight">{displayName}</h2>
+                      <h2 className="break-words text-xl font-semibold tracking-tight sm:text-2xl">{displayName}</h2>
                       <p className="text-sm font-medium text-foreground">
                         {stagiaire.specialite ?? "Specialite non renseignee"}
                       </p>
@@ -361,10 +361,10 @@ export default async function StagiairesPage({ searchParams }: StagiairesPagePro
                       </p>
                     </div>
 
-                    <div className="flex flex-wrap gap-3">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                       <Link
                         href={`/stagiaires/${stagiaire.id}`}
-                        className="rounded-full bg-primary px-4 py-2.5 text-sm font-semibold text-on-primary shadow-[var(--shadow-soft)] transition hover:opacity-90"
+                        className="rounded-full bg-primary px-4 py-2.5 text-center text-sm font-semibold text-on-primary shadow-[var(--shadow-soft)] transition hover:opacity-90"
                       >
                         Voir la fiche
                       </Link>
@@ -379,7 +379,7 @@ export default async function StagiairesPage({ searchParams }: StagiairesPagePro
                         <input type="hidden" name="returnTo" value={returnTo} />
                         <button
                           type="submit"
-                          className="rounded-full bg-surface-container-low px-4 py-2.5 text-sm font-semibold text-on-surface shadow-[var(--shadow-soft)] transition hover:bg-surface-container-high hover:text-primary"
+                          className="w-full rounded-full bg-surface-container-low px-4 py-2.5 text-sm font-semibold text-on-surface shadow-[var(--shadow-soft)] transition hover:bg-surface-container-high hover:text-primary sm:w-auto"
                         >
                           {stagiaire.user.isActive ? "Archiver" : "Reactiver"}
                         </button>
@@ -387,7 +387,7 @@ export default async function StagiairesPage({ searchParams }: StagiairesPagePro
                     </div>
                   </div>
 
-                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  <div className="grid gap-3 min-[390px]:grid-cols-2 xl:grid-cols-3">
                     <div className="rounded-[22px] border border-border bg-background p-4">
                       <p className="text-sm text-muted">Etablissement</p>
                       <p className="mt-2 text-sm font-medium">

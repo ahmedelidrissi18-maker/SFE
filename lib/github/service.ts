@@ -1,4 +1,5 @@
 import { GithubSyncStatus, Prisma } from "@prisma/client";
+import { getAppEnv } from "@/lib/env";
 import { logAuditEvent } from "@/lib/audit";
 import { createNotification, createNotificationsForRoles } from "@/lib/notifications";
 import { prisma } from "@/lib/prisma";
@@ -7,8 +8,6 @@ import type {
   GitHubServiceContract,
   GitHubSummary,
 } from "@/lib/services/contracts";
-
-const GITHUB_API_BASE_URL = process.env.GITHUB_API_BASE_URL?.trim() || "https://api.github.com";
 
 type GithubApiProfile = {
   id: number;
@@ -100,7 +99,8 @@ class GithubServiceError extends Error {
 }
 
 function getGithubHeaders() {
-  const token = process.env.GITHUB_TOKEN?.trim();
+  const env = getAppEnv();
+  const token = env.GITHUB_TOKEN;
 
   return {
     Accept: "application/vnd.github+json",
@@ -110,7 +110,7 @@ function getGithubHeaders() {
 }
 
 async function githubRequest<T>(path: string) {
-  const response = await fetch(`${GITHUB_API_BASE_URL}${path}`, {
+  const response = await fetch(`${getAppEnv().GITHUB_API_BASE_URL}${path}`, {
     headers: getGithubHeaders(),
     cache: "no-store",
   });

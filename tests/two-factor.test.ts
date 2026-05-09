@@ -1,11 +1,17 @@
 import { describe, expect, it } from "vitest";
 import {
+  consumeRecoveryCode,
   createTwoFactorSecret,
   decryptTwoFactorSecret,
+  decryptRecoveryCodesPreview,
+  encryptRecoveryCodesPreview,
   encryptTwoFactorSecret,
   formatTwoFactorSecret,
+  generateRecoveryCodes,
   generateCurrentTwoFactorCode,
+  hashRecoveryCodes,
   isSensitiveTwoFactorRole,
+  normalizeRecoveryCode,
   normalizeTwoFactorCode,
   verifyTwoFactorCode,
 } from "@/lib/security/two-factor";
@@ -30,6 +36,19 @@ describe("two-factor helpers", () => {
   it("normalizes the TOTP code formatting", () => {
     expect(normalizeTwoFactorCode("12 34 56")).toBe("123456");
     expect(formatTwoFactorSecret("ABCDEFGHIJKLMNOP")).toBe("ABCD EFGH IJKL MNOP");
+  });
+
+  it("generates, encrypts and consumes recovery codes", async () => {
+    const recoveryCodes = generateRecoveryCodes(2);
+    const hashedCodes = await hashRecoveryCodes(recoveryCodes);
+    const encryptedPreview = encryptRecoveryCodesPreview(recoveryCodes);
+    const consumption = await consumeRecoveryCode(hashedCodes, recoveryCodes[0]);
+
+    expect(recoveryCodes).toHaveLength(2);
+    expect(normalizeRecoveryCode(recoveryCodes[0]?.toLowerCase())).toBe(recoveryCodes[0]);
+    expect(decryptRecoveryCodesPreview(encryptedPreview)).toEqual(recoveryCodes);
+    expect(consumption?.consumed).toBe(true);
+    expect(consumption?.remainingHashes).toHaveLength(1);
   });
 
   it("detects the sensitive roles covered by Sprint 6", () => {

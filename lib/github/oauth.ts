@@ -1,4 +1,5 @@
 import { randomBytes } from "node:crypto";
+import { getAppEnv } from "@/lib/env";
 
 const GITHUB_OAUTH_AUTHORIZE_URL = "https://github.com/login/oauth/authorize";
 const GITHUB_OAUTH_TOKEN_URL = "https://github.com/login/oauth/access_token";
@@ -29,8 +30,9 @@ type GithubAuthenticatedUser = {
 };
 
 function getGithubOAuthConfig() {
-  const clientId = process.env.GITHUB_CLIENT_ID?.trim();
-  const clientSecret = process.env.GITHUB_CLIENT_SECRET?.trim();
+  const env = getAppEnv();
+  const clientId = env.GITHUB_CLIENT_ID;
+  const clientSecret = env.GITHUB_CLIENT_SECRET;
 
   if (!clientId || !clientSecret) {
     throw new Error("GitHub OAuth n est pas configure. Ajoutez GITHUB_CLIENT_ID et GITHUB_CLIENT_SECRET.");

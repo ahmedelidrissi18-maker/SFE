@@ -32,7 +32,7 @@ function SubmitButton({ label }: { label: string }) {
     <button
       type="submit"
       disabled={pending}
-      className="action-button action-button-primary px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70"
+      className="action-button action-button-primary w-full px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
     >
       {pending ? "Enregistrement..." : label}
     </button>
@@ -91,7 +91,7 @@ export function StagiaireForm({
     <div className="space-y-8">
       <div className="space-y-3">
         <p className="text-sm font-medium uppercase tracking-[0.18em] text-primary/80">Formulaire</p>
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h1>
+        <h1 className="text-xl font-semibold tracking-tight sm:text-3xl lg:text-4xl">{title}</h1>
         <p className="max-w-3xl text-sm leading-6 text-muted sm:text-[15px]">{description}</p>
       </div>
 
@@ -207,11 +207,11 @@ export function StagiaireForm({
           <FeedbackBanner kind="error" title="Enregistrement impossible" message={state.error} />
         ) : null}
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
           <SubmitButton label={submitLabel} />
           <Link
             href={cancelHref}
-            className="action-button action-button-secondary px-5 py-3 text-sm"
+            className="action-button action-button-secondary w-full px-5 py-3 text-sm sm:w-auto"
           >
             Annuler
           </Link>

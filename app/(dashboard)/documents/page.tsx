@@ -16,6 +16,8 @@ import {
   getDocumentStatusLabel,
   getDocumentTypeLabel,
   getDocumentVisibilityFilter,
+  resolveDocumentStatus,
+  resolveDocumentType,
   getSignatureStatusLabel,
 } from "@/lib/documents";
 import { getPaginationMeta, parsePageParam } from "@/lib/pagination";
@@ -71,8 +73,10 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
   }
 
   const params = (await searchParams) ?? {};
-  const statut = getStringParam(params.statut)?.trim() ?? "";
-  const type = getStringParam(params.type)?.trim() ?? "";
+  const rawStatut = getStringParam(params.statut)?.trim() ?? "";
+  const rawType = getStringParam(params.type)?.trim() ?? "";
+  const statut = resolveDocumentStatus(rawStatut);
+  const type = resolveDocumentType(rawType);
   const success = getStringParam(params.success)?.trim() ?? "";
   const requestedPage = parsePageParam(params.page);
   const pageSize = 10;
@@ -80,8 +84,8 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
   const documentWhere = {
     isDeleted: false,
     ...visibilityFilter,
-    ...(statut ? { statut: statut as never } : {}),
-    ...(type ? { type: type as never } : {}),
+    ...(statut ? { statut } : {}),
+    ...(type ? { type } : {}),
   };
 
   const [totalDocumentsCount, pendingCount, validatedCount, rejectedCount, stages] =
@@ -160,7 +164,7 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
     take: pagination.take,
   });
 
-  const hasActiveFilters = Boolean(statut || type);
+  const hasActiveFilters = Boolean(rawStatut || rawType);
 
   return (
     <div className="space-y-8">
@@ -178,49 +182,69 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
         description="Centralisez les depots, la revue, les rejets et les PDF standards generes pour chaque stage."
       />
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         <MetricCard
           label="Documents visibles"
           value={totalDocumentsCount}
           helper="Documents accessibles selon votre role et votre perimetre"
           accent={<MaterialSymbol icon="folder" className="text-[20px]" />}
+          className="p-4 min-h-[120px] overflow-hidden"
+          labelClassName="text-[11px] uppercase tracking-wide truncate"
+          valueClassName="text-2xl font-bold"
+          helperClassName="text-xs leading-snug line-clamp-3"
+          borderLeftClass="border-l-4 border-indigo-500 bg-indigo-50 dark:bg-indigo-950/20"
         />
         <MetricCard
           label="En verification"
           value={pendingCount}
           helper="Documents en attente de revue ou de validation"
           accent={<MaterialSymbol icon="pending_actions" className="text-[20px]" />}
+          className="p-4 min-h-[120px] overflow-hidden"
+          labelClassName="text-[11px] uppercase tracking-wide truncate"
+          valueClassName="text-2xl font-bold"
+          helperClassName="text-xs leading-snug line-clamp-3"
+          borderLeftClass="border-l-4 border-amber-500 bg-amber-50 dark:bg-amber-950/20"
         />
         <MetricCard
           label="Valides"
           value={validatedCount}
           helper="Documents valides et prets a etre telecharges"
           accent={<MaterialSymbol icon="task_alt" className="text-[20px]" filled />}
+          className="p-4 min-h-[120px] overflow-hidden"
+          labelClassName="text-[11px] uppercase tracking-wide truncate"
+          valueClassName="text-2xl font-bold"
+          helperClassName="text-xs leading-snug line-clamp-3"
+          borderLeftClass="border-l-4 border-green-500 bg-green-50 dark:bg-green-950/20"
         />
         <MetricCard
           label="Rejetes"
           value={rejectedCount}
           helper="Documents retournes avec action attendue"
           accent={<MaterialSymbol icon="cancel" className="text-[20px]" filled />}
+          className="p-4 min-h-[120px] overflow-hidden"
+          labelClassName="text-[11px] uppercase tracking-wide truncate"
+          valueClassName="text-2xl font-bold"
+          helperClassName="text-xs leading-snug line-clamp-3"
+          borderLeftClass="border-l-4 border-red-500 bg-red-50 dark:bg-red-950/20"
         />
       </section>
 
       <Card className="space-y-5">
         <div>
           <p className="text-sm font-medium text-primary">Filtres</p>
-          <h2 className="mt-1 text-2xl font-semibold tracking-tight">Cibler un lot documentaire</h2>
-          <p className="mt-2 text-sm leading-6 text-muted">
+          <h2 className="mt-1 text-lg font-semibold tracking-tight sm:text-2xl border-l-4 border-primary pl-3">Cibler un lot documentaire</h2>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground max-w-prose">
             Filtrez par statut ou type pour retrouver rapidement le bon document a traiter.
           </p>
         </div>
 
-        <form className="grid gap-4 md:grid-cols-3">
+        <form className="grid gap-4 md:grid-cols-3 rounded-xl border border-border p-6 bg-card">
           <label className="space-y-2 text-sm">
             <span className="font-medium">Statut</span>
             <select
               name="statut"
-              defaultValue={statut}
-              className="field-shell w-full rounded-2xl px-4 py-3 outline-none transition"
+              defaultValue={statut ?? ""}
+              className="w-full rounded-lg bg-muted/30 border border-transparent px-4 py-3 text-sm outline-none transition focus:bg-background focus:border-border focus:ring-2 focus:ring-primary/20"
             >
               <option value="">Tous</option>
               <option value="DEPOSE">Depose</option>
@@ -234,22 +258,22 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
             <span className="font-medium">Type</span>
             <input
               name="type"
-              defaultValue={type}
+              defaultValue={rawType}
               placeholder="CONVENTION, RAPPORT..."
-              className="field-shell w-full rounded-2xl px-4 py-3 outline-none transition"
+              className="w-full rounded-lg bg-muted/30 border border-transparent px-4 py-3 text-sm outline-none transition focus:bg-background focus:border-border focus:ring-2 focus:ring-primary/20"
             />
           </label>
 
-          <div className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
             <button
               type="submit"
-              className="action-button action-button-primary px-5 py-3 text-sm"
+              className="w-full px-6 py-2.5 text-sm sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/50"
             >
               Appliquer les filtres
             </button>
             <Link
               href="/documents"
-              className="action-button action-button-secondary px-5 py-3 text-sm"
+              className="action-button action-button-secondary w-full px-5 py-3 text-sm sm:w-auto"
             >
               Revenir a la liste complete
             </Link>
@@ -298,7 +322,7 @@ export default async function DocumentsPage({ searchParams }: DocumentsPageProps
                   </Link>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="grid gap-3 min-[390px]:grid-cols-2 xl:grid-cols-3">
                   <div className="tonal-card rounded-[22px] p-4">
                     <p className="text-sm text-muted">Type</p>
                     <p className="mt-2 text-sm font-medium">{getDocumentTypeLabel(document.type)}</p>

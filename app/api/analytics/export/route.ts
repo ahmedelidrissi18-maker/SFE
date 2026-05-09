@@ -31,7 +31,7 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL("/acces-refuse", request.url));
   }
 
-  const rateLimitResult = consumeRateLimit({
+  const rateLimitResult = await consumeRateLimit({
     ...securityRateLimits.analyticsExport,
     key: buildActorRateLimitKey(session.user.id, extractRequestIp(request) ?? "unknown"),
   });

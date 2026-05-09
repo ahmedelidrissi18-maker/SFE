@@ -25,7 +25,10 @@ export function StagiaireArchiveToggle({
         <input type="hidden" name="userId" value={userId} />
         <input type="hidden" name="nextActiveValue" value="true" />
         <input type="hidden" name="returnTo" value={returnTo} />
-        <button type="submit" className="action-button action-button-secondary px-5 py-3 text-sm">
+        <button
+          type="submit"
+          className="action-button action-button-secondary w-full px-5 py-3 text-sm sm:w-auto"
+        >
           Reactiver
         </button>
       </form>
@@ -43,9 +46,9 @@ export function StagiaireArchiveToggle({
       </button>
 
       {isModalOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/25 px-4 py-6">
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/25 px-4 py-4 sm:items-center sm:py-6">
           <div
-            className="w-full max-w-md rounded-[28px] bg-surface-container-lowest p-6 shadow-[var(--shadow-card)]"
+            className="w-full max-w-md rounded-[28px] bg-surface-container-lowest p-5 shadow-[var(--shadow-card)] sm:p-6"
             role="dialog"
             aria-modal="true"
             aria-labelledby="archive-stagiaire-title"
@@ -59,11 +62,11 @@ export function StagiaireArchiveToggle({
               </p>
             </div>
 
-            <div className="mt-6 flex flex-wrap justify-end gap-3">
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="action-button action-button-secondary px-5 py-3 text-sm"
+                className="action-button action-button-secondary w-full px-5 py-3 text-sm sm:w-auto"
               >
                 Annuler
               </button>
@@ -75,7 +78,7 @@ export function StagiaireArchiveToggle({
                 <input type="hidden" name="returnTo" value={returnTo} />
                 <button
                   type="submit"
-                  className="inline-flex min-h-11 items-center justify-center rounded-full px-5 py-3 text-sm font-semibold text-[#ba1a1a] transition hover:bg-error-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ba1a1a]/20 focus-visible:ring-offset-2"
+                  className="inline-flex min-h-11 w-full items-center justify-center rounded-full px-5 py-3 text-sm font-semibold text-[#ba1a1a] transition hover:bg-error-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ba1a1a]/20 focus-visible:ring-offset-2 sm:w-auto"
                 >
                   Confirmer
                 </button>

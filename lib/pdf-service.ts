@@ -1,13 +1,15 @@
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { PdfGenerationStatus, type Prisma } from "@prisma/client";
 import {
+  buildDocumentStorageKey,
+  storeDocumentBuffer,
+} from "@/lib/document-storage";
+import {
   buildStoredDocumentName,
-  getDocumentStorageRoot,
   getPdfTemplateDocumentType,
   getPdfTemplateLabel,
   type PdfTemplateKey,
 } from "@/lib/documents";
+import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 
 type RequestGenerationInput = {
@@ -16,16 +18,44 @@ type RequestGenerationInput = {
   requestedByUserId: string;
 };
 
-function normalizePdfText(value: string) {
-  return value
-    .normalize("NFKD")
-    .replace(/[^\x00-\x7F]/g, "")
+const winAnsiFallbacks: Record<string, string> = {
+  "’": "'",
+  "‘": "'",
+  "“": '"',
+  "”": '"',
+  "–": "-",
+  "—": "-",
+  "•": "-",
+  "…": "...",
+  "œ": "oe",
+  "Œ": "OE",
+  "€": "EUR",
+};
+
+function encodePdfWinAnsiText(value: string) {
+  return [...value]
+    .map((character) => {
+      const fallback = winAnsiFallbacks[character];
+
+      if (fallback) {
+        return fallback;
+      }
+
+      const codePoint = character.codePointAt(0) ?? 0;
+
+      if (codePoint >= 0x20 && codePoint <= 0xff) {
+        return character;
+      }
+
+      return "?";
+    })
+    .join("")
     .replace(/[()\\]/g, (match) => `\\${match}`);
 }
 
 function buildSimplePdfBuffer(title: string, lines: string[]) {
-  const safeTitle = normalizePdfText(title);
-  const safeLines = [safeTitle, "", ...lines.map(normalizePdfText)];
+  const safeTitle = encodePdfWinAnsiText(title);
+  const safeLines = [safeTitle, "", ...lines.map(encodePdfWinAnsiText)];
   const contentLines = [
     "BT",
     "/F1 18 Tf",
@@ -41,19 +71,19 @@ function buildSimplePdfBuffer(title: string, lines: string[]) {
     "1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj",
     "2 0 obj\n<< /Type /Pages /Count 1 /Kids [3 0 R] >>\nendobj",
     "3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>\nendobj",
-    "4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>\nendobj",
-    `5 0 obj\n<< /Length ${Buffer.byteLength(stream, "utf8")} >>\nstream\n${stream}\nendstream\nendobj`,
+    "4 0 obj\n<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>\nendobj",
+    `5 0 obj\n<< /Length ${Buffer.byteLength(stream, "latin1")} >>\nstream\n${stream}\nendstream\nendobj`,
   ];
 
   let pdf = "%PDF-1.4\n";
   const offsets = [0];
 
   for (const object of objects) {
-    offsets.push(Buffer.byteLength(pdf, "utf8"));
+    offsets.push(Buffer.byteLength(pdf, "latin1"));
     pdf += `${object}\n`;
   }
 
-  const xrefOffset = Buffer.byteLength(pdf, "utf8");
+  const xrefOffset = Buffer.byteLength(pdf, "latin1");
   pdf += `xref\n0 ${objects.length + 1}\n`;
   pdf += "0000000000 65535 f \n";
 
@@ -63,7 +93,7 @@ function buildSimplePdfBuffer(title: string, lines: string[]) {
 
   pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`;
 
-  return Buffer.from(pdf, "utf8");
+  return Buffer.from(pdf, "latin1");
 }
 
 async function buildTemplatePayload(stageId: string, template: PdfTemplateKey) {
@@ -179,6 +209,26 @@ export async function getJobStatus(jobId: string) {
   });
 }
 
+async function claimPdfGenerationJob(job: {
+  id: string;
+  status: PdfGenerationStatus;
+  updatedAt: Date;
+}) {
+  const claimResult = await prisma.pdfGenerationJob.updateMany({
+    where: {
+      id: job.id,
+      status: job.status,
+      updatedAt: job.updatedAt,
+    },
+    data: {
+      status: PdfGenerationStatus.PROCESSING,
+      errorMessage: null,
+    },
+  });
+
+  return claimResult.count > 0;
+}
+
 export async function processPendingPdfGenerationJobs(limit = 5) {
   const jobs = await prisma.pdfGenerationJob.findMany({
     where: {
@@ -193,25 +243,28 @@ export async function processPendingPdfGenerationJobs(limit = 5) {
   let processed = 0;
 
   for (const job of jobs) {
-    await prisma.pdfGenerationJob.update({
-      where: { id: job.id },
-      data: {
-        status: PdfGenerationStatus.PROCESSING,
-        errorMessage: null,
-      },
-    });
+    const claimed = await claimPdfGenerationJob(job);
+
+    if (!claimed) {
+      continue;
+    }
 
     try {
       const payload = await buildTemplatePayload(job.stageId, job.template as PdfTemplateKey);
-      const directory = path.join(getDocumentStorageRoot(), job.stageId, "generated");
       const filename = buildStoredDocumentName(
         `${getPdfTemplateLabel(job.template as PdfTemplateKey)}-${payload.stage.stagiaire.user.nom}.pdf`,
       );
-      const filePath = path.join(directory, filename);
+      const storageKey = buildDocumentStorageKey({
+        stageId: job.stageId,
+        filename,
+        generated: true,
+      });
       const buffer = buildSimplePdfBuffer(payload.title, payload.lines);
 
-      await mkdir(directory, { recursive: true });
-      await writeFile(filePath, buffer);
+      const storedDocument = await storeDocumentBuffer({
+        storageKey,
+        buffer,
+      });
 
       const createdDocument = await prisma.document.create({
         data: {
@@ -221,7 +274,7 @@ export async function processPendingPdfGenerationJobs(limit = 5) {
           statut: "VALIDE",
           source: "GENERATED",
           nom: `${payload.title}.pdf`,
-          url: filePath,
+          url: storedDocument.location,
           tailleOctets: buffer.length,
           version: 1,
           generatedTemplate: job.template,
@@ -243,6 +296,12 @@ export async function processPendingPdfGenerationJobs(limit = 5) {
 
       processed += 1;
     } catch (error) {
+      logger.error("documents.pdf_generation.processing_failed", {
+        jobId: job.id,
+        stageId: job.stageId,
+        template: job.template,
+        error,
+      });
       await prisma.pdfGenerationJob.update({
         where: { id: job.id },
         data: {

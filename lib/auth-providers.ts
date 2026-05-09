@@ -1,3 +1,5 @@
+import { getAppEnv } from "@/lib/env";
+
 export type OAuthProviderId = "google" | "github";
 
 function hasConfiguredValue(value?: string | null) {
@@ -5,16 +7,20 @@ function hasConfiguredValue(value?: string | null) {
 }
 
 export function isGoogleLoginConfigured() {
+  const env = getAppEnv();
+
   return (
-    hasConfiguredValue(process.env.AUTH_GOOGLE_CLIENT_ID) &&
-    hasConfiguredValue(process.env.AUTH_GOOGLE_CLIENT_SECRET)
+    hasConfiguredValue(env.AUTH_GOOGLE_CLIENT_ID) &&
+    hasConfiguredValue(env.AUTH_GOOGLE_CLIENT_SECRET)
   );
 }
 
 export function isGithubLoginConfigured() {
+  const env = getAppEnv();
+
   return (
-    hasConfiguredValue(process.env.AUTH_GITHUB_CLIENT_ID) &&
-    hasConfiguredValue(process.env.AUTH_GITHUB_CLIENT_SECRET)
+    hasConfiguredValue(env.AUTH_GITHUB_CLIENT_ID) &&
+    hasConfiguredValue(env.AUTH_GITHUB_CLIENT_SECRET)
   );
 }
 

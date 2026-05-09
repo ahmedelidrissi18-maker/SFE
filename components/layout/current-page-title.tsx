@@ -12,6 +12,7 @@ const pageTitles: Record<string, string> = {
   documents: "Documents",
   notifications: "Notifications",
   securite: "Securite",
+  search: "Recherche globale",
 };
 
 export function CurrentPageTitle() {
@@ -19,5 +20,5 @@ export function CurrentPageTitle() {
   const currentSection = pathname.split("/").filter(Boolean)[0] ?? "dashboard";
   const pageTitle = pageTitles[currentSection] ?? "Gestion des stagiaires";
 
-  return <h1 className="text-xl font-bold tracking-tight text-on-surface sm:text-2xl">{pageTitle}</h1>;
+  return <h1 className="truncate text-xl font-bold tracking-tight">{pageTitle}</h1>;
 }

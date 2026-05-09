@@ -11,7 +11,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { getPaginationMeta, parsePageParam } from "@/lib/pagination";
 import { prisma } from "@/lib/prisma";
-import { getRapportStatusLabel } from "@/lib/rapports";
+import { getRapportStatusLabel, resolveRapportStatus } from "@/lib/rapports";
 import { formatDate } from "@/lib/stagiaires";
 
 type RapportsPageProps = {
@@ -46,13 +46,14 @@ export default async function RapportsPage({ searchParams }: RapportsPageProps) 
 
   const params = (await searchParams) ?? {};
   const success = getStringParam(params.success)?.trim() ?? "";
-  const statut = getStringParam(params.statut)?.trim() ?? "";
+  const rawStatut = getStringParam(params.statut)?.trim() ?? "";
+  const statut = resolveRapportStatus(rawStatut);
   const requestedPage = parsePageParam(params.page);
   const pageSize = 10;
   const userRole = session.user.role;
 
   const rapportWhere = {
-    ...(statut ? { statut: statut as never } : {}),
+    ...(statut ? { statut } : {}),
     ...(userRole === "STAGIAIRE"
       ? {
           stage: {
@@ -152,7 +153,7 @@ export default async function RapportsPage({ searchParams }: RapportsPageProps) 
     userRole === "STAGIAIRE"
       ? "Retrouvez l historique de vos rapports, leur statut et l avancement declare pour votre stage."
       : "Consultez les rapports, identifiez ceux qui exigent une action et suivez le cycle de validation de bout en bout.";
-  const hasActiveFilters = Boolean(statut);
+  const hasActiveFilters = Boolean(rawStatut);
 
   return (
     <div className="space-y-8">
@@ -201,7 +202,7 @@ export default async function RapportsPage({ searchParams }: RapportsPageProps) 
         }
       />
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 min-[390px]:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           label="Rapports"
           value={metrics.total}
@@ -231,18 +232,18 @@ export default async function RapportsPage({ searchParams }: RapportsPageProps) 
       <Card className="space-y-5">
         <div>
           <p className="text-sm font-medium text-primary">Filtres</p>
-          <h2 className="mt-1 text-2xl font-semibold tracking-tight">Trouver un statut</h2>
+          <h2 className="mt-1 text-lg font-semibold tracking-tight sm:text-2xl">Trouver un statut</h2>
           <p className="mt-2 text-sm leading-6 text-muted">
             Utilisez ce filtre pour isoler rapidement les brouillons, les rapports soumis ou les retours a traiter.
           </p>
         </div>
-        <form className="flex flex-wrap items-end gap-3">
+        <form className="grid gap-4 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_auto_auto] lg:items-end">
           <label className="space-y-2 text-sm">
             <span className="font-medium">Statut</span>
             <select
               name="statut"
-              defaultValue={statut}
-              className="field-shell min-w-48 rounded-2xl px-4 py-3 outline-none transition"
+              defaultValue={statut ?? ""}
+              className="field-shell w-full rounded-2xl px-4 py-3 outline-none transition sm:min-w-48"
             >
               <option value="">Tous</option>
               <option value="BROUILLON">Brouillon</option>
@@ -254,13 +255,13 @@ export default async function RapportsPage({ searchParams }: RapportsPageProps) 
 
           <button
             type="submit"
-            className="action-button action-button-primary px-5 py-3 text-sm"
+            className="action-button action-button-primary w-full px-5 py-3 text-sm sm:w-auto"
           >
             Appliquer les filtres
           </button>
           <Link
             href="/rapports"
-            className="action-button action-button-secondary px-5 py-3 text-sm"
+            className="action-button action-button-secondary w-full px-5 py-3 text-sm sm:w-auto"
           >
             Revenir a la liste complete
           </Link>

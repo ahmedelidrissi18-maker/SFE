@@ -9,6 +9,8 @@ export default auth((req) => {
   const pathname = req.nextUrl.pathname;
   const isLoggedIn = Boolean(req.auth?.user);
   const role = req.auth?.user?.role;
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set("x-sfe-pathname", pathname);
 
   if (isAuthRoute(pathname) && isLoggedIn) {
     return NextResponse.redirect(new URL(DEFAULT_LOGIN_REDIRECT, req.nextUrl));
@@ -22,7 +24,11 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/acces-refuse", req.nextUrl));
   }
 
-  return NextResponse.next();
+  return NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
 });
 
 export const config = {

@@ -198,6 +198,20 @@ export function LoginForm({
               message="Le compte detecte demande une verification en deux etapes."
               description="Ouvrez votre application d authentification puis saisissez le code temporaire a 6 chiffres."
             />
+            <label htmlFor="backupCode" className="ml-1 block pt-3 text-[13px] font-medium text-on-surface-variant">
+              Code de secours
+            </label>
+            <input
+              id="backupCode"
+              name="backupCode"
+              type="text"
+              autoCapitalize="characters"
+              placeholder="ABCD-EFGH"
+              className="field-shell h-12 w-full rounded-lg px-4 font-mono tracking-[0.18em] text-on-surface outline-none transition"
+            />
+            <p className={hintClassName}>
+              Utilisez un code de secours si vous n avez pas acces a votre application d authentification.
+            </p>
           </div>
         ) : (
           <div className="rounded-xl bg-surface-container-low px-4 py-3 text-sm text-on-surface-variant">

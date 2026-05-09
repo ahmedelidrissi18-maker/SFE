@@ -1,13 +1,14 @@
-import { readFile } from "node:fs/promises";
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { logAuditEvent } from "@/lib/audit";
+import { readDocumentBuffer } from "@/lib/document-storage";
 import {
   canAccessStageDocuments,
   getDocumentContentType,
   getDocumentDownloadName,
   shouldAuditDocumentDownload,
 } from "@/lib/documents";
+import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import { buildActorRateLimitKey, buildRateLimitedResponse, extractRequestIp } from "@/lib/security/request";
 import { consumeRateLimit, securityRateLimits } from "@/lib/security/rate-limit";
@@ -25,7 +26,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
     return new NextResponse("Non authentifie", { status: 401 });
   }
 
-  const rateLimitResult = consumeRateLimit({
+  const rateLimitResult = await consumeRateLimit({
     ...securityRateLimits.documentDownload,
     key: buildActorRateLimitKey(session.user.id, extractRequestIp(_request) ?? "unknown"),
   });
@@ -63,7 +64,7 @@ export async function GET(_request: Request, { params }: RouteContext) {
   }
 
   try {
-    const buffer = await readFile(document.url);
+    const buffer = await readDocumentBuffer(document.url);
 
     if (shouldAuditDocumentDownload(document.type)) {
       await logAuditEvent({
@@ -87,7 +88,11 @@ export async function GET(_request: Request, { params }: RouteContext) {
       },
     });
   } catch (error) {
-    console.error(error);
+    logger.error("documents.download.failed", {
+      documentId: document.id,
+      userId: session.user.id,
+      error,
+    });
     return new NextResponse("Lecture impossible", { status: 500 });
   }
 }

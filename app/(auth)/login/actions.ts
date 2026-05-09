@@ -27,6 +27,8 @@ function getLoginErrorMessage(code: string | null) {
       return "Un code 2FA est requis pour ce compte. Ouvrez votre application d authentification et saisissez le code a 6 chiffres.";
     case "two_factor_invalid":
       return "Le code 2FA est invalide ou a expire. Merci de reessayer avec un code recent.";
+    case "recovery_code_invalid":
+      return "Le code de secours est invalide ou deja consomme. Merci d utiliser un code encore disponible.";
     case "rate_limited":
       return "Trop de tentatives ont ete detectees. Merci d attendre quelques minutes avant de reessayer.";
     default:
@@ -46,13 +48,14 @@ export async function loginAction(
     };
   }
 
-  const { email, password, twoFactorCode } = parsedData.data;
+  const { email, password, twoFactorCode, backupCode } = parsedData.data;
 
   try {
     await signIn("credentials", {
       email,
       password,
       twoFactorCode,
+      backupCode,
       redirect: false,
     });
   } catch (error) {

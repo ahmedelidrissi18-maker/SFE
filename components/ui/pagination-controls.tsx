@@ -19,7 +19,7 @@ type PaginationControlsProps = {
 
 function getButtonClassName(isDisabled: boolean) {
   return cn(
-    "inline-flex min-h-11 items-center justify-center rounded-full px-4 py-2 text-sm font-semibold shadow-[var(--shadow-soft)] transition",
+    "inline-flex min-h-11 flex-1 items-center justify-center rounded-full px-4 py-2 text-sm font-semibold shadow-[var(--shadow-soft)] transition sm:flex-none",
     isDisabled
       ? "cursor-not-allowed bg-surface-container-low text-on-surface-variant/60"
       : "bg-surface-container-low text-on-surface hover:bg-surface-container-high hover:text-primary",
@@ -54,10 +54,10 @@ export function PaginationControls({
     >
       <div className="text-sm text-on-surface-variant">
         {startItem}-{endItem} sur {totalItems} {itemLabel}
-        <span className="ml-2">Page {currentPage} / {totalPages}</span>
+        <span className="block sm:ml-2 sm:inline">Page {currentPage} / {totalPages}</span>
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
+      <div className="flex w-full flex-wrap items-center gap-3 sm:w-auto">
         {currentPage > 1 ? (
           <Link href={previousHref} className={getButtonClassName(false)}>
             Precedent
@@ -74,7 +74,7 @@ export function PaginationControls({
           <span className={getButtonClassName(true)}>Suivant</span>
         )}
 
-        <span className="text-xs text-on-surface-variant">
+        <span className="w-full text-xs text-on-surface-variant sm:w-auto">
           {pageSize} elements max par page
         </span>
       </div>

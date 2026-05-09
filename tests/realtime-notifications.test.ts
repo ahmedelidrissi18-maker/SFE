@@ -24,6 +24,15 @@ describe("realtime notifications", () => {
       unreadCount: 3,
       notificationId: "notification-1",
       notificationType: "RAPPORT_SUBMITTED",
+      notification: {
+        id: "notification-1",
+        type: "RAPPORT_SUBMITTED",
+        titre: "Rapport soumis",
+        message: "Un rapport attend une relecture.",
+        lien: "/rapports/rapport-1",
+        isRead: false,
+        createdAt: "2026-05-08T10:00:00.000Z",
+      },
     });
 
     expect(firstSubscriber.send).toHaveBeenCalledTimes(1);

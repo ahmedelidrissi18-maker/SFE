@@ -12,8 +12,8 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { MaterialSymbol } from "@/components/ui/material-symbol";
 import { MetricCard } from "@/components/ui/metric-card";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { getNotificationTypeLabel } from "@/lib/notification-definitions";
 import type { RealtimeNotificationRecord } from "@/lib/notification-realtime-events";
-import { getNotificationTypeLabel } from "@/lib/notifications";
 import { formatDate } from "@/lib/stagiaires";
 
 type NotificationsLiveFeedProps = {
@@ -72,24 +72,39 @@ export function NotificationsLiveFeed({
 
   return (
     <>
-      <section className="grid gap-4 md:grid-cols-3">
+      <section className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <MetricCard
           label="Notifications"
           value={totalCount}
-          helper="Tous les evenements visibles dans votre espace"
+          helper="Tous les evenements visibles"
           accent={<MaterialSymbol icon="notifications" className="text-[20px]" filled />}
+          className="p-4 min-h-[120px] overflow-hidden"
+          labelClassName="text-[11px] uppercase tracking-wide truncate"
+          valueClassName="text-2xl font-bold"
+          helperClassName="text-xs leading-snug line-clamp-2"
+          borderLeftClass="border-l-4 border-primary bg-primary/5"
         />
         <MetricCard
           label="Non lues"
           value={unreadCount}
-          helper="Elements qui demandent encore une lecture"
+          helper="Elements demandant lecture"
           accent={<MaterialSymbol icon="schedule" className="text-[20px]" />}
+          className="p-4 min-h-[120px] overflow-hidden"
+          labelClassName="text-[11px] uppercase tracking-wide truncate"
+          valueClassName="text-2xl font-bold"
+          helperClassName="text-xs leading-snug line-clamp-2"
+          borderLeftClass="border-l-4 border-amber-500 bg-amber-50 dark:bg-amber-950/20"
         />
         <MetricCard
           label="Derniere mise a jour"
           value={latestUpdateLabel}
-          helper="Horodatage de la notification la plus recente"
+          helper="Horodatage le plus recent"
           accent={<MaterialSymbol icon="done_all" className="text-[20px]" />}
+          className="p-4 min-h-[120px] overflow-hidden sm:col-span-1 col-span-2"
+          labelClassName="text-[11px] uppercase tracking-wide truncate"
+          valueClassName="text-2xl font-bold"
+          helperClassName="text-xs leading-snug line-clamp-2"
+          borderLeftClass="border-l-4 border-green-500 bg-green-50 dark:bg-green-950/20"
         />
       </section>
 
@@ -119,11 +134,11 @@ export function NotificationsLiveFeed({
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
                   {notification.lien ? (
                     <Link
                       href={notification.lien}
-                      className="action-button action-button-primary px-4 py-2.5 text-sm"
+                      className="action-button action-button-primary w-full px-4 py-2.5 text-sm sm:w-auto"
                     >
                       Ouvrir
                     </Link>
@@ -134,7 +149,7 @@ export function NotificationsLiveFeed({
                       <input type="hidden" name="notificationId" value={notification.id} />
                       <button
                         type="submit"
-                        className="action-button action-button-secondary px-4 py-2.5 text-sm"
+                        className="action-button action-button-secondary w-full px-4 py-2.5 text-sm sm:w-auto"
                       >
                         Marquer comme lue
                       </button>

@@ -209,7 +209,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-sm font-medium text-primary">Pilotage</p>
-            <h2 className="mt-1 text-2xl font-semibold tracking-tight">Fenêtre d&apos;analyse</h2>
+            <h2 className="mt-1 text-lg font-semibold tracking-tight sm:text-2xl">Fenêtre d&apos;analyse</h2>
             <p className="mt-2 text-sm leading-6 text-muted">
               Les calculs sont centrés sur la période sélectionnée et sur votre périmètre d’accès.
               Fenêtre actuelle : {overview.range.label}.
@@ -228,13 +228,13 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
           </div>
         </div>
 
-        <form className="flex flex-wrap items-end gap-3">
+        <form className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5 xl:items-end">
           <label className="space-y-2 text-sm">
             <span className="font-medium">Période</span>
             <select
               name="period"
               defaultValue={period}
-              className="field-shell min-w-[220px] rounded-2xl px-4 py-3 outline-none transition"
+              className="field-shell w-full rounded-2xl px-4 py-3 outline-none transition sm:min-w-[220px]"
             >
               {getAnalyticsPeriodOptions().map((option) => (
                 <option key={option.value} value={option.value}>
@@ -249,7 +249,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
             <select
               name="department"
               defaultValue={departmentFilter ?? ""}
-              className="field-shell min-w-[220px] rounded-2xl px-4 py-3 outline-none transition"
+              className="field-shell w-full rounded-2xl px-4 py-3 outline-none transition sm:min-w-[220px]"
             >
               <option value="">Tous les départements</option>
               {departmentOptions.map((department) => (
@@ -265,7 +265,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
             <select
               name="attention"
               defaultValue={attentionFilter}
-              className="field-shell min-w-[220px] rounded-2xl px-4 py-3 outline-none transition"
+              className="field-shell w-full rounded-2xl px-4 py-3 outline-none transition sm:min-w-[220px]"
             >
               {attentionOptions.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -280,7 +280,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
             <select
               name="limit"
               defaultValue={detailLimit}
-              className="field-shell min-w-[180px] rounded-2xl px-4 py-3 outline-none transition"
+              className="field-shell w-full rounded-2xl px-4 py-3 outline-none transition sm:min-w-[180px]"
             >
               {getAnalyticsStageDetailLimitOptions().map((option) => (
                 <option key={option.value} value={option.value}>
@@ -292,7 +292,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
 
           <button
             type="submit"
-            className="action-button action-button-secondary px-5 py-3 text-sm"
+            className="action-button action-button-secondary w-full px-5 py-3 text-sm sm:w-auto"
           >
             Appliquer les filtres
           </button>
@@ -312,7 +312,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
         ) : null}
       </Card>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 min-[390px]:grid-cols-2 xl:grid-cols-4">
         {overview.metrics.map((metric, index) => {
           const icon = metricIcons[index] ?? "bar_chart";
 
@@ -329,7 +329,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
         })}
       </section>
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 min-[390px]:grid-cols-2 xl:grid-cols-4">
         {overview.focusItems.map((item, index) => {
           const icon = focusIcons[index] ?? "insights";
 
@@ -351,7 +351,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-sm font-medium text-primary">Départements</p>
-              <h2 className="mt-1 text-2xl font-semibold tracking-tight">Progression moyenne</h2>
+              <h2 className="mt-1 text-lg font-semibold tracking-tight sm:text-2xl">Progression moyenne</h2>
             </div>
             <p className="text-sm text-muted">
               {filteredDepartments.length} département
@@ -380,7 +380,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
                       </p>
                     </div>
 
-                    <div className="grid min-w-[220px] gap-3 sm:grid-cols-2">
+                    <div className="grid w-full gap-3 sm:w-auto sm:min-w-[220px] sm:grid-cols-2">
                       <div className="rounded-[20px] bg-surface-container-lowest p-3 shadow-[var(--shadow-soft)]">
                         <p className="text-xs uppercase tracking-[0.16em] text-muted">Progression</p>
                         <p className="mt-2 text-lg font-semibold">{department.averageProgressLabel}</p>
@@ -412,7 +412,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
         <Card className="space-y-5">
           <div>
             <p className="text-sm font-medium text-primary">Couverture</p>
-            <h2 className="mt-1 text-2xl font-semibold tracking-tight">Volume exploité</h2>
+            <h2 className="mt-1 text-lg font-semibold tracking-tight sm:text-2xl">Volume exploité</h2>
             <p className="mt-2 text-sm leading-6 text-muted">
               Cette vue centralise les lots réels pris en compte dans les calculs de la période.
             </p>
@@ -444,7 +444,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-sm font-medium text-primary">Surveillance métier</p>
-              <h2 className="mt-1 text-2xl font-semibold tracking-tight">Alertes actives</h2>
+              <h2 className="mt-1 text-lg font-semibold tracking-tight sm:text-2xl">Alertes actives</h2>
             </div>
             <MaterialSymbol icon="warning" className="text-[20px] text-primary" />
           </div>
@@ -480,7 +480,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-sm font-medium text-primary">Santé technique</p>
-              <h2 className="mt-1 text-2xl font-semibold tracking-tight">Observabilité analytics</h2>
+              <h2 className="mt-1 text-lg font-semibold tracking-tight sm:text-2xl">Observabilité analytics</h2>
               <p className="mt-2 text-sm leading-6 text-muted">
                 Fenêtre glissante de {monitoring.windowMinutes} minutes sur les chargements et exports.
               </p>
@@ -558,7 +558,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="text-sm font-medium text-primary">Vues détaillées</p>
-            <h2 className="mt-1 text-2xl font-semibold tracking-tight">Stages à surveiller</h2>
+            <h2 className="mt-1 text-lg font-semibold tracking-tight sm:text-2xl">Stages à surveiller</h2>
             <p className="mt-2 text-sm leading-6 text-muted">
               Priorisation des dossiers les plus sensibles sur la fenêtre sélectionnée, avec filtres
               par département et niveau de vigilance.
@@ -572,7 +572,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
           </div>
         </div>
 
-        <div className="grid gap-3 md:grid-cols-3">
+        <div className="grid gap-3 min-[390px]:grid-cols-2 md:grid-cols-3">
           {attentionSummary.map((summary) => (
             <div
               key={summary.key}
@@ -609,7 +609,7 @@ export default async function AnalyticsPage({ searchParams }: AnalyticsPageProps
                     </div>
                   </div>
 
-                  <div className="grid min-w-[260px] gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  <div className="grid w-full gap-3 sm:w-auto sm:min-w-[260px] sm:grid-cols-2 lg:grid-cols-3">
                     <div className="rounded-[18px] bg-surface-container-lowest p-3 shadow-[var(--shadow-soft)]">
                       <p className="text-xs uppercase tracking-[0.16em] text-muted">Progression</p>
                       <p className="mt-2 text-sm font-semibold">{stage.latestProgressLabel}</p>

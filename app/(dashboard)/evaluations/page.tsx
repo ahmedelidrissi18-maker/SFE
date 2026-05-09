@@ -12,6 +12,8 @@ import {
   getEvaluationStatusLabel,
   getEvaluationTypeLabel,
   getEvaluationVisibilityFilter,
+  resolveEvaluationStatus,
+  resolveEvaluationType,
 } from "@/lib/evaluations";
 import { getPaginationMeta, parsePageParam } from "@/lib/pagination";
 import { prisma } from "@/lib/prisma";
@@ -48,8 +50,10 @@ export default async function EvaluationsPage({ searchParams }: EvaluationsPageP
   }
 
   const params = (await searchParams) ?? {};
-  const statut = getStringParam(params.statut)?.trim() ?? "";
-  const type = getStringParam(params.type)?.trim() ?? "";
+  const rawStatut = getStringParam(params.statut)?.trim() ?? "";
+  const rawType = getStringParam(params.type)?.trim() ?? "";
+  const statut = resolveEvaluationStatus(rawStatut);
+  const type = resolveEvaluationType(rawType);
   const highlight = getStringParam(params.highlight)?.trim() ?? "";
   const requestedPage = parsePageParam(params.page);
   const pageSize = 10;
@@ -59,8 +63,8 @@ export default async function EvaluationsPage({ searchParams }: EvaluationsPageP
 
   const evaluationWhere = {
     ...getEvaluationVisibilityFilter(session.user.role, session.user.id),
-    ...(statut ? { status: statut as EvaluationStatus } : {}),
-    ...(type ? { type: type as EvaluationType } : {}),
+    ...(statut ? { status: statut } : {}),
+    ...(type ? { type } : {}),
   };
 
   const [
@@ -127,7 +131,7 @@ export default async function EvaluationsPage({ searchParams }: EvaluationsPageP
     take: pagination.take,
   });
 
-  const hasActiveFilters = Boolean(statut || type);
+  const hasActiveFilters = Boolean(rawStatut || rawType);
 
   return (
     <div className="space-y-8">
@@ -135,6 +139,8 @@ export default async function EvaluationsPage({ searchParams }: EvaluationsPageP
         eyebrow="Evaluations"
         title="Workflow des evaluations"
         description="Retrouvez les evaluations de debut, mi-parcours et fin de stage, avec leur statut, leur score et la prochaine action attendue."
+        titleClassName="border-l-4 border-indigo-500 pl-4"
+        descriptionClassName="text-sm text-muted-foreground max-w-2xl"
         actions={
           session.user.role !== "STAGIAIRE" ? (
             <Link
@@ -147,48 +153,52 @@ export default async function EvaluationsPage({ searchParams }: EvaluationsPageP
         }
       />
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 min-[390px]:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           label="Evaluations visibles"
           value={totalEvaluationsCount}
           helper="Toutes les evaluations accessibles selon votre role"
           accent={<MaterialSymbol icon="grading" className="text-[20px]" />}
+          borderLeftClass="border-l-4 border-slate-400 bg-slate-50 dark:bg-slate-900/20"
         />
         <MetricCard
           label="A valider"
           value={submittedCount}
           helper="Evaluations soumises et en attente de validation RH"
           accent={<MaterialSymbol icon="schedule" className="text-[20px]" />}
+          borderLeftClass="border-l-4 border-amber-500 bg-amber-50 dark:bg-amber-950/20"
         />
         <MetricCard
           label="Retournees"
           value={returnedCount}
           helper="Evaluations renvoyees pour correction ou ajustement"
           accent={<MaterialSymbol icon="replay" className="text-[20px]" />}
+          borderLeftClass="border-l-4 border-red-400 bg-red-50 dark:bg-red-950/20"
         />
         <MetricCard
           label="Validees"
           value={validatedCount}
           helper={`${upcomingCount} evaluation${upcomingCount > 1 ? "s" : ""} planifiee${upcomingCount > 1 ? "s" : ""} sous 15 jours`}
           accent={<MaterialSymbol icon="military_tech" className="text-[20px]" />}
+          borderLeftClass="border-l-4 border-green-500 bg-green-50 dark:bg-green-950/20"
         />
       </section>
 
       <Card className="space-y-5">
         <div>
           <p className="text-sm font-medium text-primary">Filtres</p>
-          <h2 className="mt-1 text-2xl font-semibold tracking-tight">Cibler le bon lot</h2>
-          <p className="mt-2 text-sm leading-6 text-muted">
+          <h2 className="mt-1 text-lg font-semibold tracking-tight sm:text-2xl border-l-4 border-primary pl-3">Cibler le bon lot</h2>
+          <p className="mt-2 text-sm leading-relaxed text-muted-foreground max-w-prose">
             Filtrez par statut ou type pour retrouver plus vite les evaluations a traiter.
           </p>
         </div>
-        <form className="grid gap-4 md:grid-cols-3">
+        <form className="grid gap-4 md:grid-cols-3 rounded-xl border border-border p-6 bg-card">
           <label className="space-y-2 text-sm">
             <span className="font-medium">Statut</span>
             <select
               name="statut"
-              defaultValue={statut}
-              className="field-shell w-full rounded-2xl px-4 py-3 outline-none transition"
+              defaultValue={statut ?? ""}
+              className="w-full rounded-lg bg-muted/30 border border-transparent px-4 py-3 text-sm outline-none transition focus:bg-background focus:border-border focus:ring-2 focus:ring-primary/20"
             >
               <option value="">Tous</option>
               <option value={EvaluationStatus.BROUILLON}>Brouillon</option>
@@ -202,8 +212,8 @@ export default async function EvaluationsPage({ searchParams }: EvaluationsPageP
             <span className="font-medium">Type</span>
             <select
               name="type"
-              defaultValue={type}
-              className="field-shell w-full rounded-2xl px-4 py-3 outline-none transition"
+              defaultValue={type ?? ""}
+              className="w-full rounded-lg bg-muted/30 border border-transparent px-4 py-3 text-sm outline-none transition focus:bg-background focus:border-border focus:ring-2 focus:ring-primary/20"
             >
               <option value="">Tous</option>
               <option value={EvaluationType.DEBUT_STAGE}>Debut de stage</option>
@@ -212,16 +222,16 @@ export default async function EvaluationsPage({ searchParams }: EvaluationsPageP
             </select>
           </label>
 
-          <div className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
             <button
               type="submit"
-              className="action-button action-button-primary px-5 py-3 text-sm"
+              className="w-full px-6 py-2.5 text-sm sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/50"
             >
               Appliquer les filtres
             </button>
             <Link
               href="/evaluations"
-              className="action-button action-button-secondary px-5 py-3 text-sm"
+              className="action-button action-button-secondary w-full px-5 py-3 text-sm sm:w-auto"
             >
               Revenir a la liste complete
             </Link>
@@ -246,7 +256,7 @@ export default async function EvaluationsPage({ searchParams }: EvaluationsPageP
                     <div className="flex flex-wrap gap-2">
                       <StatusBadge status={getEvaluationStatusLabel(evaluation.status)} />
                     </div>
-                    <h2 className="text-2xl font-semibold tracking-tight">
+                    <h2 className="text-xl font-semibold tracking-tight sm:text-2xl">
                       {getEvaluationTypeLabel(evaluation.type)}
                     </h2>
                     <p className="text-sm leading-6 text-muted">

@@ -1,4 +1,4 @@
-import type { RapportStatus } from "@prisma/client";
+import { RapportStatus } from "@prisma/client";
 
 const editableStatuses: RapportStatus[] = ["BROUILLON", "RETOURNE"];
 
@@ -11,6 +11,16 @@ export function getRapportStatusLabel(status: RapportStatus) {
   };
 
   return labels[status];
+}
+
+export function resolveRapportStatus(value?: string | null) {
+  const normalizedValue = value?.trim().toUpperCase();
+
+  if (!normalizedValue || !(normalizedValue in RapportStatus)) {
+    return null;
+  }
+
+  return normalizedValue as RapportStatus;
 }
 
 export function canEditRapport(status: RapportStatus) {

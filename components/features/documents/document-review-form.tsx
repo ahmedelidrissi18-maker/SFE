@@ -28,14 +28,14 @@ function ActionButtons(props: {
   const { pending } = useFormStatus();
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
       {props.canSubmit ? (
         <button
           type="submit"
           name="intent"
           value="submit"
           disabled={pending}
-          className="action-button action-button-primary px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70"
+          className="action-button action-button-primary w-full px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
         >
           {pending ? "Traitement..." : "Envoyer en verification"}
         </button>
@@ -47,7 +47,7 @@ function ActionButtons(props: {
             name="intent"
             value="reject"
             disabled={pending}
-            className="action-button action-button-danger px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70"
+            className="action-button action-button-danger w-full px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
           >
             {pending ? "Traitement..." : "Rejeter"}
           </button>
@@ -56,7 +56,7 @@ function ActionButtons(props: {
             name="intent"
             value="validate"
             disabled={pending}
-            className="action-button action-button-primary px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70"
+            className="action-button action-button-primary w-full px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
           >
             {pending ? "Traitement..." : "Valider"}
           </button>
@@ -68,7 +68,7 @@ function ActionButtons(props: {
           name="intent"
           value="prepare-signature"
           disabled={pending}
-          className="action-button action-button-warning px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70"
+          className="action-button action-button-warning w-full px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
         >
           {pending ? "Preparation..." : "Preparer la signature"}
         </button>
@@ -79,7 +79,7 @@ function ActionButtons(props: {
           name="intent"
           value="mark-signed"
           disabled={pending}
-          className="action-button action-button-success px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70"
+          className="action-button action-button-success w-full px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
         >
           {pending ? "Validation..." : "Marquer signe"}
         </button>
@@ -107,7 +107,7 @@ export function DocumentReviewForm({
       <input type="hidden" name="documentId" value={documentId} />
 
       <div className="space-y-2">
-        <h2 className="text-xl font-semibold">Workflow documentaire</h2>
+        <h2 className="text-lg font-semibold sm:text-xl">Workflow documentaire</h2>
         <p className="text-sm leading-6 text-muted">
           Soumettez le document, validez-le, rejetez-le avec motif ou preparez sa signature selon vos droits.
         </p>

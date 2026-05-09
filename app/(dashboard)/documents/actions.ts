@@ -1,12 +1,14 @@
 "use server";
 
 import { randomUUID } from "node:crypto";
-import { mkdir, writeFile } from "node:fs/promises";
-import path from "node:path";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { auth } from "@/auth";
 import { logAuditEvent } from "@/lib/audit";
+import {
+  buildDocumentStorageKey,
+  storeDocumentBuffer,
+} from "@/lib/document-storage";
 import {
   buildStoredDocumentName,
   canAccessStageDocuments,
@@ -15,10 +17,10 @@ import {
   canRequestPdfGeneration,
   canReviewDocument,
   canSubmitDocumentForReview,
-  getDocumentStorageRoot,
   getPdfTemplateLabel,
   validateDocumentUpload,
 } from "@/lib/documents";
+import { logger } from "@/lib/logger";
 import { queueDocumentRejectedNotification } from "@/lib/notifications";
 import { requestGeneration } from "@/lib/pdf-service";
 import { prisma } from "@/lib/prisma";
@@ -131,15 +133,18 @@ export async function uploadDocumentAction(
     return { error: "Stage introuvable ou non accessible." };
   }
 
-  const storageRoot = getDocumentStorageRoot();
-  const directory = path.join(storageRoot, stage.id);
   const storedFilename = buildStoredDocumentName(documentFile.name);
-  const storedFilePath = path.join(directory, storedFilename);
+  const storageKey = buildDocumentStorageKey({
+    stageId: stage.id,
+    filename: storedFilename,
+  });
   const buffer = Buffer.from(await documentFile.arrayBuffer());
 
   try {
-    await mkdir(directory, { recursive: true });
-    await writeFile(storedFilePath, buffer);
+    const storedDocument = await storeDocumentBuffer({
+      storageKey,
+      buffer,
+    });
 
     const latestVersion = await prisma.document.findFirst({
       where: {
@@ -159,7 +164,7 @@ export async function uploadDocumentAction(
         auteurId: session.user.id,
         type,
         nom: documentFile.name,
-        url: storedFilePath,
+        url: storedDocument.location,
         tailleOctets: documentFile.size,
         version: (latestVersion?.version ?? 0) + 1,
         statut: "DEPOSE",
@@ -181,7 +186,11 @@ export async function uploadDocumentAction(
       },
     });
   } catch (error) {
-    console.error(error);
+    logger.error("documents.upload.failed", {
+      stageId: stage.id,
+      userId: session.user.id,
+      error,
+    });
     return {
       error: "Televersement du document impossible pour le moment.",
     };
@@ -387,7 +396,12 @@ export async function transitionDocumentWorkflowAction(
       );
     }
   } catch (error) {
-    console.error(error);
+    logger.error("documents.workflow.failed", {
+      documentId: document.id,
+      userId: session.user.id,
+      intent: data.intent,
+      error,
+    });
 
     return {
       error: "Transition documentaire impossible pour le moment.",
@@ -460,7 +474,12 @@ export async function requestPdfGenerationAction(
       },
     });
   } catch (error) {
-    console.error(error);
+    logger.error("documents.pdf_generation.request_failed", {
+      stageId: stage.id,
+      userId: session.user.id,
+      template: data.template,
+      error,
+    });
 
     return {
       error: "Generation PDF impossible pour le moment.",

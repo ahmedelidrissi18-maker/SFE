@@ -10,20 +10,20 @@ describe("rate limit helpers", () => {
     clearAllRateLimits();
   });
 
-  it("allows requests until the configured limit is reached", () => {
-    const first = consumeRateLimit({
+  it("allows requests until the configured limit is reached", async () => {
+    const first = await consumeRateLimit({
       namespace: "test",
       key: "user-1",
       limit: 2,
       windowMs: 60_000,
     });
-    const second = consumeRateLimit({
+    const second = await consumeRateLimit({
       namespace: "test",
       key: "user-1",
       limit: 2,
       windowMs: 60_000,
     });
-    const third = consumeRateLimit({
+    const third = await consumeRateLimit({
       namespace: "test",
       key: "user-1",
       limit: 2,
@@ -36,20 +36,20 @@ describe("rate limit helpers", () => {
     expect(third.retryAfterSeconds).toBeGreaterThan(0);
   });
 
-  it("resets an actor bucket after a successful flow", () => {
-    consumeRateLimit({
+  it("resets an actor bucket after a successful flow", async () => {
+    await consumeRateLimit({
       namespace: "test",
       key: "user-2",
       limit: 1,
       windowMs: 60_000,
     });
 
-    resetRateLimit({
+    await resetRateLimit({
       namespace: "test",
       key: "user-2",
     });
 
-    const next = consumeRateLimit({
+    const next = await consumeRateLimit({
       namespace: "test",
       key: "user-2",
       limit: 1,
@@ -59,4 +59,3 @@ describe("rate limit helpers", () => {
     expect(next.allowed).toBe(true);
   });
 });
-

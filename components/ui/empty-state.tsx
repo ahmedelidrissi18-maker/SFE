@@ -39,8 +39,7 @@ export function EmptyState({
           align === "center" ? "mx-auto items-center" : "items-start",
         )}
       >
-        <div className="absolute left-1/2 top-10 h-24 w-24 -translate-x-1/2 rounded-full bg-primary-fixed blur-3xl opacity-80" />
-        <div className="relative flex h-16 w-16 items-center justify-center rounded-[22px] bg-surface-container-low text-primary">
+        <div className="relative flex h-14 w-14 items-center justify-center rounded-lg border border-border bg-surface-container-low text-primary">
           <MaterialSymbol icon={icon ?? "inbox"} className="text-[28px]" filled />
         </div>
         <div className="relative space-y-2">
@@ -55,20 +54,20 @@ export function EmptyState({
         {actionHref && actionLabel ? (
           <div
             className={cn(
-              "flex flex-wrap gap-3",
+              "flex w-full flex-col gap-3 sm:w-auto sm:flex-row sm:flex-wrap",
               align === "center" ? "justify-center" : "justify-start",
             )}
           >
             <Link
               href={actionHref}
-              className="inline-flex min-h-11 items-center justify-center rounded-full bg-primary px-5 py-3 text-sm font-semibold text-on-primary shadow-[var(--shadow-ambient)] transition hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2"
+              className="action-button action-button-primary w-full px-5 py-3 text-sm sm:w-auto"
             >
               {actionLabel}
             </Link>
             {secondaryActionHref && secondaryActionLabel ? (
               <Link
                 href={secondaryActionHref}
-                className="inline-flex min-h-11 items-center justify-center rounded-full bg-surface-container-low px-5 py-3 text-sm font-semibold text-on-surface shadow-[var(--shadow-soft)] transition hover:bg-surface-container-high focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2"
+                className="action-button action-button-secondary w-full px-5 py-3 text-sm sm:w-auto"
               >
                 {secondaryActionLabel}
               </Link>

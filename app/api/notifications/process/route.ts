@@ -1,6 +1,9 @@
 import { after, NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { getAppEnv } from "@/lib/env";
+import { logger } from "@/lib/logger";
 import {
+  ensureAutomatedBusinessAlerts,
   ensureEndingSoonNotifications,
   processPendingNotificationDispatchJobs,
 } from "@/lib/notifications";
@@ -9,7 +12,7 @@ import { buildActorRateLimitKey, buildRateLimitedResponse, extractRequestIp } fr
 import { consumeRateLimit, securityRateLimits } from "@/lib/security/rate-limit";
 
 function hasInternalProcessorAccess(request: Request) {
-  const configuredSecret = process.env.NOTIFICATIONS_PROCESSOR_SECRET?.trim();
+  const configuredSecret = getAppEnv().NOTIFICATIONS_PROCESSOR_SECRET;
 
   if (!configuredSecret) {
     return false;
@@ -28,7 +31,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const rateLimitResult = consumeRateLimit({
+  const rateLimitResult = await consumeRateLimit({
     ...securityRateLimits.notificationsProcess,
     key: buildActorRateLimitKey(
       session?.user?.id ?? "internal-processor",
@@ -48,10 +51,11 @@ export async function POST(request: Request) {
     try {
       await Promise.all([
         ensureEndingSoonNotifications(),
+        ensureAutomatedBusinessAlerts(),
         processPendingNotificationDispatchJobs(20),
       ]);
     } catch (error) {
-      console.error("notification_dispatch_after_failed", error);
+      logger.error("notifications.processor.after_failed", { error });
     }
   });
 

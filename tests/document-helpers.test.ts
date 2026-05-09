@@ -9,6 +9,8 @@ import {
   getDocumentStatusLabel,
   getDocumentTypeLabel,
   getPdfTemplateLabel,
+  resolveDocumentStatus,
+  resolveDocumentType,
   validateDocumentUpload,
 } from "@/lib/documents";
 
@@ -20,6 +22,13 @@ describe("document helpers", () => {
     expect(getPdfTemplateLabel("RAPPORT_CONSOLIDE_STAGE")).toBe("Rapport consolide");
     expect(formatDocumentSize(512)).toBe("512 o");
     expect(formatDocumentSize(2048)).toBe("2.0 Ko");
+  });
+
+  it("resolves known document filters and ignores invalid ones", () => {
+    expect(resolveDocumentStatus("valide")).toBe("VALIDE");
+    expect(resolveDocumentStatus("unexpected")).toBeNull();
+    expect(resolveDocumentType("rapport")).toBe("RAPPORT");
+    expect(resolveDocumentType("not-a-type")).toBeNull();
   });
 
   it("validates uploads", () => {

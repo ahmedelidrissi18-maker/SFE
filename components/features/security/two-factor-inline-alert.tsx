@@ -39,7 +39,7 @@ export function TwoFactorInlineAlert({ userId }: TwoFactorInlineAlertProps) {
 
   return (
     <div
-      className="flex max-w-full items-center justify-between gap-3 rounded-[20px] border border-tertiary-fixed-dim/50 bg-tertiary-fixed px-4 py-3 text-on-tertiary-fixed-variant shadow-[var(--shadow-soft)]"
+      className="flex max-w-full flex-col items-stretch gap-3 rounded-[20px] border border-tertiary-fixed-dim/50 bg-tertiary-fixed px-4 py-3 text-on-tertiary-fixed-variant shadow-[var(--shadow-soft)] sm:flex-row sm:items-center sm:justify-between"
       role="alert"
     >
       <div className="flex min-w-0 items-center gap-3">
@@ -48,10 +48,10 @@ export function TwoFactorInlineAlert({ userId }: TwoFactorInlineAlertProps) {
           Activez le 2FA pour sécuriser votre compte.
         </p>
       </div>
-      <div className="ml-auto flex shrink-0 items-center gap-2">
+      <div className="flex shrink-0 items-center gap-2 self-stretch sm:ml-auto sm:self-auto">
         <Link
           href="/securite"
-          className="inline-flex h-9 items-center justify-center rounded-full bg-background px-3 py-2 text-sm font-semibold text-foreground shadow-[var(--shadow-soft)] transition hover:bg-surface-container-high"
+          className="inline-flex h-9 flex-1 items-center justify-center rounded-full bg-background px-3 py-2 text-sm font-semibold text-foreground shadow-[var(--shadow-soft)] transition hover:bg-surface-container-high sm:flex-none"
         >
           Activer maintenant
         </Link>

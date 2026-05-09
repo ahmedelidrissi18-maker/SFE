@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { getStageStatusLabel, hasActiveStageConflict, isActiveStageStatus } from "@/lib/stages";
+import {
+  getStageStatusLabel,
+  hasActiveStageConflict,
+  isActiveStageStatus,
+  resolveStageStatus,
+} from "@/lib/stages";
 
 describe("stages helpers", () => {
   it("identifies active statuses", () => {
@@ -22,7 +27,12 @@ describe("stages helpers", () => {
   });
 
   it("returns display labels", () => {
-    expect(getStageStatusLabel("PLANIFIE")).toBe("Planifié");
-    expect(getStageStatusLabel("ANNULE")).toBe("Annulé");
+    expect(getStageStatusLabel("PLANIFIE")).toBe("PlanifiÃ©");
+    expect(getStageStatusLabel("ANNULE")).toBe("AnnulÃ©");
+  });
+
+  it("resolves known stage filters and ignores invalid ones", () => {
+    expect(resolveStageStatus("en_cours")).toBe("EN_COURS");
+    expect(resolveStageStatus("paused")).toBeNull();
   });
 });

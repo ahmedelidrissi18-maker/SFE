@@ -8,6 +8,8 @@ import {
   getEvaluationGridDefinition,
   getEvaluationStatusLabel,
   getEvaluationTypeLabel,
+  resolveEvaluationStatus,
+  resolveEvaluationType,
 } from "@/lib/evaluations";
 
 describe("evaluation helpers", () => {
@@ -16,6 +18,13 @@ describe("evaluation helpers", () => {
     expect(getEvaluationTypeLabel(EvaluationType.FINAL)).toBe("Fin de stage");
     expect(getEvaluationStatusLabel(EvaluationStatus.SOUMIS)).toBe("Soumis");
     expect(getEvaluationStatusLabel(EvaluationStatus.RETOURNE)).toBe("Retourne");
+  });
+
+  it("normalise les filtres d evaluation et rejette les valeurs inconnues", () => {
+    expect(resolveEvaluationStatus("soumis")).toBe(EvaluationStatus.SOUMIS);
+    expect(resolveEvaluationStatus("invalid")).toBeNull();
+    expect(resolveEvaluationType("final")).toBe(EvaluationType.FINAL);
+    expect(resolveEvaluationType("unknown")).toBeNull();
   });
 
   it("calcule un score total normalise sur une grille", () => {

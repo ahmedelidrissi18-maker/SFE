@@ -52,7 +52,7 @@ export async function GET(request: NextRequest) {
     return redirectWithClearedCookie(request, "/acces-refuse", {});
   }
 
-  const rateLimitResult = consumeRateLimit({
+  const rateLimitResult = await consumeRateLimit({
     ...securityRateLimits.githubCallback,
     key: buildActorRateLimitKey(session.user.id, extractRequestIp(request) ?? "unknown"),
   });

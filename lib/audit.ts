@@ -1,4 +1,5 @@
 import { Prisma } from "@prisma/client";
+import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 
 type AuditJsonValue = Prisma.InputJsonValue | Prisma.NullableJsonNullValueInput;
@@ -29,6 +30,12 @@ export async function logAuditEvent(input: AuditEventInput) {
       },
     });
   } catch (error) {
-    console.error("Unable to write audit log", error);
+    logger.error("audit.write_failed", {
+      userId: input.userId,
+      action: input.action,
+      entite: input.entite,
+      entiteId: input.entiteId,
+      error,
+    });
   }
 }

@@ -11,7 +11,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { getPaginationMeta, parsePageParam } from "@/lib/pagination";
 import { prisma } from "@/lib/prisma";
-import { getStageStatusLabel } from "@/lib/stages";
+import { getStageStatusLabel, resolveStageStatus } from "@/lib/stages";
 import { formatDate } from "@/lib/stagiaires";
 
 type StagesPageProps = {
@@ -29,7 +29,8 @@ export default async function StagesPage({ searchParams }: StagesPageProps) {
   soonDate.setDate(soonDate.getDate() + 15);
   const params = (await searchParams) ?? {};
   const success = getStringParam(params.success)?.trim() ?? "";
-  const statut = getStringParam(params.statut)?.trim() ?? "";
+  const rawStatut = getStringParam(params.statut)?.trim() ?? "";
+  const statut = resolveStageStatus(rawStatut);
   const departement = getStringParam(params.departement)?.trim() ?? "";
   const requestedPage = parsePageParam(params.page);
   const pageSize = 10;
@@ -43,7 +44,7 @@ export default async function StagesPage({ searchParams }: StagesPageProps) {
           },
         }
       : {}),
-    ...(statut ? { statut: statut as never } : {}),
+    ...(statut ? { statut } : {}),
     ...(session?.user.role === "ENCADRANT" ? { encadrantId: session.user.id } : {}),
   };
   const [totalStagesCount, activeCount, endingSoonCount, coveredStagiaires] = await Promise.all([
@@ -94,7 +95,7 @@ export default async function StagesPage({ searchParams }: StagesPageProps) {
     skip: pagination.skip,
     take: pagination.take,
   });
-  const hasActiveFilters = Boolean(statut || departement);
+  const hasActiveFilters = Boolean(rawStatut || departement);
 
   return (
     <div className="space-y-8">
@@ -129,7 +130,7 @@ export default async function StagesPage({ searchParams }: StagesPageProps) {
         }
       />
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-4 min-[390px]:grid-cols-2 xl:grid-cols-4">
         <MetricCard
           label="Stages visibles"
           value={totalStagesCount}
@@ -159,7 +160,7 @@ export default async function StagesPage({ searchParams }: StagesPageProps) {
       <Card className="space-y-5">
         <div>
           <p className="text-sm font-medium text-primary">Filtres</p>
-          <h2 className="mt-1 text-2xl font-semibold tracking-tight">Cibler un perimetre</h2>
+          <h2 className="mt-1 text-lg font-semibold tracking-tight sm:text-2xl">Cibler un perimetre</h2>
           <p className="mt-2 text-sm leading-6 text-muted">
             Filtrez par statut ou departement pour retrouver rapidement les stages a suivre.
           </p>
@@ -169,7 +170,7 @@ export default async function StagesPage({ searchParams }: StagesPageProps) {
             <span className="font-medium">Statut</span>
             <select
               name="statut"
-              defaultValue={statut}
+              defaultValue={statut ?? ""}
               className="field-shell w-full rounded-2xl px-4 py-3 outline-none transition"
             >
               <option value="">Tous</option>
@@ -191,16 +192,16 @@ export default async function StagesPage({ searchParams }: StagesPageProps) {
             />
           </label>
 
-          <div className="flex flex-wrap items-end gap-3">
+          <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end">
             <button
               type="submit"
-              className="action-button action-button-primary px-5 py-3 text-sm"
+              className="action-button action-button-primary w-full px-5 py-3 text-sm sm:w-auto"
             >
               Appliquer les filtres
             </button>
             <Link
               href="/stages"
-              className="action-button action-button-secondary px-5 py-3 text-sm"
+              className="action-button action-button-secondary w-full px-5 py-3 text-sm sm:w-auto"
             >
               Revenir a la liste complete
             </Link>
@@ -218,10 +219,10 @@ export default async function StagesPage({ searchParams }: StagesPageProps) {
                     <div className="flex flex-wrap gap-2">
                       <StatusBadge status={getStageStatusLabel(stage.statut)} />
                     </div>
-                    <h2 className="text-2xl font-semibold tracking-tight">{stage.sujet}</h2>
+                    <h2 className="break-words text-xl font-semibold tracking-tight sm:text-2xl">{stage.sujet}</h2>
                     <p className="text-sm leading-6 text-muted">{stage.departement}</p>
                   </div>
-                  <div className="flex flex-wrap gap-3">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                     <Link
                       href={`/stagiaires/${stage.stagiaireId}`}
                       className="action-button action-button-primary px-4 py-2.5 text-sm"
@@ -239,7 +240,7 @@ export default async function StagesPage({ searchParams }: StagesPageProps) {
                   </div>
                 </div>
 
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                <div className="grid gap-3 min-[390px]:grid-cols-2 xl:grid-cols-3">
                   <div className="tonal-card rounded-[22px] p-4">
                     <p className="text-sm text-muted">Stagiaire</p>
                     <p className="mt-2 text-sm font-medium">

@@ -8,6 +8,7 @@ import type { NavigationItem } from "@/lib/navigation";
 
 type SidebarNavigationLinksProps = {
   items: NavigationItem[];
+  onNavigate?: () => void;
 };
 
 const iconMap = {
@@ -26,11 +27,11 @@ function isCurrentPath(pathname: string, href: string) {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-export function SidebarNavigationLinks({ items }: SidebarNavigationLinksProps) {
+export function SidebarNavigationLinks({ items, onNavigate }: SidebarNavigationLinksProps) {
   const pathname = usePathname();
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
+    <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-1">
       {items.map((item) => {
         const isCurrent = isCurrentPath(pathname, item.href);
 
@@ -38,18 +39,19 @@ export function SidebarNavigationLinks({ items }: SidebarNavigationLinksProps) {
           <Link
             key={item.href}
             href={item.href}
+            onClick={onNavigate}
             aria-current={isCurrent ? "page" : undefined}
             className={cn(
-              "group flex min-h-14 items-start gap-3 rounded-[22px] px-3.5 py-3 text-sm font-medium transition-all",
+              "group flex items-center gap-3 px-3 py-2.5 rounded-lg min-h-[44px] text-sm transition-colors duration-100",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2 focus-visible:ring-offset-card",
               isCurrent
-                ? "bg-surface-container-low text-on-surface shadow-[var(--shadow-soft)]"
-                : "text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface",
+                ? "bg-primary/10 text-primary font-semibold border-l-2 border-primary"
+                : "font-medium text-muted-foreground hover:bg-accent border-l-2 border-transparent",
             )}
           >
             <span
               className={cn(
-                "flex h-10 w-10 shrink-0 items-center justify-center rounded-[18px] transition",
+                "flex h-9 w-9 shrink-0 items-center justify-center rounded-md transition",
                 isCurrent
                   ? "bg-primary text-on-primary"
                   : "bg-surface-container-lowest text-on-surface-variant group-hover:text-primary",
@@ -60,7 +62,7 @@ export function SidebarNavigationLinks({ items }: SidebarNavigationLinksProps) {
             <span className="min-w-0 flex-1 break-words leading-5">{item.label}</span>
             <span
               className={cn(
-                "mt-3 h-2.5 w-2.5 shrink-0 rounded-full transition",
+                "h-2 w-2 shrink-0 rounded-full transition",
                 isCurrent ? "bg-primary" : "bg-surface-container-highest group-hover:bg-primary-fixed-dim",
               )}
             />

@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from "node:crypto";
 import path from "node:path";
-import { DocumentSource, DocumentStatus, SignatureStatus, type DocumentType, type Prisma, type Role } from "@prisma/client";
+import { DocumentSource, DocumentStatus, DocumentType, SignatureStatus, type Prisma, type Role } from "@prisma/client";
+import { getAppEnv } from "@/lib/env";
 
 const MAX_DOCUMENT_SIZE_BYTES = 5 * 1024 * 1024;
 
@@ -35,6 +36,9 @@ const signatureStatusLabels: Record<SignatureStatus, string> = {
   SIGNED: "Signe",
   FAILED: "Echec signature",
 };
+
+const documentStatuses = new Set<DocumentStatus>(Object.values(DocumentStatus));
+const documentTypes = new Set<DocumentType>(Object.values(DocumentType));
 
 export const pdfTemplateDefinitions = [
   {
@@ -72,6 +76,26 @@ export function getDocumentStatusLabel(status: DocumentStatus) {
   return documentStatusLabels[status];
 }
 
+export function resolveDocumentStatus(value?: string | null) {
+  const normalizedValue = value?.trim().toUpperCase();
+
+  if (!normalizedValue || !documentStatuses.has(normalizedValue as DocumentStatus)) {
+    return null;
+  }
+
+  return normalizedValue as DocumentStatus;
+}
+
+export function resolveDocumentType(value?: string | null) {
+  const normalizedValue = value?.trim().toUpperCase();
+
+  if (!normalizedValue || !documentTypes.has(normalizedValue as DocumentType)) {
+    return null;
+  }
+
+  return normalizedValue as DocumentType;
+}
+
 export function getDocumentSourceLabel(source: DocumentSource) {
   return documentSourceLabels[source];
 }
@@ -107,7 +131,7 @@ export function formatDocumentSize(size: number) {
 }
 
 export function getDocumentStorageRoot() {
-  return path.join(process.cwd(), "storage", "documents");
+  return getAppEnv().DOCUMENT_STORAGE_LOCAL_ROOT;
 }
 
 export function sanitizeDocumentFilename(filename: string) {

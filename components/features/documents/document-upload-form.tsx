@@ -32,7 +32,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="action-button action-button-primary px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70"
+      className="action-button action-button-primary w-full px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
     >
       {pending ? "Televersement..." : "Ajouter le document"}
     </button>
@@ -50,7 +50,7 @@ export function DocumentUploadForm({ stageId, action }: DocumentUploadFormProps)
       <input type="hidden" name="stageId" value={stageId} />
 
       <div className="space-y-2">
-        <h2 className="text-xl font-semibold">Ajouter un document</h2>
+        <h2 className="text-lg font-semibold sm:text-xl">Ajouter un document</h2>
         <p className="text-sm leading-6 text-muted">
           Formats autorises : PDF, JPG, PNG, DOC et DOCX. Taille maximale : 5 Mo.
         </p>

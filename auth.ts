@@ -9,6 +9,7 @@ import type { Role } from "@prisma/client";
 import type { JWT } from "next-auth/jwt";
 import authConfig from "@/auth.config";
 import { getConfiguredLoginProviders } from "@/lib/auth-providers";
+import { getAppEnv } from "@/lib/env";
 import { logAuditEvent } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 import { extractRequestIp, extractUserAgent } from "@/lib/security/request";
@@ -18,6 +19,7 @@ import {
   securityRateLimits,
 } from "@/lib/security/rate-limit";
 import {
+  consumeRecoveryCode,
   decryptTwoFactorSecret,
   isSensitiveTwoFactorRole,
   verifyTwoFactorCode,
@@ -36,6 +38,10 @@ class TwoFactorInvalidError extends CredentialsSignin {
   code = "two_factor_invalid";
 }
 
+class RecoveryCodeInvalidError extends CredentialsSignin {
+  code = "recovery_code_invalid";
+}
+
 class RateLimitedSignInError extends CredentialsSignin {
   code = "rate_limited";
 }
@@ -51,12 +57,13 @@ type AuthUserRecord = {
 
 const configuredOAuthProviders = getConfiguredLoginProviders();
 const oauthProviders: AppProviders = [];
+const env = getAppEnv();
 
 if (configuredOAuthProviders.google) {
   oauthProviders.push(
     Google({
-      clientId: process.env.AUTH_GOOGLE_CLIENT_ID!.trim(),
-      clientSecret: process.env.AUTH_GOOGLE_CLIENT_SECRET!.trim(),
+      clientId: env.AUTH_GOOGLE_CLIENT_ID,
+      clientSecret: env.AUTH_GOOGLE_CLIENT_SECRET,
     }),
   );
 }
@@ -64,8 +71,8 @@ if (configuredOAuthProviders.google) {
 if (configuredOAuthProviders.github) {
   oauthProviders.push(
     GitHub({
-      clientId: process.env.AUTH_GITHUB_CLIENT_ID!.trim(),
-      clientSecret: process.env.AUTH_GITHUB_CLIENT_SECRET!.trim(),
+      clientId: env.AUTH_GITHUB_CLIENT_ID,
+      clientSecret: env.AUTH_GITHUB_CLIENT_SECRET,
     }),
   );
 }
@@ -178,6 +185,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         email: { label: "Email", type: "email" },
         password: { label: "Mot de passe", type: "password" },
         twoFactorCode: { label: "Code 2FA", type: "text" },
+        backupCode: { label: "Code de secours", type: "text" },
       },
       async authorize(credentials, request) {
         const parsedCredentials = loginFormSchema.safeParse(credentials);
@@ -186,7 +194,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           throw new InvalidCredentialsError();
         }
 
-        const { email, password, twoFactorCode } = parsedCredentials.data;
+        const { email, password, twoFactorCode, backupCode } = parsedCredentials.data;
         const user = await prisma.user.findUnique({
           where: { email },
           select: {
@@ -199,15 +207,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             passwordHash: true,
             twoFactorEnabled: true,
             twoFactorSecret: true,
+            twoFactorRecoveryCodes: true,
           },
         });
         const ip = extractRequestIp(request) ?? undefined;
         const userAgent = extractUserAgent(request) ?? undefined;
-        const loginIpBucket = consumeRateLimit({
+        const loginIpBucket = await consumeRateLimit({
           ...securityRateLimits.authLoginIp,
           key: ip ?? "unknown",
         });
-        const loginIdentityBucket = consumeRateLimit({
+        const loginIdentityBucket = await consumeRateLimit({
           ...securityRateLimits.authLoginIdentity,
           key: email,
         });
@@ -269,6 +278,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           throw new InvalidCredentialsError();
         }
 
+        let verifiedSecondFactorMethod: "totp" | "recovery" | null = null;
+
         if (isSensitiveTwoFactorRole(user.role) && user.twoFactorEnabled) {
           const decryptedSecret = decryptTwoFactorSecret(user.twoFactorSecret);
 
@@ -289,12 +300,42 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             throw new TwoFactorInvalidError();
           }
 
-          const isValidTwoFactorCode = verifyTwoFactorCode(
-            decryptedSecret,
-            twoFactorCode,
-          );
+          if (verifyTwoFactorCode(decryptedSecret, twoFactorCode)) {
+            verifiedSecondFactorMethod = "totp";
+          } else {
+            const recoveryCodeConsumption = await consumeRecoveryCode(
+              user.twoFactorRecoveryCodes,
+              backupCode,
+            );
 
-          if (!isValidTwoFactorCode) {
+            if (recoveryCodeConsumption?.consumed) {
+              await prisma.user.update({
+                where: {
+                  id: user.id,
+                },
+                data: {
+                  twoFactorRecoveryCodes: recoveryCodeConsumption.remainingHashes,
+                },
+              });
+
+              await logAuditEvent({
+                userId: user.id,
+                action: "AUTH_2FA_RECOVERY_CODE_USED",
+                entite: "AUTH",
+                entiteId: user.id,
+                ip,
+                userAgent,
+                nouvelleValeur: {
+                  email,
+                  remainingRecoveryCodes: recoveryCodeConsumption.remainingHashes.length,
+                },
+              });
+
+              verifiedSecondFactorMethod = "recovery";
+            }
+          }
+
+          if (!verifiedSecondFactorMethod) {
             await logAuditEvent({
               userId: user.id,
               action: "AUTH_LOGIN_FAILED",
@@ -304,23 +345,31 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               userAgent,
               nouvelleValeur: {
                 email,
-                reason: twoFactorCode ? "two_factor_invalid" : "two_factor_required",
+                reason: backupCode
+                  ? "recovery_code_invalid"
+                  : twoFactorCode
+                    ? "two_factor_invalid"
+                    : "two_factor_required",
               },
             });
 
-            if (!twoFactorCode) {
+            if (!twoFactorCode && !backupCode) {
               throw new TwoFactorRequiredError();
+            }
+
+            if (backupCode) {
+              throw new RecoveryCodeInvalidError();
             }
 
             throw new TwoFactorInvalidError();
           }
         }
 
-        resetRateLimit({
+        await resetRateLimit({
           namespace: securityRateLimits.authLoginIp.namespace,
           key: ip ?? "unknown",
         });
-        resetRateLimit({
+        await resetRateLimit({
           namespace: securityRateLimits.authLoginIdentity.namespace,
           key: email,
         });
@@ -336,6 +385,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             email,
             role: user.role,
             twoFactorVerified: isSensitiveTwoFactorRole(user.role) && user.twoFactorEnabled,
+            twoFactorMethod: verifiedSecondFactorMethod,
           },
         });
 

@@ -19,13 +19,13 @@ function ReviewButtons() {
   const { pending } = useFormStatus();
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
       <button
         type="submit"
         name="intent"
         value="return"
         disabled={pending}
-        className="action-button action-button-warning px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70"
+        className="action-button action-button-warning w-full px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
       >
         {pending ? "Traitement..." : "Retourner le rapport"}
       </button>
@@ -34,7 +34,7 @@ function ReviewButtons() {
         name="intent"
         value="validate"
         disabled={pending}
-        className="action-button action-button-primary px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70"
+        className="action-button action-button-primary w-full px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
       >
         {pending ? "Traitement..." : "Valider le rapport"}
       </button>
@@ -53,7 +53,7 @@ export function RapportReviewForm({ rapportId, defaultComment, action }: Rapport
       <input type="hidden" name="rapportId" value={rapportId} />
 
       <div className="space-y-2">
-        <h2 className="text-xl font-semibold">Revue de l encadrant</h2>
+        <h2 className="text-lg font-semibold sm:text-xl">Revue de l encadrant</h2>
         <p className="text-sm leading-6 text-muted">
           Ajoutez un retour puis validez ou retournez ce rapport au stagiaire.
         </p>

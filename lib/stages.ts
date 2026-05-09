@@ -1,4 +1,4 @@
-import type { StageStatus } from "@prisma/client";
+import { StageStatus } from "@prisma/client";
 
 export const ACTIVE_STAGE_STATUSES: StageStatus[] = ["PLANIFIE", "EN_COURS", "SUSPENDU"];
 
@@ -8,14 +8,24 @@ export function isActiveStageStatus(status: StageStatus) {
 
 export function getStageStatusLabel(status: StageStatus) {
   const labels: Record<StageStatus, string> = {
-    PLANIFIE: "Planifié",
+    PLANIFIE: "PlanifiÃ©",
     EN_COURS: "En cours",
     SUSPENDU: "Suspendu",
-    TERMINE: "Terminé",
-    ANNULE: "Annulé",
+    TERMINE: "TerminÃ©",
+    ANNULE: "AnnulÃ©",
   };
 
   return labels[status];
+}
+
+export function resolveStageStatus(value?: string | null) {
+  const normalizedValue = value?.trim().toUpperCase();
+
+  if (!normalizedValue || !(normalizedValue in StageStatus)) {
+    return null;
+  }
+
+  return normalizedValue as StageStatus;
 }
 
 export function hasActiveStageConflict(

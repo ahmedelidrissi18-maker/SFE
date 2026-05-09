@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(new URL("/acces-refuse", request.nextUrl));
   }
 
-  const rateLimitResult = consumeRateLimit({
+  const rateLimitResult = await consumeRateLimit({
     ...securityRateLimits.githubConnect,
     key: buildActorRateLimitKey(session.user.id, extractRequestIp(request) ?? "unknown"),
   });

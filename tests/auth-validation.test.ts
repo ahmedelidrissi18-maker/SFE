@@ -7,6 +7,7 @@ describe("auth validation schemas", () => {
       email: "ADMIN@stagiaires.local",
       password: "Password123!",
       twoFactorCode: "",
+      backupCode: "",
     });
 
     expect(parsed.success).toBe(true);
@@ -18,9 +19,21 @@ describe("auth validation schemas", () => {
       email: "admin@stagiaires.local",
       password: "Password123!",
       twoFactorCode: "12345",
+      backupCode: "",
     });
 
     expect(parsed.success).toBe(false);
+  });
+
+  it("accepts a recovery code with the expected format", () => {
+    const parsed = loginFormSchema.safeParse({
+      email: "admin@stagiaires.local",
+      password: "Password123!",
+      twoFactorCode: "",
+      backupCode: "ABCD-EFGH",
+    });
+
+    expect(parsed.success).toBe(true);
   });
 
   it("requires a 6-digit code for security actions", () => {
@@ -36,4 +49,3 @@ describe("auth validation schemas", () => {
     ).toBe(false);
   });
 });
-

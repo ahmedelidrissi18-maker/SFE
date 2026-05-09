@@ -13,7 +13,7 @@ import { PaginationControls } from "@/components/ui/pagination-controls";
 import { PageHeader } from "@/components/ui/page-header";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { getPaginationMeta, parsePageParam } from "@/lib/pagination";
-import { notificationEventDefinitions } from "@/lib/notifications";
+import { notificationEventDefinitions } from "@/lib/notification-definitions";
 import { prisma } from "@/lib/prisma";
 
 type NotificationsPageProps = {
@@ -40,7 +40,7 @@ function getStringParam(value?: string | string[]) {
 function NotificationsFeedFallback() {
   return (
     <div className="space-y-6">
-      <section className="grid gap-4 md:grid-cols-3">
+      <section className="grid gap-4 min-[390px]:grid-cols-2 xl:grid-cols-3">
         {Array.from({ length: 3 }).map((_, index) => (
           <div
             key={index}
@@ -174,16 +174,16 @@ async function NotificationPreferencesSection({ userId }: NotificationPreference
     <Card className="space-y-5">
       <div>
         <p className="text-sm font-medium text-primary">Preferences</p>
-        <h2 className="mt-1 text-2xl font-semibold tracking-tight">
+        <h2 className="mt-1 text-lg font-semibold tracking-tight sm:text-2xl">
           Diffusion temps reel et in-app
         </h2>
-        <p className="mt-2 text-sm leading-6 text-muted">
+        <p className="mt-2 text-sm leading-relaxed text-muted-foreground max-w-prose">
           Choisissez les evenements qui doivent apparaitre dans votre centre de notifications
           et ceux qui doivent declencher une mise a jour live de votre interface.
         </p>
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-2">
+      <div className="grid gap-4 lg:grid-cols-2">
         {notificationEventDefinitions.map((eventDefinition) => {
           const preference = preferenceByType.get(eventDefinition.type);
 
@@ -202,24 +202,15 @@ async function NotificationPreferencesSection({ userId }: NotificationPreference
                   </p>
                 </div>
 
-                <div className="flex flex-wrap gap-3">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-muted">Centre in-app</span>
-                    <StatusBadge status={preference?.inAppEnabled ?? true ? "Active" : "Desactive"} />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-medium text-muted">Live</span>
-                    <StatusBadge status={preference?.liveEnabled ?? true ? "Active" : "Desactive"} />
-                  </div>
-                </div>
 
-                <div className="grid gap-3 md:grid-cols-2">
+
+                <div className="grid gap-3 md:grid-cols-2 mt-2">
                   <label className="space-y-2 text-sm">
-                    <span className="font-medium">Centre in-app</span>
+                    <span className="font-medium text-muted-foreground">Centre in-app</span>
                     <select
                       name="inAppEnabled"
                       defaultValue={String(preference?.inAppEnabled ?? true)}
-                      className="field-shell w-full rounded-2xl px-4 py-3 outline-none transition"
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition"
                     >
                       <option value="true">Active</option>
                       <option value="false">Desactive</option>
@@ -227,11 +218,11 @@ async function NotificationPreferencesSection({ userId }: NotificationPreference
                   </label>
 
                   <label className="space-y-2 text-sm">
-                    <span className="font-medium">Mise a jour live</span>
+                    <span className="font-medium text-muted-foreground">Mise a jour live</span>
                     <select
                       name="liveEnabled"
                       defaultValue={String(preference?.liveEnabled ?? true)}
-                      className="field-shell w-full rounded-2xl px-4 py-3 outline-none transition"
+                      className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition"
                     >
                       <option value="true">Active</option>
                       <option value="false">Desactive</option>
@@ -241,7 +232,7 @@ async function NotificationPreferencesSection({ userId }: NotificationPreference
 
                 <button
                   type="submit"
-                  className="action-button action-button-secondary px-4 py-2.5 text-sm"
+                  className="w-full px-6 py-2.5 text-sm sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-600/50 mt-2"
                 >
                   Enregistrer
                 </button>

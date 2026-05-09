@@ -46,32 +46,30 @@ export function SessionDropdown({
   }, []);
 
   return (
-    <div ref={containerRef} className="relative z-30">
+    <div ref={containerRef} className="relative z-30 w-full sm:w-auto">
       <button
         type="button"
         aria-expanded={isOpen}
         aria-haspopup="menu"
         onClick={() => setIsOpen((current) => !current)}
-        className="inline-flex min-h-11 min-w-[220px] items-center gap-3 rounded-[24px] bg-surface-container-low px-4 py-3 text-left shadow-[var(--shadow-soft)] transition hover:bg-surface-container-high focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+        className="flex items-center gap-2 rounded-lg p-1.5 text-sm font-medium hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 transition-colors"
       >
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-[18px] bg-primary text-sm font-semibold text-on-primary">
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-semibold text-primary-foreground">
           {initials}
         </div>
-        <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold uppercase tracking-[0.16em] text-on-surface-variant">
-            Session active
-          </p>
-          <p className="truncate font-semibold text-on-surface">{displayName}</p>
+        <div className="hidden sm:flex flex-col items-start text-left">
+          <span className="max-w-[120px] truncate leading-none text-foreground">{displayName}</span>
+          <span className="text-[10px] uppercase tracking-widest text-muted-foreground mt-0.5">{roleLabel}</span>
         </div>
         <MaterialSymbol
           icon={isOpen ? "expand_less" : "expand_more"}
-          className="shrink-0 text-[20px] text-on-surface-variant"
+          className="hidden sm:block shrink-0 text-[18px] text-muted-foreground"
         />
       </button>
 
       <div
         className={cn(
-          "absolute right-0 top-[calc(100%+0.75rem)] z-40 w-[min(22rem,calc(100vw-2rem))] rounded-[24px] bg-surface-container-low p-4 shadow-[var(--shadow-card)]",
+          "absolute right-0 top-[calc(100%+0.75rem)] z-40 w-[calc(100vw-2.5rem)] max-w-[22rem] rounded-[24px] bg-surface-container-low p-4 shadow-[var(--shadow-card)] sm:w-[22rem]",
           isOpen ? "block" : "hidden",
         )}
         role="menu"
@@ -87,7 +85,7 @@ export function SessionDropdown({
         </div>
 
         <div className="mt-4 rounded-[18px] bg-surface-container-lowest px-3 py-3 text-sm shadow-[var(--shadow-soft)]">
-          <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
             <span className="font-medium text-on-surface">{roleLabel}</span>
             <span className="text-on-surface-variant">{currentDateLabel}</span>
           </div>

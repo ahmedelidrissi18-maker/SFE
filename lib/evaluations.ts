@@ -144,6 +144,26 @@ export function getEvaluationStatusLabel(status: EvaluationStatus) {
   return labels[status];
 }
 
+export function resolveEvaluationStatus(value?: string | null) {
+  const normalizedValue = value?.trim().toUpperCase();
+
+  if (!normalizedValue || !(normalizedValue in EvaluationStatus)) {
+    return null;
+  }
+
+  return normalizedValue as EvaluationStatus;
+}
+
+export function resolveEvaluationType(value?: string | null) {
+  const normalizedValue = value?.trim().toUpperCase();
+
+  if (!normalizedValue || !(normalizedValue in EvaluationType)) {
+    return null;
+  }
+
+  return normalizedValue as EvaluationType;
+}
+
 export function getEvaluationTypeOptions() {
   return Object.values(EvaluationType).map((type) => ({
     value: type,

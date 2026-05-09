@@ -1,7 +1,3 @@
-import { assertPasswordStrength } from "@/lib/security/password-policy";
+import { getAppEnv } from "@/lib/env";
 
-const resolvedDefaultUserPassword = process.env.DEFAULT_USER_PASSWORD?.trim() || "Password123!";
-
-assertPasswordStrength(resolvedDefaultUserPassword, "DEFAULT_USER_PASSWORD");
-
-export const DEFAULT_USER_PASSWORD = resolvedDefaultUserPassword;
+export const DEFAULT_USER_PASSWORD = getAppEnv().DEFAULT_USER_PASSWORD;

@@ -76,13 +76,13 @@ function SubmitButtons() {
   const { pending } = useFormStatus();
 
   return (
-    <div className="flex flex-wrap items-center gap-3">
+    <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
       <button
         type="submit"
         name="intent"
         value="draft"
         disabled={pending}
-        className="action-button action-button-secondary px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70"
+        className="action-button action-button-secondary w-full px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
       >
         {pending ? "Enregistrement..." : "Enregistrer"}
       </button>
@@ -91,7 +91,7 @@ function SubmitButtons() {
         name="intent"
         value="submit"
         disabled={pending}
-        className="action-button action-button-primary px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70"
+        className="action-button action-button-primary w-full px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
       >
         {pending ? "Soumission..." : "Soumettre a validation"}
       </button>
@@ -139,7 +139,7 @@ export function EvaluationForm({
         <p className="text-sm font-medium uppercase tracking-[0.18em] text-primary/80">
           Evaluations
         </p>
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h1>
+        <h1 className="text-xl font-semibold tracking-tight sm:text-3xl lg:text-4xl">{title}</h1>
         <p className="max-w-3xl text-sm leading-6 text-muted sm:text-[15px]">{description}</p>
       </div>
 
@@ -157,7 +157,7 @@ export function EvaluationForm({
           description="La grille active et le score total se mettent a jour automatiquement selon le type choisi."
         />
 
-        <section className="grid gap-4 md:grid-cols-3">
+        <section className="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
           <label className="space-y-2 text-sm md:col-span-2">
             <span className="font-medium">Stage</span>
             <select
@@ -334,11 +334,11 @@ export function EvaluationForm({
           <FeedbackBanner kind="error" title="Enregistrement impossible" message={state.error} />
         ) : null}
 
-        <div className="flex flex-wrap items-center gap-3">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
           <SubmitButtons />
           <Link
             href={cancelHref}
-            className="action-button action-button-secondary px-5 py-3 text-sm"
+            className="action-button action-button-secondary w-full px-5 py-3 text-sm sm:w-auto"
           >
             Annuler
           </Link>

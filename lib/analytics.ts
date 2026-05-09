@@ -1347,12 +1347,13 @@ export async function getAnalyticsOverview(input: {
 
 function escapeCsvValue(value: string | number) {
   const normalized = String(value);
+  const protectedValue = /^[=+\-@]/.test(normalized) ? `'${normalized}` : normalized;
 
-  if (!/[;"\n]/.test(normalized)) {
-    return normalized;
+  if (!/[;"\n]/.test(protectedValue)) {
+    return protectedValue;
   }
 
-  return `"${normalized.replaceAll('"', '""')}"`;
+  return `"${protectedValue.replaceAll('"', '""')}"`;
 }
 
 export function buildAnalyticsCsv(overview: AnalyticsOverview) {

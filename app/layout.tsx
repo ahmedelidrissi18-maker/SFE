@@ -1,13 +1,9 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
 import { Providers } from "@/app/providers";
+import { assertAppEnv } from "@/lib/env";
 import "./globals.css";
 
-const inter = Inter({
-  variable: "--font-inter",
-  display: "swap",
-  subsets: ["latin"],
-});
+assertAppEnv();
 
 export const metadata: Metadata = {
   title: "Gestion des Stagiaires",
@@ -24,7 +20,7 @@ export default function RootLayout({
       lang="fr"
       data-scroll-behavior="smooth"
       suppressHydrationWarning
-      className={`${inter.variable} h-full antialiased`}
+      className="h-full antialiased"
     >
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />

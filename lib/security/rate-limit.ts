@@ -1,3 +1,7 @@
+import Redis from "ioredis";
+import { getAppEnv } from "@/lib/env";
+import { logger } from "@/lib/logger";
+
 type RateLimitBucket = {
   count: number;
   resetAt: number;
@@ -20,6 +24,25 @@ export type RateLimitResult = {
 };
 
 const buckets = new Map<string, RateLimitBucket>();
+
+type RateLimitRedisStore = {
+  client?: Redis;
+  warnedFallback: boolean;
+};
+
+declare global {
+  var __sfeRateLimitRedisStore__: RateLimitRedisStore | undefined;
+}
+
+function getRateLimitRedisStore() {
+  if (!globalThis.__sfeRateLimitRedisStore__) {
+    globalThis.__sfeRateLimitRedisStore__ = {
+      warnedFallback: false,
+    };
+  }
+
+  return globalThis.__sfeRateLimitRedisStore__;
+}
 
 export const securityRateLimits = {
   authLoginIp: {
@@ -67,6 +90,10 @@ function buildRateLimitBucketKey(namespace: string, key: string) {
   return `${normalizeRateLimitKeyPart(namespace)}::${normalizeRateLimitKeyPart(key)}`;
 }
 
+function buildRedisRateLimitKey(namespace: string, key: string) {
+  return `rate-limit:${buildRateLimitBucketKey(namespace, key)}`;
+}
+
 function pruneExpiredBuckets(now: number) {
   if (buckets.size < 500) {
     return;
@@ -79,7 +106,7 @@ function pruneExpiredBuckets(now: number) {
   }
 }
 
-export function consumeRateLimit(options: RateLimitOptions): RateLimitResult {
+function consumeMemoryRateLimit(options: RateLimitOptions): RateLimitResult {
   const now = Date.now();
   pruneExpiredBuckets(now);
 
@@ -109,11 +136,115 @@ export function consumeRateLimit(options: RateLimitOptions): RateLimitResult {
   };
 }
 
-export function resetRateLimit(options: Pick<RateLimitOptions, "namespace" | "key">) {
+function getRateLimitRedisClient() {
+  const env = getAppEnv();
+
+  if (!env.REDIS_ENABLED) {
+    return null;
+  }
+
+  const store = getRateLimitRedisStore();
+
+  if (!store.client) {
+    store.client = new Redis(env.REDIS_URL, {
+      lazyConnect: true,
+      maxRetriesPerRequest: 1,
+      connectTimeout: env.REDIS_CONNECT_TIMEOUT_MS,
+      enableReadyCheck: true,
+      enableOfflineQueue: false,
+      connectionName: "gestion-stagiaires-rate-limit",
+      retryStrategy: () => null,
+    });
+    store.client.on("error", (error) => {
+      if (store.warnedFallback) {
+        return;
+      }
+
+      store.warnedFallback = true;
+      logger.warn("rate_limit.redis.error_fallback_memory", { error });
+    });
+  }
+
+  return store.client;
+}
+
+async function consumeRedisRateLimit(options: RateLimitOptions): Promise<RateLimitResult | null> {
+  const client = getRateLimitRedisClient();
+
+  if (!client) {
+    return null;
+  }
+
+  const now = Date.now();
+  const redisKey = buildRedisRateLimitKey(options.namespace, options.key);
+
+  try {
+    if (client.status === "wait" || client.status === "end") {
+      await client.connect();
+    }
+
+    const count = await client.incr(redisKey);
+
+    if (count === 1) {
+      await client.pexpire(redisKey, options.windowMs);
+    }
+
+    let ttlMs = await client.pttl(redisKey);
+
+    if (ttlMs < 0) {
+      await client.pexpire(redisKey, options.windowMs);
+      ttlMs = options.windowMs;
+    }
+
+    const allowed = count <= options.limit;
+    const retryAfterSeconds = Math.max(1, Math.ceil(ttlMs / 1000));
+
+    return {
+      allowed,
+      currentCount: count,
+      limit: options.limit,
+      remaining: Math.max(0, options.limit - count),
+      resetAt: new Date(now + ttlMs),
+      retryAfterSeconds,
+    };
+  } catch (error) {
+    const store = getRateLimitRedisStore();
+
+    if (!store.warnedFallback) {
+      store.warnedFallback = true;
+      logger.warn("rate_limit.redis.unavailable_fallback_memory", { error });
+    }
+
+    return null;
+  }
+}
+
+export async function consumeRateLimit(options: RateLimitOptions): Promise<RateLimitResult> {
+  const redisResult = await consumeRedisRateLimit(options);
+
+  return redisResult ?? consumeMemoryRateLimit(options);
+}
+
+export async function resetRateLimit(options: Pick<RateLimitOptions, "namespace" | "key">) {
   buckets.delete(buildRateLimitBucketKey(options.namespace, options.key));
+
+  const client = getRateLimitRedisClient();
+
+  if (!client) {
+    return;
+  }
+
+  try {
+    if (client.status === "wait" || client.status === "end") {
+      await client.connect();
+    }
+
+    await client.del(buildRedisRateLimitKey(options.namespace, options.key));
+  } catch (error) {
+    logger.warn("rate_limit.redis.reset_failed", { error });
+  }
 }
 
 export function clearAllRateLimits() {
   buckets.clear();
 }
-

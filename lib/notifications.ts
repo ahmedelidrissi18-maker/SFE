@@ -1,6 +1,13 @@
-import { NotificationDispatchStatus, type Prisma, type Role } from "@prisma/client";
+import { EvaluationType, NotificationDispatchStatus, type Prisma, type Role } from "@prisma/client";
+import {
+  getNotificationTypeLabel,
+  notificationEventDefinitions,
+  type NotificationEventType,
+} from "@/lib/notification-definitions";
 import { publishNotificationRealtimeEvent } from "@/lib/realtime-notifications";
+import { getEvaluationTypeLabel } from "@/lib/evaluations";
 import { prisma } from "@/lib/prisma";
+import { getSuggestedRapportWeek } from "@/lib/rapports";
 
 type NotificationInput = {
   destinataireId: string;
@@ -9,51 +16,6 @@ type NotificationInput = {
   message: string;
   lien?: string;
 };
-
-export const notificationEventDefinitions = [
-  {
-    type: "STAGIAIRE_CREATED",
-    label: "Nouveau stagiaire",
-    description: "Alerte lors de la creation d une nouvelle fiche stagiaire.",
-  },
-  {
-    type: "RAPPORT_SUBMITTED",
-    label: "Rapport soumis",
-    description: "Alerte quand un rapport entre en revue.",
-  },
-  {
-    type: "RAPPORT_RETURNED",
-    label: "Rapport retourne",
-    description: "Alerte quand un rapport est renvoye avec demande de corrections.",
-  },
-  {
-    type: "STAGE_ENDING_SOON",
-    label: "Fin de stage proche",
-    description: "Alerte sur les stages qui approchent de leur date de fin.",
-  },
-  {
-    type: "GITHUB_SYNC_SUCCESS",
-    label: "Synchro GitHub terminee",
-    description: "Alerte sur une synchronisation GitHub terminee avec succes.",
-  },
-  {
-    type: "GITHUB_SYNC_FAILED",
-    label: "Synchro GitHub echouee",
-    description: "Alerte sur une synchronisation GitHub en erreur ou limitee.",
-  },
-  {
-    type: "EVALUATION_SCHEDULED",
-    label: "Evaluation planifiee",
-    description: "Alerte quand une evaluation doit etre preparee ou tenir sa date.",
-  },
-  {
-    type: "DOCUMENT_REJECTED",
-    label: "Document rejete",
-    description: "Alerte quand un document est refuse et demande une nouvelle action.",
-  },
-] as const;
-
-export type NotificationEventType = (typeof notificationEventDefinitions)[number]["type"];
 
 const HEAVY_NOTIFICATION_RECIPIENT_THRESHOLD = 2;
 const NOTIFICATION_DISPATCH_MAX_ATTEMPTS = 3;
@@ -75,6 +37,14 @@ type NotificationPreferenceFlags = {
   liveEnabled: boolean;
 };
 
+type NotificationCandidate = {
+  type: string;
+  title: string;
+  message: string;
+  link: string;
+  recipientIds: string[];
+};
+
 const defaultNotificationPreference: NotificationPreferenceFlags = {
   inAppEnabled: true,
   liveEnabled: true,
@@ -94,6 +64,144 @@ function chunkArray<T>(items: T[], chunkSize: number) {
     chunks.push(items.slice(index, index + chunkSize));
   }
   return chunks;
+}
+
+function dedupeNotificationRecipientIds(recipientIds: string[]) {
+  return [...new Set(recipientIds.filter((value) => value.trim().length > 0))];
+}
+
+function getNotificationCandidateKey(input: {
+  recipientId: string;
+  type: string;
+  link: string;
+}) {
+  return `${input.recipientId}::${input.type}::${input.link}`;
+}
+
+async function createDedupedNotificationsFromCandidates(candidates: NotificationCandidate[]) {
+  if (candidates.length === 0) {
+    return 0;
+  }
+
+  const candidateRecipientIds = [...new Set(candidates.flatMap((candidate) => candidate.recipientIds))];
+  const candidateTypes = [...new Set(candidates.map((candidate) => candidate.type))];
+  const candidateLinks = [...new Set(candidates.map((candidate) => candidate.link))];
+
+  if (
+    candidateRecipientIds.length === 0 ||
+    candidateTypes.length === 0 ||
+    candidateLinks.length === 0
+  ) {
+    return 0;
+  }
+
+  const existingNotifications = await prisma.notification.findMany({
+    where: {
+      destinataireId: {
+        in: candidateRecipientIds,
+      },
+      type: {
+        in: candidateTypes,
+      },
+      lien: {
+        in: candidateLinks,
+      },
+    },
+    select: {
+      destinataireId: true,
+      type: true,
+      lien: true,
+    },
+  });
+
+  const existingKeySet = new Set(
+    existingNotifications
+      .filter((notification) => notification.lien)
+      .map((notification) =>
+        getNotificationCandidateKey({
+          recipientId: notification.destinataireId,
+          type: notification.type,
+          link: notification.lien ?? "",
+        }),
+      ),
+  );
+
+  const notificationsToCreate: NotificationInput[] = [];
+
+  for (const candidate of candidates) {
+    for (const recipientId of dedupeNotificationRecipientIds(candidate.recipientIds)) {
+      const candidateKey = getNotificationCandidateKey({
+        recipientId,
+        type: candidate.type,
+        link: candidate.link,
+      });
+
+      if (existingKeySet.has(candidateKey)) {
+        continue;
+      }
+
+      existingKeySet.add(candidateKey);
+      notificationsToCreate.push({
+        destinataireId: recipientId,
+        type: candidate.type,
+        titre: candidate.title,
+        message: candidate.message,
+        lien: candidate.link,
+      });
+    }
+  }
+
+  return createNotificationBatch(notificationsToCreate);
+}
+
+export function getExpectedRapportWeekForAlerts(input: {
+  stageStartDate: Date;
+  stageEndDate: Date;
+  referenceDate?: Date;
+}) {
+  const effectiveReferenceDate =
+    (input.referenceDate ?? new Date()).getTime() > input.stageEndDate.getTime()
+      ? input.stageEndDate
+      : input.referenceDate ?? new Date();
+
+  return getSuggestedRapportWeek(input.stageStartDate, [], effectiveReferenceDate);
+}
+
+function getDifferenceInDays(from: Date, to: Date) {
+  const millisecondsPerDay = 24 * 60 * 60 * 1000;
+
+  return Math.floor((to.getTime() - from.getTime()) / millisecondsPerDay);
+}
+
+export function resolveMissingEvaluationTypeForAlerts(input: {
+  stageStartDate: Date;
+  stageEndDate: Date;
+  existingTypes: EvaluationType[];
+  referenceDate?: Date;
+}) {
+  const referenceDate = input.referenceDate ?? new Date();
+
+  if (referenceDate.getTime() < input.stageStartDate.getTime()) {
+    return null;
+  }
+
+  const elapsedDays = getDifferenceInDays(input.stageStartDate, referenceDate);
+  const daysUntilEnd = getDifferenceInDays(referenceDate, input.stageEndDate);
+  const existingTypes = new Set(input.existingTypes);
+
+  if (elapsedDays >= 7 && !existingTypes.has(EvaluationType.DEBUT_STAGE)) {
+    return EvaluationType.DEBUT_STAGE;
+  }
+
+  if (elapsedDays >= 28 && !existingTypes.has(EvaluationType.MI_PARCOURS)) {
+    return EvaluationType.MI_PARCOURS;
+  }
+
+  if (daysUntilEnd <= 7 && !existingTypes.has(EvaluationType.FINAL)) {
+    return EvaluationType.FINAL;
+  }
+
+  return null;
 }
 
 async function getPreference(userId: string, eventType: string): Promise<NotificationPreferenceFlags> {
@@ -298,6 +406,35 @@ export async function enqueueNotificationDispatchJob(input: DispatchJobInput) {
   });
 }
 
+async function claimNotificationDispatchJob(job: {
+  id: string;
+  status: NotificationDispatchStatus;
+  attempts: number;
+  availableAt: Date;
+  updatedAt: Date;
+}) {
+  const nextAttempt = job.attempts + 1;
+  const claimResult = await prisma.notificationDispatchJob.updateMany({
+    where: {
+      id: job.id,
+      status: job.status,
+      availableAt: job.availableAt,
+      updatedAt: job.updatedAt,
+    },
+    data: {
+      status: NotificationDispatchStatus.PROCESSING,
+      attempts: nextAttempt,
+      lastError: null,
+    },
+  });
+
+  if (claimResult.count === 0) {
+    return null;
+  }
+
+  return nextAttempt;
+}
+
 export async function processPendingNotificationDispatchJobs(limit = 10) {
   const pendingJobs = await prisma.notificationDispatchJob.findMany({
     where: {
@@ -315,16 +452,11 @@ export async function processPendingNotificationDispatchJobs(limit = 10) {
   let processed = 0;
 
   for (const job of pendingJobs) {
-    const nextAttempt = job.attempts + 1;
+    const nextAttempt = await claimNotificationDispatchJob(job);
 
-    await prisma.notificationDispatchJob.update({
-      where: { id: job.id },
-      data: {
-        status: NotificationDispatchStatus.PROCESSING,
-        attempts: nextAttempt,
-        lastError: null,
-      },
-    });
+    if (!nextAttempt) {
+      continue;
+    }
 
     try {
       const recipientIds = Array.isArray(job.recipientIds)
@@ -451,13 +583,7 @@ export async function ensureEndingSoonNotifications(referenceDate = new Date()) 
       id: true,
     },
   });
-  const stageCandidates: Array<{
-    link: string;
-    title: string;
-    message: string;
-    recipientIds: string[];
-  }> = [];
-  const dedupeKeys = new Set<string>();
+  const stageCandidates: NotificationCandidate[] = [];
 
   for (const stage of stages) {
     const targetLink = `/stagiaires/${stage.stagiaireId}`;
@@ -476,77 +602,160 @@ export async function ensureEndingSoonNotifications(referenceDate = new Date()) 
 
     const resolvedRecipientIds = [...recipientIds];
     stageCandidates.push({
+      type: "STAGE_ENDING_SOON",
       link: targetLink,
       title,
       message,
       recipientIds: resolvedRecipientIds,
     });
-
-    for (const destinataireId of resolvedRecipientIds) {
-      dedupeKeys.add(`${destinataireId}::${targetLink}`);
-    }
   }
 
-  if (stageCandidates.length === 0 || dedupeKeys.size === 0) {
+  if (stageCandidates.length === 0) {
     return {
       scannedStages: stages.length,
       created: 0,
     };
   }
-
-  const candidateRecipientIds = [...new Set([...dedupeKeys].map((key) => key.split("::")[0] ?? ""))]
-    .filter((value) => value.length > 0);
-  const candidateLinks = [...new Set([...dedupeKeys].map((key) => key.split("::")[1] ?? ""))]
-    .filter((value) => value.length > 0);
-
-  const existingNotifications = await prisma.notification.findMany({
-    where: {
-      destinataireId: {
-        in: candidateRecipientIds,
-      },
-      type: "STAGE_ENDING_SOON",
-      lien: {
-        in: candidateLinks,
-      },
-    },
-    select: {
-      destinataireId: true,
-      lien: true,
-    },
-  });
-
-  const existingKeySet = new Set(
-    existingNotifications
-      .filter((notification) => notification.lien)
-      .map((notification) => `${notification.destinataireId}::${notification.lien}`),
-  );
-
-  const notificationsToCreate: NotificationInput[] = [];
-
-  for (const candidate of stageCandidates) {
-    for (const recipientId of candidate.recipientIds) {
-      const dedupeKey = `${recipientId}::${candidate.link}`;
-
-      if (existingKeySet.has(dedupeKey)) {
-        continue;
-      }
-
-      existingKeySet.add(dedupeKey);
-      notificationsToCreate.push({
-        destinataireId: recipientId,
-        type: "STAGE_ENDING_SOON",
-        titre: candidate.title,
-        message: candidate.message,
-        lien: candidate.link,
-      });
-    }
-  }
-
-  const created = await createNotificationBatch(notificationsToCreate);
+  const created = await createDedupedNotificationsFromCandidates(stageCandidates);
 
   return {
     scannedStages: stages.length,
     created,
+  };
+}
+
+export async function ensureAutomatedBusinessAlerts(referenceDate = new Date()) {
+  const blockedDocumentThresholdDate = new Date(referenceDate.getTime() - 3 * 24 * 60 * 60 * 1000);
+  const [adminsAndRh, activeStages, blockedDocuments] = await Promise.all([
+    prisma.user.findMany({
+      where: {
+        role: {
+          in: ["ADMIN", "RH"],
+        },
+        isActive: true,
+      },
+      select: {
+        id: true,
+      },
+    }),
+    prisma.stage.findMany({
+      where: {
+        statut: {
+          in: ["EN_COURS", "SUSPENDU"],
+        },
+      },
+      include: {
+        stagiaire: {
+          include: {
+            user: true,
+          },
+        },
+        rapports: {
+          select: {
+            semaine: true,
+            statut: true,
+          },
+        },
+        evaluations: {
+          select: {
+            type: true,
+          },
+        },
+      },
+    }),
+    prisma.document.findMany({
+      where: {
+        isDeleted: false,
+        statut: "EN_VERIFICATION",
+        validationRequestedAt: {
+          lte: blockedDocumentThresholdDate,
+        },
+      },
+      include: {
+        stage: {
+          include: {
+            stagiaire: {
+              include: {
+                user: true,
+              },
+            },
+          },
+        },
+      },
+    }),
+  ]);
+  const adminAndRhIds = adminsAndRh.map((user) => user.id);
+  const candidates: NotificationCandidate[] = [];
+  let overdueRapports = 0;
+  let missingEvaluations = 0;
+  let blockedDocumentsCount = 0;
+
+  for (const stage of activeStages) {
+    if (referenceDate.getTime() < stage.dateDebut.getTime()) {
+      continue;
+    }
+
+    const expectedWeek = getExpectedRapportWeekForAlerts({
+      stageStartDate: stage.dateDebut,
+      stageEndDate: stage.dateFin,
+      referenceDate,
+    });
+    const hasExpectedWeekRapport = stage.rapports.some((rapport) => {
+      return rapport.semaine === expectedWeek && rapport.statut !== "BROUILLON";
+    });
+
+    if (!hasExpectedWeekRapport) {
+      overdueRapports += 1;
+      candidates.push({
+        type: "RAPPORT_OVERDUE",
+        title: "Rapport en retard",
+        message: `Le rapport de la semaine ${expectedWeek} pour ${`${stage.stagiaire.user.prenom} ${stage.stagiaire.user.nom}`.trim()} n a pas encore ete soumis.`,
+        link: `/rapports?stageId=${stage.id}&alert=overdue&week=${expectedWeek}`,
+        recipientIds: [
+          stage.stagiaire.userId,
+          ...(stage.encadrantId ? [stage.encadrantId] : []),
+          ...adminAndRhIds,
+        ],
+      });
+    }
+
+    const missingEvaluationType = resolveMissingEvaluationTypeForAlerts({
+      stageStartDate: stage.dateDebut,
+      stageEndDate: stage.dateFin,
+      existingTypes: stage.evaluations.map((evaluation) => evaluation.type),
+      referenceDate,
+    });
+
+    if (missingEvaluationType) {
+      missingEvaluations += 1;
+      candidates.push({
+        type: "EVALUATION_MISSING",
+        title: "Evaluation manquante",
+        message: `L evaluation ${getEvaluationTypeLabel(missingEvaluationType)} du stage de ${`${stage.stagiaire.user.prenom} ${stage.stagiaire.user.nom}`.trim()} reste a preparer.`,
+        link: `/evaluations?stageId=${stage.id}&alert=missing-${missingEvaluationType}`,
+        recipientIds: [...(stage.encadrantId ? [stage.encadrantId] : []), ...adminAndRhIds],
+      });
+    }
+  }
+
+  for (const document of blockedDocuments) {
+    blockedDocumentsCount += 1;
+    candidates.push({
+      type: "DOCUMENT_BLOCKED",
+      title: "Document bloque",
+      message: `Le document ${document.nom} de ${`${document.stage.stagiaire.user.prenom} ${document.stage.stagiaire.user.nom}`.trim()} est en verification depuis plus de 3 jours.`,
+      link: `/documents/${document.id}`,
+      recipientIds: [...(document.stage.encadrantId ? [document.stage.encadrantId] : []), ...adminAndRhIds],
+    });
+  }
+
+  const created = await createDedupedNotificationsFromCandidates(candidates);
+
+  return {
+    created,
+    overdueRapports,
+    missingEvaluations,
+    blockedDocuments: blockedDocumentsCount,
   };
 }
 
@@ -594,17 +803,4 @@ export async function queueDocumentRejectedNotification(input: {
   });
 }
 
-export function getNotificationTypeLabel(type: string) {
-  const labels: Record<string, string> = {
-    STAGIAIRE_CREATED: "Nouveau stagiaire",
-    RAPPORT_SUBMITTED: "Rapport soumis",
-    RAPPORT_RETURNED: "Rapport retourne",
-    STAGE_ENDING_SOON: "Fin de stage proche",
-    GITHUB_SYNC_SUCCESS: "Synchro GitHub terminee",
-    GITHUB_SYNC_FAILED: "Synchro GitHub echouee",
-    EVALUATION_SCHEDULED: "Evaluation planifiee",
-    DOCUMENT_REJECTED: "Document rejete",
-  };
-
-  return labels[type] ?? "Notification";
-}
+export { getNotificationTypeLabel, notificationEventDefinitions, type NotificationEventType };

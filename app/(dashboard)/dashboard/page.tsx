@@ -102,8 +102,8 @@ function getQuickActions(role: UserRole): QuickAction[] {
 
 function getQuickActionClassName(variant: QuickAction["variant"]) {
   return variant === "primary"
-    ? "inline-flex min-h-11 shrink-0 whitespace-nowrap items-center justify-center rounded-xl bg-primary px-5 py-3 text-sm font-semibold text-on-primary shadow-[var(--shadow-ambient)] transition hover:opacity-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
-    : "inline-flex min-h-11 shrink-0 whitespace-nowrap items-center justify-center rounded-xl bg-surface-container-low px-5 py-3 text-sm font-semibold text-on-surface shadow-[var(--shadow-soft)] transition hover:bg-surface-container-high hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2 focus-visible:ring-offset-card";
+    ? "inline-flex min-h-11 shrink-0 whitespace-nowrap items-center justify-center bg-indigo-500 hover:bg-indigo-600 text-white px-6 py-2.5 rounded-lg font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+    : "inline-flex min-h-11 shrink-0 whitespace-nowrap items-center justify-center border border-white/20 hover:bg-white/5 text-white/70 px-6 py-2.5 rounded-lg transition-all duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/25 focus-visible:ring-offset-2 focus-visible:ring-offset-card";
 }
 
 function getEndingSoonStageHref(role: UserRole, stagiaireId: string) {
@@ -553,27 +553,43 @@ export default async function DashboardPage() {
         <TwoFactorInlineAlert userId={session.user.id} />
       ) : null}
 
-      <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {metrics.map((metric) => (
-          <MetricCard
-            key={metric.label}
-            label={metric.label}
-            value={metric.value}
-            helper={metric.helper}
-            accent={metric.accent}
-            className="h-full min-h-[176px]"
-          />
-        ))}
+      <section className="grid gap-4 min-[390px]:grid-cols-2 xl:grid-cols-4">
+        {metrics.map((metric) => {
+          let borderLeftClass = "bg-card border-l-4 border-gray-500";
+          const labelLower = metric.label.toLowerCase();
+          if (metric.value === "En cours" || metric.label === "Stage actif") {
+            borderLeftClass = "border-l-4 border-green-500 bg-green-50 dark:bg-green-950/20";
+          } else if (labelLower.includes("rapport")) {
+            borderLeftClass = "border-l-4 border-blue-500 bg-blue-50 dark:bg-blue-950/20";
+          } else if (labelLower.includes("document")) {
+            borderLeftClass = "border-l-4 border-indigo-500 bg-indigo-50 dark:bg-indigo-950/20";
+          } else if (metric.label === "Fin prévisionnelle") {
+            const daysUntil = myActiveStage ? (new Date(myActiveStage.dateFin).getTime() - new Date().getTime()) / (1000 * 3600 * 24) : 999;
+            borderLeftClass = daysUntil < 30 ? "border-l-4 border-orange-400 bg-orange-50 dark:bg-orange-950/20" : "bg-card border-l-4 border-gray-500";
+          }
+
+          return (
+            <MetricCard
+              key={metric.label}
+              label={metric.label}
+              value={metric.value}
+              helper={metric.helper}
+              accent={metric.accent}
+              borderLeftClass={borderLeftClass}
+              className="h-full min-h-[176px]"
+            />
+          );
+        })}
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[0.88fr_1.12fr]">
         <Card className="space-y-5">
           <div>
             <p className="text-sm font-medium text-primary">Priorités</p>
-            <h2 className="mt-1 text-2xl font-semibold tracking-tight">
+            <h2 className="mt-1 border-l-4 border-primary pl-3 text-lg font-semibold tracking-tight sm:text-2xl">
               {role === "STAGIAIRE" ? "Ce que je dois suivre" : "Ce qui demande une action"}
             </h2>
-            <p className="mt-2 text-sm leading-6 text-muted">
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground max-w-prose">
               Les cartes ci-dessous mettent en avant les points les plus utiles pour votre rôle à
               partir des données visibles dans votre périmètre.
             </p>
@@ -606,12 +622,12 @@ export default async function DashboardPage() {
           <div>
             <p className="text-sm font-medium text-primary">Rapports récents</p>
             <div className="mt-1 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-              <h2 className="text-2xl font-semibold tracking-tight">{recentRapportsTitle}</h2>
+              <h2 className="border-l-4 border-primary pl-3 text-lg font-semibold tracking-tight sm:text-2xl">{recentRapportsTitle}</h2>
               <p className="text-[13px] text-on-surface-variant">
                 {recentRapports.length} rapport{recentRapports.length > 1 ? "s" : ""} sur la vue actuelle
               </p>
             </div>
-            <p className="mt-2 text-sm leading-6 text-muted">
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground max-w-prose">
               Les rapports les plus récents apparaissent ici pour vous aider à reprendre vite le
               contexte.
             </p>
@@ -663,8 +679,8 @@ export default async function DashboardPage() {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <p className="text-sm font-medium text-primary">Échéances</p>
-            <h2 className="mt-1 text-2xl font-semibold tracking-tight">{endingSoonTitle}</h2>
-            <p className="mt-2 text-sm leading-6 text-muted">{endingSoonDescription}</p>
+            <h2 className="mt-1 border-l-4 border-primary pl-3 text-lg font-semibold tracking-tight sm:text-2xl">{endingSoonTitle}</h2>
+            <p className="mt-2 text-sm leading-relaxed text-muted-foreground max-w-prose">{endingSoonDescription}</p>
           </div>
           <span className="rounded-full bg-tertiary-fixed px-3 py-1 text-xs font-semibold text-on-tertiary-fixed-variant">
             Sous 15 jours
@@ -672,7 +688,7 @@ export default async function DashboardPage() {
         </div>
 
         {endingSoonStages.length > 0 ? (
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-3 min-[390px]:grid-cols-2 xl:grid-cols-3">
             {endingSoonStages.map((stage) => (
               <Link
                 key={stage.id}

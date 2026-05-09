@@ -68,6 +68,23 @@ Configuration securite Sprint 6 :
 - `TWO_FACTOR_ISSUER` : libelle affiche dans l application d authentification
 - `TWO_FACTOR_ENCRYPTION_SECRET` : secret dedie au chiffrement des secrets 2FA
   - si vide, `NEXTAUTH_SECRET` est reutilise
+- `DEFAULT_USER_PASSWORD` : mot de passe de seed, valide au demarrage
+- les roles `ADMIN` et `RH` sont forces vers `/securite` tant que le 2FA n est pas active
+- des codes de secours a usage unique sont generes lors de l activation du 2FA
+
+Configuration temps reel et healthcheck :
+
+- `REDIS_ENABLED` : active le bus Redis pour les notifications multi-instance
+- `REDIS_URL` : URL Redis de publication / souscription
+- `REDIS_CHANNEL_PREFIX` : prefixe des canaux pub/sub
+- `REDIS_CONNECT_TIMEOUT_MS` : timeout de connexion Redis
+- `HEALTHCHECK_QUEUE_WARNING_THRESHOLD` : seuil warning pour les jobs asynchrones en attente
+- `HEALTHCHECK_QUEUE_CRITICAL_THRESHOLD` : seuil critique pour les jobs asynchrones en attente
+
+Configuration stockage documentaire :
+
+- `DOCUMENT_STORAGE_DRIVER` : pilote de stockage, `local` par defaut
+- `DOCUMENT_STORAGE_LOCAL_ROOT` : racine locale pour les fichiers documentaires
 
 Application :
 
@@ -82,6 +99,7 @@ Application :
 - `npm run lint` : verifie le code
 - `npm test` : lance la suite Vitest
 - `npm run test:smoke` : lance le smoke test V1 (login/dashboard/stagiaires/RBAC)
+- `npm run test:e2e` : lance la base Playwright E2E
 - `npm run test:load:baseline` : lance le scenario de charge baseline Artillery
 - `npm run prisma:generate` : genere le client Prisma
 - `npm run prisma:migrate` : cree/applique les migrations
@@ -134,6 +152,15 @@ Le socle V1 couvre deja :
 - notifications in-app avec badge et centre de lecture
 - dashboard relie aux donnees reelles
 - validations metier et premiers tests Vitest
+
+Ameliorations techniques implementees sur la branche courante :
+
+- validation centralisee des variables d environnement au demarrage
+- healthcheck enrichi avec verifications PostgreSQL, Redis, stockage et files asynchrones
+- notifications temps reel compatibles Redis avec fallback memoire
+- abstraction de stockage documentaire pour preparer un backend objet
+- base Playwright pour les parcours E2E prioritaires
+- enrolement 2FA obligatoire pour `ADMIN` et `RH`, avec regeneration et consommation de codes de secours
 
 ## Roadmap V2
 
@@ -218,6 +245,21 @@ Pour activer ce lot completement :
 
 - appliquer la migration Prisma `0003_notification_preferences_realtime`
 - appliquer la migration Prisma `0004_notification_dispatch_queue`
+- configurer `REDIS_ENABLED=true` et `REDIS_URL` pour le mode distribue
+
+## Healthcheck et E2E
+
+Endpoint de sante :
+
+- `GET /api/health`
+- retourne `200` si la plateforme est exploitable
+- retourne `503` si PostgreSQL, Redis, le stockage ou les files critiques sont degrades
+
+Base E2E Playwright :
+
+- tests situes dans `tests/e2e/`
+- smoke public disponible sans credentials
+- smoke de connexion complete activable via `E2E_DEMO_EMAIL` et `E2E_DEMO_PASSWORD`
 
 Pour piloter le traitement de file hors session admin/RH :
 

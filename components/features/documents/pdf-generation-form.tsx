@@ -28,7 +28,7 @@ function SubmitButton({ disabled }: { disabled?: boolean }) {
     <button
       type="submit"
       disabled={isDisabled}
-      className="action-button action-button-primary px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70"
+      className="action-button action-button-primary w-full px-5 py-3 text-sm disabled:cursor-not-allowed disabled:opacity-70 sm:w-auto"
     >
       {pending ? "Generation..." : "Generer le PDF"}
     </button>
@@ -45,7 +45,7 @@ export function PdfGenerationForm({ stages, action }: PdfGenerationFormProps) {
       className="form-shell space-y-5 rounded-[32px] p-6 sm:p-8"
     >
       <div className="space-y-2">
-        <h2 className="text-xl font-semibold">Generer un PDF standard</h2>
+        <h2 className="text-lg font-semibold sm:text-xl">Generer un PDF standard</h2>
         <p className="text-sm leading-6 text-muted">
           Produisez une attestation, une fiche recapitulative ou un rapport consolide a partir des donnees du stage.
         </p>

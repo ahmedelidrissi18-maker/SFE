@@ -4,6 +4,7 @@ import { clearAllRateLimits } from "@/lib/security/rate-limit";
 const authMock = vi.fn();
 const processPendingJobsMock = vi.fn();
 const ensureEndingSoonNotificationsMock = vi.fn();
+const ensureAutomatedBusinessAlertsMock = vi.fn();
 const afterMock = vi.fn(async (callback: () => Promise<unknown> | unknown) => {
   await callback();
 });
@@ -13,6 +14,7 @@ vi.mock("@/auth", () => ({
 }));
 
 vi.mock("@/lib/notifications", () => ({
+  ensureAutomatedBusinessAlerts: ensureAutomatedBusinessAlertsMock,
   ensureEndingSoonNotifications: ensureEndingSoonNotificationsMock,
   processPendingNotificationDispatchJobs: processPendingJobsMock,
 }));
@@ -60,6 +62,12 @@ describe("notifications process route", () => {
       scannedStages: 3,
       created: 1,
     });
+    ensureAutomatedBusinessAlertsMock.mockResolvedValue({
+      created: 2,
+      overdueRapports: 1,
+      missingEvaluations: 1,
+      blockedDocuments: 0,
+    });
     processPendingJobsMock.mockResolvedValue({
       processed: 2,
       pending: 1,
@@ -78,6 +86,7 @@ describe("notifications process route", () => {
     });
     expect(afterMock).toHaveBeenCalledTimes(1);
     expect(ensureEndingSoonNotificationsMock).toHaveBeenCalledTimes(1);
+    expect(ensureAutomatedBusinessAlertsMock).toHaveBeenCalledTimes(1);
     expect(processPendingJobsMock).toHaveBeenCalledWith(20);
   });
 
@@ -91,6 +100,12 @@ describe("notifications process route", () => {
     ensureEndingSoonNotificationsMock.mockResolvedValue({
       scannedStages: 0,
       created: 0,
+    });
+    ensureAutomatedBusinessAlertsMock.mockResolvedValue({
+      created: 0,
+      overdueRapports: 0,
+      missingEvaluations: 0,
+      blockedDocuments: 0,
     });
     processPendingJobsMock.mockResolvedValue({
       processed: 1,

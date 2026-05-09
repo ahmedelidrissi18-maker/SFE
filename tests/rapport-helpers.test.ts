@@ -3,6 +3,7 @@ import {
   canEditRapport,
   canReviewRapport,
   getRapportStatusLabel,
+  resolveRapportStatus,
   getSuggestedRapportWeek,
 } from "@/lib/rapports";
 
@@ -10,6 +11,11 @@ describe("rapports helpers", () => {
   it("returns display labels", () => {
     expect(getRapportStatusLabel("BROUILLON")).toBe("Brouillon");
     expect(getRapportStatusLabel("SOUMIS")).toBe("Soumis");
+  });
+
+  it("resolves known rapport filters and ignores invalid ones", () => {
+    expect(resolveRapportStatus("valide")).toBe("VALIDE");
+    expect(resolveRapportStatus("unknown")).toBeNull();
   });
 
   it("detects editable and reviewable statuses", () => {

@@ -1,13 +1,10 @@
 import { NextResponse } from "next/server";
-import { getObservabilitySnapshot } from "@/lib/observability";
+import { getHealthSnapshot } from "@/lib/health";
 
 export async function GET() {
-  const observability = getObservabilitySnapshot();
+  const snapshot = await getHealthSnapshot();
 
-  return NextResponse.json({
-    status: observability.status === "critical" ? "degraded" : "ok",
-    service: "gestion-stagiaires",
-    timestamp: new Date().toISOString(),
-    observability,
+  return NextResponse.json(snapshot, {
+    status: snapshot.status === "ok" ? 200 : 503,
   });
 }

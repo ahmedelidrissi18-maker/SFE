@@ -86,7 +86,7 @@ export function FeedbackBanner({
           <Link
             href={actionHref}
             className={cn(
-              "inline-flex min-h-10 shrink-0 items-center justify-center rounded-full bg-white/70 px-4 py-2 text-sm font-semibold shadow-[0px_12px_32px_rgba(26,28,29,0.04)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current/20 focus-visible:ring-offset-2",
+              "inline-flex min-h-10 w-full shrink-0 items-center justify-center rounded-full bg-white/70 px-4 py-2 text-sm font-semibold shadow-[0px_12px_32px_rgba(26,28,29,0.04)] transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current/20 focus-visible:ring-offset-2 sm:w-auto",
               style.action,
             )}
           >
